@@ -7,7 +7,7 @@
 static void test_file(const char *file)
 {
     fprintf(stderr, "--- {{ test %s --- \n", file);
-    size_t len = 1024, size;
+    size_t len = 1024, size, offset = 0;
     char *str = malloc(1024);
     char *end = str + 1024;
     FILE *fp = fopen(file, "r");
@@ -16,12 +16,13 @@ static void test_file(const char *file)
         size = fread(buf, 1, 1024, fp);
         if (size == 0)
             break;
-        if (str + size > end) {
+        if (str + offset + size > end) {
             len *= 2;
             str = realloc(str, len);
             end = str + len;
         }
-        memcpy(str, buf, size);
+        memcpy(str+offset, buf, size);
+        offset += size;
     }
     JSON json = parseJSON(str, str+len);
     JSON_dump(stderr, json);

@@ -74,4 +74,9 @@ find_library(HAVE_LIBMSGPACK msgpack)
 find_library(HAVE_LIBYAJL yajl)
 add_executable(benchmark test/bench.c)
 target_link_libraries(benchmark kjson ${HAVE_LIBMSGPACK} ${HAVE_LIBYAJL})
+
+add_executable(parseJSON test/parseJson.c)
+add_test(parseJSON parseJSON)
+target_link_libraries(parseJSON kjson)
+
 install(TARGETS kjson LIBRARY DESTINATION lib)
