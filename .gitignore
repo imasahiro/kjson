@@ -1,0 +1,8 @@
+build
+Debug
+Release
+.DS_Store
+GPATH
+GRTAGS
+GTAGS
+a.out*
