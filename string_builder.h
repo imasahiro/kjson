@@ -78,6 +78,10 @@ static inline void string_builder_add_string(string_builder *builder, char *s, s
     builder->buf.size += len;
 }
 
+static inline void string_builder_dispose(string_builder *builder)
+{
+    ARRAY_dispose(char, &builder->buf);
+}
 
 static inline char *string_builder_tostring(string_builder *builder,
         size_t *len, int ensureZero)

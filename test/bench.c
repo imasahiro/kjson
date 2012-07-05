@@ -13,18 +13,18 @@
 
 static struct timeval g_timer;
 
-void reset_timer()
+static void reset_timer()
 {
     gettimeofday(&g_timer, NULL);
 }
 
-void show_timer(size_t bufsz)
+static void show_timer(const char *s)
 {
     struct timeval endtime;
     gettimeofday(&endtime, NULL);
     double sec = (endtime.tv_sec - g_timer.tv_sec)
         + (double)(endtime.tv_usec - g_timer.tv_usec) / 1000 / 1000;
-    printf("%f sec\n", sec);
+    printf("%20s: %f sec\n", s, sec);
 }
 
 static const unsigned int TASK_INT_NUM = 1<<24;
@@ -54,7 +54,6 @@ void bench_json(void)
     yajl_handle h = yajl_alloc(&callbacks, NULL, NULL);
     const unsigned char * buf;
     size_t len;
-    puts("generate integer");
     reset_timer();
     {
         unsigned int i;
@@ -64,12 +63,10 @@ void bench_json(void)
         }
         yajl_gen_array_close(g);
     }
-    show_timer(len);
+    show_timer("generate integer");
 
     yajl_gen_get_buf(g, &buf, &len);
 
-    puts("----");
-    puts("parse integer");
     reset_timer();
     {
         yajl_status stat = yajl_parse(h, buf, len);
@@ -78,13 +75,11 @@ void bench_json(void)
             fprintf(stderr, "%s\n", (const char *) str);
         }
     }
-    show_timer(len);
+    show_timer("parse integer");
     yajl_gen_free(g);
     g = yajl_gen_alloc(NULL);
     yajl_free(h);
     h = yajl_alloc(&callbacks, NULL, NULL);
-    puts("----");
-    puts("generate string");
     reset_timer();
     {
         unsigned int i;
@@ -94,12 +89,10 @@ void bench_json(void)
         }
         yajl_gen_array_close(g);
     }
-    show_timer(len);
+    show_timer("generate string");
 
     yajl_gen_get_buf(g, &buf, &len);
 
-    puts("----");
-    puts("parse string");
     reset_timer();
     {
         yajl_status stat = yajl_parse(h, buf, len);
@@ -108,7 +101,7 @@ void bench_json(void)
             fprintf(stderr, "%s", (const char *) str);
         }
     }
-    show_timer(len);
+    show_timer("parse string");
     yajl_gen_free(g);
     yajl_free(h);
 }
@@ -123,7 +116,6 @@ void bench_msgpack(void)
     msgpack_unpacker_init(&mpac, MSGPACK_UNPACKER_INIT_BUFFER_SIZE);
     msgpack_unpacked msg;
 
-    puts("pack integer");
     reset_timer();
     {
         unsigned int i;
@@ -132,10 +124,8 @@ void bench_msgpack(void)
             msgpack_pack_unsigned_int(mpk, i);
         }
     }
-    show_timer(0);
+    show_timer("pack integer");
 
-    puts("----");
-    puts("unpack integer");
     reset_timer();
     {
         size_t off = 0;
@@ -146,13 +136,11 @@ void bench_msgpack(void)
             fprintf(stderr, "Not finished.\n");
         }
     }
-    show_timer(msgpack_unpacker_message_size(&mpac));
+    show_timer("unpack integer");
 
     msgpack_packer_free(mpk);
     msgpack_unpacker_reset(&mpac);
     mpk = msgpack_packer_new(sbuf, msgpack_sbuffer_write);
-    puts("----");
-    puts("pack string");
     reset_timer();
     {
         unsigned int i;
@@ -162,10 +150,8 @@ void bench_msgpack(void)
             msgpack_pack_raw_body(mpk, TASK_STR_PTR, i);
         }
     }
-    show_timer(0);
+    show_timer("pack string");
 
-    puts("----");
-    puts("unpack string");
     reset_timer();
     {
         size_t off = 0;
@@ -176,7 +162,7 @@ void bench_msgpack(void)
             fprintf(stderr, "Not finished.\n");
         }
     }
-    show_timer(msgpack_unpacker_message_size(&mpac));
+    show_timer("unpack string");
 
 }
 
@@ -187,7 +173,6 @@ void bench_kjson(void)
     JSON o;
     char *buf;
     size_t len;
-    puts("generate integer");
     reset_timer();
     {
         unsigned int i;
@@ -197,12 +182,11 @@ void bench_kjson(void)
             JSONArray_append((JSONArray*)o, v);
         }
     }
-    show_timer(len);
+    show_timer("generate integer");
 
     buf = JSON_toString(o, &len);
     JSON_free(o);
-    puts("----");
-    puts("parse integer");
+
     reset_timer();
     {
         o = parseJSON(buf, buf + len);
@@ -210,13 +194,11 @@ void bench_kjson(void)
             fprintf(stderr, "Error\n");
         }
     }
-    show_timer(len);
+    show_timer("parse integer");
 
     JSON_free(o);
     free(buf);
 
-    puts("----");
-    puts("generate string");
     reset_timer();
     {
         unsigned int i;
@@ -226,12 +208,10 @@ void bench_kjson(void)
             JSONArray_append((JSONArray*)o, v);
         }
     }
-    show_timer(len);
+    show_timer("generate string");
     buf = JSON_toString(o, &len);
     JSON_free(o);
 
-    puts("----");
-    puts("parse string");
     reset_timer();
     {
         o = parseJSON(buf, buf + len);
@@ -239,21 +219,18 @@ void bench_kjson(void)
             fprintf(stderr, "Errro\n");
         }
     }
-    show_timer(len);
+    show_timer("parse string");
     JSON_free(o);
     free(buf);
 }
 
 int main(int argc, char* argv[])
 {
-    int i;
     char* str = malloc(TASK_STR_LEN);
     memset(str, 'a', TASK_STR_LEN);
     TASK_STR_PTR = str;
     bench_msgpack();
     bench_json();
-    for (i = 0; i < 3; i++) {
-        bench_kjson();
-    }
+    bench_kjson();
     return 0;
 }

@@ -441,56 +441,45 @@ static JSON parseBoolean(input_stream_iterator *itr, char c)
 static JSON parseNumber(input_stream_iterator *itr, char c)
 {
     assert((c == '-' || ('0' <= c && c <= '9')) && "It do not seem as Number");
-    string_builder sb; string_builder_init(&sb);
     kjson_type type = JSON_Int32;
     union io_data state;
     _input_stream_save(itr->ins, &state);
-    if (c == '-') { string_builder_add(&sb, c); c = NEXT(itr); }
-    if (c == '0') {
-        string_builder_add(&sb, c);
-        c = NEXT(itr);
-    }
+    bool negative = false;
+    int64_t val = 0;
+    if (c == '-') { negative = true; c = NEXT(itr); }
+    if (c == '0') { c = NEXT(itr); }
     else if ('1' <= c && c <= '9') {
         for (; '0' <= c && c <= '9' && EOS(itr); c = NEXT(itr)) {
-            string_builder_add(&sb, c);
+            val = val * 10 + (c - '0');
         }
     }
     if (c == '.') {
         type = JSON_Double;
-        string_builder_add(&sb, c);
         for (c = NEXT(itr); '0' <= c && c <= '9' &&
-                EOS(itr); c = NEXT(itr)) {
-            string_builder_add(&sb, c);
-        }
+                EOS(itr); c = NEXT(itr)) {}
     }
     if (c == 'e' || c == 'E') {
-        string_builder_add(&sb, c);
+        type = JSON_Double;
         c = NEXT(itr);
         if (c == '+' || c == '-') {
-            string_builder_add(&sb, c);
             c = NEXT(itr);
         }
-        type = JSON_Double;
-        for (; '0' <= c && c <= '9' && EOS(itr); c = NEXT(itr)) {
-            string_builder_add(&sb, c);
-        }
+        for (; '0' <= c && c <= '9' && EOS(itr); c = NEXT(itr)) {}
     }
     union io_data state2;
     _input_stream_save(itr->ins, &state2);
     state2.str -= 1;
     _input_stream_resume(itr->ins, state2);
     JSON n;
-    size_t len;
-    char *s = string_builder_tostring(&sb, &len, 0);
-    char *e = s + len;
-    if (type == JSON_Double) {
+    if (type != JSON_Double) {
+        val = (negative)? -val : val;
+        n = JSONInt_new(val);
+    } else {
+        char *s = state.str-1;
+        char *e = state2.str;
         double d = strtod(s, &e);
         n = JSONDouble_new(d);
-    } else {
-        int64_t val = strtoll(s, &e, 10);
-        n = JSONInt_new(val);
     }
-    free(s);
     return n;
 }
 
@@ -640,12 +629,6 @@ JSON parseJSON(char *s, char *e)
     return parseJSON_stream(ins);
 }
 
-//JSON parseJSON_fromFILE(char *file)
-//{
-//    input_stream *ins = new_file_input_stream(file, 1024);
-//    return parseJSON_stream(ins);
-//}
-
 static JSON _JSON_get(JSON json, char *key)
 {
     JSONObject *o = toJSONObject(json);
@@ -775,12 +758,11 @@ static void JSONObject_toString(string_builder *sb, JSONObject *o)
 #ifdef USE_NUMBOX
     o = toJSONObject(toObj(toVal((JSON)o)));
 #endif
-    int i = 0;
+    r = poolmap_next(o->child, &itr);
+    goto L_internal;
     while ((r = poolmap_next(o->child, &itr)) != NULL) {
-        if (i != 0) {
-            string_builder_add(sb, ',');
-        }
-        i = 1;
+        string_builder_add(sb, ',');
+        L_internal:
         JSONString_toString(sb, (JSONString*)r->k);
         string_builder_add(sb, ':');
         _JSON_toString(sb, (JSON)r->v);
@@ -791,13 +773,16 @@ static void JSONObject_toString(string_builder *sb, JSONObject *o)
 static void JSONArray_toString(string_builder *sb, JSONArray *a)
 {
     JSON *s, *e;
-    int i = 0;
     string_builder_add(sb, '[');
-    JSON_ARRAY_EACH(a, s, e) {
-        if (i != 0) {
-            string_builder_add(sb, ',');
-        }
-        i = 1;
+#ifdef USE_NUMBOX
+    a = toJSONArray(toAry(toVal((JSON)a)));
+#endif
+    s = (a)->list;
+    e = (a)->list+(a)->length;
+    goto L_internal;
+    for (; s < e; ++s) {
+        string_builder_add(sb, ',');
+        L_internal:
         _JSON_toString(sb, *s);
     }
     string_builder_add(sb, ']');
@@ -870,12 +855,6 @@ static void JSONNull_toString(string_builder *sb, JSONNull *o)
 
 static void _JSON_toString(string_builder *sb, JSON json)
 {
-#ifdef USE_NUMBOX
-    if (IsDouble((toVal(json)))) {
-        JSONDouble_toString(sb, (JSONDouble*)json);
-        return;
-    }
-#endif
     switch (JSON_type(json)) {
 #define CASE(T, SB, O) case JSON_##T: JSON##T##_toString(SB, (JSON##T *) O); break
         CASE(Object, sb, json);
@@ -887,6 +866,12 @@ static void _JSON_toString(string_builder *sb, JSON json)
         CASE(Bool, sb, json);
         CASE(Null, sb, json);
         default:
+#ifdef USE_NUMBOX
+    if (IsDouble((toVal(json)))) {
+        JSONDouble_toString(sb, (JSONDouble*)json);
+        return;
+    }
+#endif
             assert(0 && "NO tostring func");
 #undef CASE
     }
@@ -902,6 +887,11 @@ char *JSON_toString(JSON json, size_t *len)
         *len = length;
     }
     return str;
+}
+
+void JSON_dump_(JSON s)
+{
+    JSON_dump(stderr, s);
 }
 #ifdef __cplusplus
 }

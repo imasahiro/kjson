@@ -185,12 +185,14 @@ static inline kjson_type JSON_type(JSON json) {
 #define ARRAY_INIT(A) (A)
 #endif
 
-#define JSON_ARRAY_EACH(A, I, E) \
+#define JSON_ARRAY_EACH(A, I, E) JSON_ARRAY_EACH_(A, I, E, 0)
+#define JSON_ARRAY_EACH_(A, I, E, N) \
     if (!JSON_TYPE_CHECK(Array, (JSON)A)) {} else\
         if (!ARRAY_INIT(A)) {}\
         else\
-        for (I = (A)->list,\
+        for (I = (A)->list + N,\
             E = (A)->list+(A)->length; I < E; ++I)
+
 
 typedef struct JSONObject_iterator {
     long index;
