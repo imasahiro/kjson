@@ -17,6 +17,7 @@ typedef enum kjson_type {
     JSON_Double =  0, /* 0000 */
     JSON_Object =  3, /* 0011 */
     JSON_String =  1, /* 0001 */
+    JSON_UString = 9, /* 1001 */
     JSON_Array  =  5, /* 0101 */
     JSON_Int64  = 11, /* 1011 */
     JSON_Error  = 15, /* 1111 */
@@ -34,6 +35,7 @@ typedef struct JSONString {
     int length;
     char *str;
 } JSONString;
+typedef JSONString JSONUString;
 
 typedef struct JSONArray {
 #ifndef USE_NUMBOX

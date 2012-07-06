@@ -34,6 +34,11 @@ static void reverse(char *const start, char *const end)
     }
 }
 
+static inline char toHexChar(unsigned char c)
+{
+    return c < 10 ? c + '0': c - 10 + 'a';
+}
+
 static inline char *put_d(char *p, uint64_t v)
 {
     char *base = p;

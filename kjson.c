@@ -73,12 +73,15 @@ static JSON JSONString_new2(string_builder *builder)
 
 JSON JSONString_new(char *s, size_t len)
 {
-    string_builder sb; string_builder_init(&sb);
-    char *const e = s + len;
-    while (s < e) {
-        string_builder_add(&sb, *s++);
-    }
-    return JSONString_new2(&sb);
+    JSONString *o = JSON_NEW(String);
+    o->str = calloc(1, len+1);
+    o->length = len;
+    memcpy(o->str, s, len);
+#ifdef USE_NUMBOX
+    return toJSON(ValueS((JSON)o));
+#else
+    return (JSON) o;
+#endif
 }
 
 JSON JSONNull_new()
@@ -213,6 +216,7 @@ void JSON_free(JSON o)
             JSONObject_free(o);
             break;
         case JSON_String:
+        case JSON_UString:
             JSONString_free(o);
             break;
         case JSON_Array:
@@ -361,13 +365,38 @@ static void parseEscape(input_stream_iterator *itr, string_builder *sb, char c)
     string_builder_add(sb, c);
 }
 
+static char skipBSorDoubleQuote(input_stream_iterator *itr, char c)
+{
+    for(; EOS(itr); c = NEXT(itr)) {
+        if (c == '\\' || c == '"') {
+            return c;
+        }
+    }
+    return c;
+}
+
 static JSON parseString(input_stream_iterator *itr, char c)
 {
     assert(c == '"' && "Missing open quote at start of JSONString");
+    union io_data state;
+    _input_stream_save(itr->ins, &state);
+    c = NEXT(itr);
+    c = skipBSorDoubleQuote(itr, c);
+    union io_data state2;
+    _input_stream_save(itr->ins, &state2);
     string_builder sb; string_builder_init(&sb);
-    for(c = NEXT(itr); EOS(itr); c = NEXT(itr)) {
+    if (c == '"') {/* fast path */
+        return (JSON)JSONString_new(state.str, state2.str - state.str - 1);
+    }
+    if (state2.str - state.str - 1 > 0) {
+        string_builder_add_string(&sb, state.str, state2.str - state.str - 1);
+    }
+    assert(c == '\\');
+    goto L_escape;
+    for(; EOS(itr); c = NEXT(itr)) {
         switch (c) {
             case '\\':
+            L_escape:;
                 parseEscape(itr, &sb, NEXT(itr));
                 continue;
             case '"':
@@ -527,6 +556,11 @@ static void JSONString_dump(FILE *fp, JSONString *json)
     fprintf(stderr, "\"%s\"", json->str);
 }
 
+static void JSONUString_dump(FILE *fp, JSONString *json)
+{
+    JSONString_dump(fp, json);
+}
+
 static void JSONNull_dump(FILE *fp, JSONNull *json)
 {
     fputs("null", stderr);
@@ -551,6 +585,7 @@ static void JSONArray_dump(FILE *fp, JSONArray *a)
     }
     fputs("]", stderr);
 }
+
 static void JSONInt32_dump(FILE *fp, JSONNumber *json)
 {
 #ifdef USE_NUMBOX
@@ -559,7 +594,6 @@ static void JSONInt32_dump(FILE *fp, JSONNumber *json)
     fprintf(stderr, "%d", (int)json->val);
 #endif
 }
-
 
 static void JSONInt64_dump(FILE *fp, JSONInt64 *json)
 {
@@ -618,6 +652,7 @@ void JSON_dump(FILE *fp, JSON json)
         CASE(Double, json);
         CASE(Bool, json);
         CASE(Null, json);
+        CASE(UString, json);
         default:
             assert(0 && "NO dump func");
 #undef CASE
@@ -806,6 +841,43 @@ static void JSONString_toString(string_builder *sb, JSONString *o)
     string_builder_add(sb, '"');
 }
 
+static void JSONUString_toString(string_builder *sb, JSONString *o)
+{
+#ifdef USE_NUMBOX
+    o = toJSONString(toStr(toVal((JSON)o)));
+#endif
+    string_builder_add(sb, '"');
+    char *s = o->str;
+    char *e = o->str + o->length;
+    while (s < e) {
+        char c;
+        if (*s & 0x80) {
+            c = *s;
+            string_builder_add_string(sb, "\\u", 2);
+            string_builder_add(sb, toHexChar(c >> 12));
+            string_builder_add(sb, toHexChar(c >>  8));
+            string_builder_add(sb, toHexChar(c >>  4));
+            string_builder_add(sb, toHexChar(c & 0xf));
+            continue;
+        }
+        c = *s++;
+        switch (c) {
+            case '"':  c = '"';
+            case '\\': c = '\\';
+            case '/':  c = '/';
+            case 'b':  c = '\b';
+            case 'f':  c = '\f';
+            case 'n':  c = '\n';
+            case 'r':  c = '\r';
+            case 't':  c = '\t';
+                string_builder_add(sb, '\\');
+            default:
+                string_builder_add(sb, c);
+        }
+    }
+    string_builder_add(sb, '"');
+}
+
 static void JSONInt32_toString(string_builder *sb, JSONInt *o)
 {
     int32_t i;
@@ -818,15 +890,13 @@ static void JSONInt32_toString(string_builder *sb, JSONInt *o)
 }
 static void JSONInt64_toString(string_builder *sb, JSONInt64 *o)
 {
-    int32_t i;
+    int64_t i;
 #ifdef USE_NUMBOX
-    i = toInt32(toVal(o));
-#else
-    i = (int)o->val;
+    o = ((JSONInt64 *) toInt64(toVal(o)));
 #endif
+    i = o->val;
     string_builder_add_int(sb, i);
 }
-
 
 static void JSONDouble_toString(string_builder *sb, JSONDouble *o)
 {
@@ -873,6 +943,7 @@ static void _JSON_toString(string_builder *sb, JSON json)
         CASE(Double, sb, json);
         CASE(Bool, sb, json);
         CASE(Null, sb, json);
+        CASE(UString, sb, json);
         default:
 #ifdef USE_NUMBOX
     if (IsDouble((toVal(json)))) {

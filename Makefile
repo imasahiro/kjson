@@ -1,8 +1,5 @@
 target=Debug
 target=Release
-#target=Qt
-#target=BMGC
-#target=logpool
 .PHONY : all
 all:
 	make -C $(target) -j8

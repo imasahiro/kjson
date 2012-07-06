@@ -229,8 +229,11 @@ int main(int argc, char* argv[])
     char* str = malloc(TASK_STR_LEN);
     memset(str, 'a', TASK_STR_LEN);
     TASK_STR_PTR = str;
-    bench_msgpack();
-    bench_json();
+    if (argc > 1 && strcmp(argv[1], "-t") == 0) {
+    } else {
+        bench_msgpack();
+        bench_json();
+    }
     bench_kjson();
     return 0;
 }
