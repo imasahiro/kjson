@@ -61,11 +61,11 @@ static inline JSON toJSON(Value v) { return (JSON) v.pval; }
 
 static JSON JSONString_new2(string_builder *builder)
 {
-    JSONString *o = JSON_NEW(String);
+    JSONString *o = JSON_NEW(UString);
     o->str = string_builder_tostring(builder, (size_t*)&o->length, 1);
     o->length -= 1;
 #ifdef USE_NUMBOX
-    return toJSON(ValueS((JSON)o));
+    return toJSON(ValueU((JSON)o));
 #else
     return (JSON) o;
 #endif
@@ -841,6 +841,38 @@ static void JSONString_toString(string_builder *sb, JSONString *o)
     string_builder_add(sb, '"');
 }
 
+static int utf8_check_size(char s)
+{
+    uint8_t u = (uint8_t) s;
+    assert (u >= 0x80);
+    if (0xc2 <= u && u <= 0xdf)
+        return 2;
+    else if (0xe0 <= u && u <= 0xef)
+        return 3;
+    else if (0xf0 <= u && u <= 0xf4)
+        return 4;
+    //assert(0 && "Invalid encoding");
+    return 0;
+}
+
+static char *toUTF8(string_builder *sb, char *s, char *e)
+{
+    uint32_t v = 0;
+    int i, length = utf8_check_size(*s);
+    if (length == 2) v = *s++ & 0x1f;
+    else if (length == 3) v = *s++ & 0xf;
+    else if (length == 4) v = *s++ & 0x7;
+    for (i = 1; i < length && s < e; ++i) {
+        uint8_t tmp = (uint8_t) *s++;
+        if (tmp < 0x80 || tmp > 0xbf) {
+            return 0;
+        }
+        v = (v << 6) | (tmp & 0x3f);
+    }
+    string_builder_add_hex(sb, v);
+    return s;
+}
+
 static void JSONUString_toString(string_builder *sb, JSONString *o)
 {
 #ifdef USE_NUMBOX
@@ -852,25 +884,20 @@ static void JSONUString_toString(string_builder *sb, JSONString *o)
     while (s < e) {
         char c;
         if (*s & 0x80) {
-            c = *s;
             string_builder_add_string(sb, "\\u", 2);
-            string_builder_add(sb, toHexChar(c >> 12));
-            string_builder_add(sb, toHexChar(c >>  8));
-            string_builder_add(sb, toHexChar(c >>  4));
-            string_builder_add(sb, toHexChar(c & 0xf));
+            s = toUTF8(sb, s, e);
             continue;
         }
         c = *s++;
         switch (c) {
-            case '"':  c = '"';
-            case '\\': c = '\\';
-            case '/':  c = '/';
-            case 'b':  c = '\b';
-            case 'f':  c = '\f';
-            case 'n':  c = '\n';
-            case 'r':  c = '\r';
-            case 't':  c = '\t';
-                string_builder_add(sb, '\\');
+            case '"':  string_builder_add_string(sb, "\\\"", 2); break;
+            case '\\': string_builder_add_string(sb, "\\\\", 2); break;
+            case '/':  string_builder_add_string(sb, "\\/" , 2); break;
+            case 'b':  string_builder_add_string(sb, "\b", 2); break;
+            case 'f':  string_builder_add_string(sb, "\f", 2); break;
+            case 'n':  string_builder_add_string(sb, "\n", 2); break;
+            case 'r':  string_builder_add_string(sb, "\r", 2); break;
+            case 't':  string_builder_add_string(sb, "\t", 2); break;
             default:
                 string_builder_add(sb, c);
         }

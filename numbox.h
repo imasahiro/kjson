@@ -15,6 +15,7 @@
 #define TagNull     ((TagBaseMask | 0x6ULL) << TagBitShift)
 #define TagObject   ((TagBaseMask | 0x3ULL) << TagBitShift)
 #define TagString   ((TagBaseMask | 0x1ULL) << TagBitShift)
+#define TagUString  ((TagBaseMask | 0x9ULL) << TagBitShift)
 #define TagArray    ((TagBaseMask | 0x5ULL) << TagBitShift)
 #define TagInt64    ((TagBaseMask | 0xbULL) << TagBitShift)
 
@@ -48,6 +49,9 @@ static inline Value ValueO(union JSON *oval) {
 static inline Value ValueS(union JSON *sval) {
     Value v; v.bits = (uint64_t)sval | TagString; return v;
 }
+static inline Value ValueU(union JSON *sval) {
+    Value v; v.bits = (uint64_t)sval | TagUString; return v;
+}
 static inline Value ValueA(union JSON *aval) {
     Value v; v.bits = (uint64_t)aval | TagArray; return v;
 }
@@ -75,6 +79,9 @@ static inline union JSON *toObj(Value v) {
     return (union JSON*) Val(v);
 }
 static inline union JSON *toStr(Value v) {
+    return (union JSON*) Val(v);
+}
+static inline union JSON *toUStr(Value v) {
     return (union JSON*) Val(v);
 }
 static inline union JSON *toAry(Value v) {

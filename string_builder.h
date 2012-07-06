@@ -39,6 +39,16 @@ static inline char toHexChar(unsigned char c)
     return c < 10 ? c + '0': c - 10 + 'a';
 }
 
+static inline char *put_x(char *p, uint64_t v)
+{
+    char *base = p;
+    do {
+        *p++ = toHexChar(v % 16);
+    } while ((v /= 16) != 0);
+    reverse(base, p);
+    return p;
+}
+
 static inline char *put_d(char *p, uint64_t v)
 {
     char *base = p;
@@ -57,7 +67,13 @@ static inline char *put_i(char *p, int64_t value)
     }
     return put_d(p, (uint64_t)value);
 }
-
+static inline void string_builder_add_hex(string_builder *builder, uint32_t i)
+{
+    ARRAY_ensureSize(char, &builder->buf, 4);
+    char *p = builder->buf.list + ARRAY_size(builder->buf);
+    char *e = put_x(p, i);
+    builder->buf.size += e - p;
+}
 static inline void string_builder_add_int(string_builder *builder, int32_t i)
 {
     ARRAY_ensureSize(char, &builder->buf, 12);/* sizeof("-2147483648") */
