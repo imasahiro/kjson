@@ -16,7 +16,7 @@
 #define TagObject   ((TagBaseMask | 0x3ULL) << TagBitShift)
 #define TagString   ((TagBaseMask | 0x1ULL) << TagBitShift)
 #define TagArray    ((TagBaseMask | 0x5ULL) << TagBitShift)
-#define TagInt64    ((TagBaseMask | 0xaULL) << TagBitShift)
+#define TagInt64    ((TagBaseMask | 0xbULL) << TagBitShift)
 
 union JSON;
 typedef union numbox {

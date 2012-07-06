@@ -72,8 +72,10 @@ add_test(test_tostring test_tostring)
 
 find_library(HAVE_LIBMSGPACK msgpack)
 find_library(HAVE_LIBYAJL yajl)
+if(HAVE_LIBMSGPACK AND HAVE_LIBYAJL)
 add_executable(benchmark test/bench.c)
 target_link_libraries(benchmark kjson ${HAVE_LIBMSGPACK} ${HAVE_LIBYAJL})
+endif(HAVE_LIBMSGPACK AND HAVE_LIBYAJL)
 
 add_executable(parseJSON test/parseJson.c)
 add_test(parseJSON parseJSON)

@@ -43,15 +43,7 @@ static int json_keycmp(uintptr_t k0, uintptr_t k1)
 static void json_recfree(pmap_record_t *r)
 {
     JSON json = (JSON) r->v;
-#ifdef USE_NUMBOX
-    if (IsDouble((toVal(json))))
-        return;
-    if ((JSON_type(json) & 0x1) == 0x0)
-        return;
-    json = (JSON) toObj(toVal(json));
-#endif
     JSON_free(json);
-    free(json);
 }
 
 #define JSON_NEW(T) (JSON##T *) JSON_new(JSON_##T)
@@ -139,7 +131,7 @@ JSON JSONDouble_new(double val)
 JSON JSONInt_new(int64_t val)
 {
     JSONNumber *o;
-    if (val > INT32_MAX || val < INT32_MIN) {
+    if (val > (int64_t)INT32_MAX || val < (int64_t)INT32_MIN) {
         JSONInt64 *i64 = (JSONInt64 *) JSON_NEW(Int64);
         i64->val = val;
         o = (JSONNumber *) i64;
@@ -178,6 +170,7 @@ static void JSONObject_free(JSON json)
     o = toJSONObject(toObj(toVal((JSON)o)));
 #endif
     poolmap_delete(o->child);
+    free(o);
 }
 
 static void JSONString_free(JSON json)
@@ -187,6 +180,7 @@ static void JSONString_free(JSON json)
     o = toJSONString(toStr(toVal((JSON)o)));
 #endif
     free(o->str);
+    free(o);
 }
 
 static void JSONArray_free(JSON o)
@@ -197,8 +191,17 @@ static void JSONArray_free(JSON o)
         JSON_free(*s);
     }
     free(a->list);
+    free(a);
 }
 
+static void JSONInt64_free(JSON json)
+{
+    JSONInt64 *o = (JSONInt64*) (json);
+#ifdef USE_NUMBOX
+    o = (JSONInt64*) toInt64(toVal((JSON)o));
+#endif
+    free(o);
+}
 void JSON_free(JSON o)
 {
 #ifdef USE_NUMBOX
@@ -214,6 +217,9 @@ void JSON_free(JSON o)
             break;
         case JSON_Array:
             JSONArray_free(o);
+            break;
+        case JSON_Int64:
+            JSONInt64_free(o);
             break;
         default:
             break;
@@ -239,7 +245,7 @@ static void _JSONObject_set(JSONObject *o, JSONString *key, JSON value)
     o = toJSONObject(toObj(toVal((JSON)o)));
 #endif
     assert(key && value);
-    assert(JSON_type(value) < 8);
+    assert(JSON_type(value) < 16);
     poolmap_set(o->child, (char *) key, 0, value);
 }
 
@@ -626,7 +632,9 @@ static JSON parseJSON_stream(input_stream *ins)
 JSON parseJSON(char *s, char *e)
 {
     input_stream *ins = new_string_input_stream(s, e - s);
-    return parseJSON_stream(ins);
+    JSON json = parseJSON_stream(ins);
+    input_stream_delete(ins);
+    return json;
 }
 
 static JSON _JSON_get(JSON json, char *key)

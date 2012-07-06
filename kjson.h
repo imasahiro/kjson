@@ -171,7 +171,7 @@ static inline kjson_type JSON_type(JSON json) {
     Value v; v.bits = (uint64_t)json;
     uint64_t tag = Tag(v);
     return (IsDouble((v)))?
-        JSON_Double : (kjson_type) ((tag >> TagBitShift) & 7);
+        JSON_Double : (kjson_type) ((tag >> TagBitShift) & 15);
 }
 #define JSON_set_type(json, type) assert(0 && "Not supported")
 #else

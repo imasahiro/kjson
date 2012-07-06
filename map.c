@@ -1,3 +1,4 @@
+#include "kjson.h"
 #include "hash.h"
 #include "map.h"
 #include <stdio.h>
@@ -139,6 +140,7 @@ void poolmap_delete(poolmap_t *m)
     for (i = 0; i < size; ++i) {
         pmap_record_t *r = pmap_at(m, i);
         if (r->hash) {
+            JSON_free((JSON)r->k);
             m->ffree(r);
         }
     }
