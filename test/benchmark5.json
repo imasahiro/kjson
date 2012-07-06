@@ -22,4 +22,4 @@
 }],"longCash":4.600368106E7,"ownerId":8,"pendingOrders":[{
 "total":487000,"type":"cover","subtotal":483000,"price":4.83,"commission":4000,"date":"2008-10-17 23:56:06.000"
 ,"quantity":100000,"expires":"2008-10-20 16:00:00.000","stock":"JBLU","id":182375},{"total":6271600,"type":"buy","subtotal":6270000,"price":156.75,"commission":1600,"date":"2008-10-17 23:56:40.000","quantity":40000,"expires"
-:"2008-10-20 16:00:00.000","stock":"MA","id":182376}],"inceptionDate":"2008-04-26 04:44:29.000","withdrawals":0,"id":219948,"deposits":0}";
+:"2008-10-20 16:00:00.000","stock":"MA","id":182376}],"inceptionDate":"2008-04-26 04:44:29.000","withdrawals":0,"id":219948,"deposits":0}
