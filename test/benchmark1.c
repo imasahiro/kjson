@@ -3,11 +3,18 @@
 #include <string.h>
 #include <sys/time.h>
 
+//#define USE_JSON_C
+//#define USE_YAJL
+
+#ifdef USE_MSGPACK
 #include <msgpack.h>
 #include <msgpack/pack.h>
 #include <msgpack/unpack.h>
+#endif
+#ifdef USE_YAJL
 #include <yajl/yajl_parse.h>
 #include <yajl/yajl_gen.h>
+#endif
 #include "kjson.h"
 
 
@@ -33,9 +40,9 @@ static const unsigned int TASK_STR_LEN = 1<<15;
 //static const unsigned int TASK_STR_LEN = 1<<12;
 static const char* TASK_STR_PTR;
 
-
 void bench_json(void)
 {
+#ifdef USE_YAJL
     puts("== JSON ==");
     yajl_gen g = yajl_gen_alloc(NULL);
     yajl_callbacks callbacks = {
@@ -104,10 +111,12 @@ void bench_json(void)
     show_timer("parse string");
     yajl_gen_free(g);
     yajl_free(h);
+#endif
 }
 
 void bench_msgpack(void)
 {
+#ifdef USE_MSGPACK
     puts("== MessagePack ==");
     msgpack_sbuffer *sbuf = msgpack_sbuffer_new();
     msgpack_packer* mpk = msgpack_packer_new(sbuf, msgpack_sbuffer_write);
@@ -163,7 +172,7 @@ void bench_msgpack(void)
         }
     }
     show_timer("unpack string");
-
+#endif
 }
 
 void bench_kjson(void)

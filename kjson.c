@@ -1020,8 +1020,8 @@ static void JSONBool_toString(string_builder *sb, JSONBool *o)
 #else
     b = o->val;
 #endif
-    char *str = (b) ? "true" : "false";
-    size_t len =  (b)? 4/*strlen("ture")*/ : 5/*strlen("false")*/;
+    char *str  = (b) ? "true" : "false";
+    size_t len = (b) ? 4/*strlen("ture")*/ : 5/*strlen("false")*/;
     string_builder_add_string(sb, str, len);
 }
 

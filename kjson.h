@@ -11,14 +11,14 @@ extern "C" {
 
 typedef enum kjson_type {
     /** ($type & 1 == 0) means $type extends Number */
-    JSON_Null   =  6, /* 0110 */
-    JSON_Bool   =  4, /* 0100 */
-    JSON_Int32  =  2, /* 0010 */
     JSON_Double =  0, /* 0000 */
-    JSON_Object =  3, /* 0011 */
     JSON_String =  1, /* 0001 */
-    JSON_UString = 9, /* 1001 */
+    JSON_Int32  =  2, /* 0010 */
+    JSON_Object =  3, /* 0011 */
+    JSON_Bool   =  4, /* 0100 */
     JSON_Array  =  5, /* 0101 */
+    JSON_Null   =  6, /* 0110 */
+    JSON_UString = 9, /* 1001 */
     JSON_Int64  = 11, /* 1011 */
     JSON_Error  = 15, /* 1111 */
     /* '7' is reserved by numbox*/
