@@ -235,5 +235,6 @@ int main(int argc, char* argv[])
         bench_json();
     }
     bench_kjson();
+    free(str);
     return 0;
 }

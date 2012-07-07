@@ -33,7 +33,7 @@ typedef struct JSONString {
     kjson_type type;
 #endif
     int length;
-    char *str;
+    char str[1];
 } JSONString;
 typedef JSONString JSONUString;
 

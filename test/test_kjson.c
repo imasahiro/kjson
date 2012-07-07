@@ -29,9 +29,10 @@ static void test_file(const char *file)
     size_t json_len;
     char *json_s = JSON_toString(json, &json_len);
     fprintf(stderr, "'%s'\n", json_s);
+    fprintf(stderr, "\n--- }} test %s --- \n", file);
     free(json_s);
     JSON_free(json);
-    fprintf(stderr, "\n--- }} test %s --- \n", file);
+    free(str);
 }
 
 static const char *names[] = {

@@ -81,4 +81,8 @@ add_executable(parseJSON test/parseJson.c)
 add_test(parseJSON parseJSON)
 target_link_libraries(parseJSON kjson)
 
+add_executable(parseString test/parseString.c)
+add_test(parseString parseString)
+target_link_libraries(parseString kjson)
+
 install(TARGETS kjson LIBRARY DESTINATION lib)

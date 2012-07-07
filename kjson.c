@@ -19,14 +19,27 @@ static uintptr_t json_keygen1(char *key, uint32_t klen)
     return (uintptr_t) key;
 }
 
+struct _string {
+    char  *str;
+    size_t len;
+};
+
 static uintptr_t json_keygen0(char *key, uint32_t klen)
 {
     JSONString *s = toJSONString((JSON)key);
-    (void)klen;
 #ifdef USE_NUMBOX
-    s = toJSONString(toStr(toVal(s)));
+    kjson_type type = JSON_type((JSON)s);
+    if (type > 0) {
+        s = toJSONString(toStr(toVal(s)));
+        key  = s->str;
+        klen = s->length;
+    } else {
+        struct _string *s = (struct _string *) key;
+        key  = s->str;
+        klen = s->len;
+    }
 #endif
-    return djbhash(s->str, s->length);
+    return djbhash(key, klen);
 }
 
 static int json_keycmp(uintptr_t k0, uintptr_t k1)
@@ -34,11 +47,24 @@ static int json_keycmp(uintptr_t k0, uintptr_t k1)
     JSONString *s0 = toJSONString((JSON)k0);
     JSONString *s1 = toJSONString((JSON)k1);
 #ifdef USE_NUMBOX
+    char  *key = ((struct _string *) k1)->str;
+    size_t len = ((struct _string *) k1)->len;
     s0 = toJSONString(toStr(toVal(s0)));
-    s1 = toJSONString(toStr(toVal(s1)));
-#endif
+    kjson_type type = JSON_type((JSON)s1);
+    if (type > 0) {
+        s1 = toJSONString(toStr(toVal(s1)));
+        key = s1->str;
+        len = s1->length;
+    } else {
+        key = ((struct _string *) k1)->str;
+        len = ((struct _string *) k1)->len;
+    }
+    return s0->length == len &&
+        strncmp(s0->str, key, len) == 0;
+#else
     return s0->length == s1->length &&
         strncmp(s0->str, s1->str, s0->length) == 0;
+#endif
 }
 
 static void json_recfree(pmap_record_t *r)
@@ -47,24 +73,27 @@ static void json_recfree(pmap_record_t *r)
     _JSON_free(json);
 }
 
-#define JSON_NEW(T) (JSON##T *) JSON_new(JSON_##T)
+static inline JSON toJSON(Value v) { return (JSON) v.pval; }
 
-static inline JSON JSON_new(kjson_type type)
+#define JSON_NEW_(T, SIZE) (JSON##T *) JSON_new(JSON_##T, (sizeof(union JSON) + SIZE))
+#define JSON_NEW(T)        JSON_NEW_(T, 0);
+
+static inline JSON JSON_new(kjson_type type, size_t size)
 {
-    JSON json = (JSON) calloc(1, sizeof(union JSON));
+    JSON json = (JSON) malloc(size);
 #ifndef USE_NUMBOX
     JSON_set_type(json, type);
 #endif
     return json;
 }
-
-static inline JSON toJSON(Value v) { return (JSON) v.pval; }
-
 static JSON JSONString_new2(string_builder *builder)
 {
-    JSONString *o = JSON_NEW(UString);
-    o->str = string_builder_tostring(builder, (size_t*)&o->length, 1);
-    o->length -= 1;
+    size_t len;
+    char *s = string_builder_tostring(builder, &len, 1);
+    JSONString *o = JSON_NEW_(UString, len);
+    memcpy(o->str, s, len);
+    o->length = len - 1;
+    free(s);
 #ifdef USE_NUMBOX
     return toJSON(ValueU((JSON)o));
 #else
@@ -74,10 +103,9 @@ static JSON JSONString_new2(string_builder *builder)
 
 JSON JSONString_new(char *s, size_t len)
 {
-    JSONString *o = JSON_NEW(String);
-    o->str = calloc(1, len+1);
-    o->length = len;
+    JSONString *o = JSON_NEW_(String, len+1);
     memcpy(o->str, s, len);
+    o->length = len;
 #ifdef USE_NUMBOX
     return toJSON(ValueS((JSON)o));
 #else
@@ -183,7 +211,6 @@ static void JSONString_free(JSON json)
 #ifdef USE_NUMBOX
     o = toJSONString(toStr(toVal((JSON)o)));
 #endif
-    free(o->str);
     free(o);
 }
 
@@ -212,7 +239,7 @@ static void _JSON_free(JSON o)
 #ifdef USE_NUMBOX
     kjson_type type = JSON_type(o);
     typedef void (*freeJSON)(JSON);
-    static const freeJSON dispatch[] = {
+    static const freeJSON dispatch_free[] = {
         /* 00 */JSONNOP_free,
         /* 01 */JSONString_free,
         /* 02 */JSONNOP_free,
@@ -229,7 +256,7 @@ static void _JSON_free(JSON o)
         /* 13 */JSONNOP_free,
         /* 14 */JSONNOP_free,
         /* 15 */JSONNOP_free};
-    dispatch[type](o);
+    dispatch_free[type](o);
 #else
     switch (JSON_type(o)) {
         case JSON_Object:
@@ -399,6 +426,9 @@ static void parseEscape(input_stream *ins, string_builder *sb, char c)
     string_builder_add(sb, c);
 }
 
+static const uint8_t string_info[] = {
+};
+
 static char skipBSorDoubleQuote(input_stream *ins, char c)
 {
     for(; EOS(ins); c = NEXT(ins)) {
@@ -418,10 +448,10 @@ static JSON parseString(input_stream *ins, char c)
     c = skipBSorDoubleQuote(ins, c);
     union io_data state2;
     state2 = _input_stream_save(ins);
-    string_builder sb; string_builder_init(&sb);
     if (c == '"') {/* fast path */
         return (JSON)JSONString_new(state.str, state2.str - state.str - 1);
     }
+    string_builder sb; string_builder_init(&sb);
     if (state2.str - state.str - 1 > 0) {
         string_builder_add_string(&sb, state.str, state2.str - state.str - 1);
     }
@@ -711,24 +741,23 @@ JSON parseJSON(char *s, char *e)
 static JSON _JSON_get(JSON json, char *key)
 {
     JSONObject *o = toJSONObject(json);
-    JSONString s = {};
-    s.length = strlen(key);
-    s.str    = key;
-    assert(JSON_type(json) == JSON_Object);
-#ifdef USE_NUMBOX
-    Value v = ValueS((JSON)&s);
-    o = toJSONObject(toObj(toVal((JSON)o)));
-#else
-    JSON_set_type((JSON) &s, JSON_String);
-#endif
+    size_t len = strlen(key);
 
-    pmap_record_t *r = poolmap_get(o->child, (char *)
 #ifdef USE_NUMBOX
-            v.pval
+    struct _string tmp;
+    tmp.str = key;
+    tmp.len = len;
+    o = toJSONObject(toObj(toVal((JSON)o)));
+    pmap_record_t *r = poolmap_get(o->child, (char *)&tmp, 0);
 #else
-            &s
+    char tmp[sizeof(union JSON) + len];
+    JSONString *s = (JSONString *) tmp;
+    s->length = len;
+    memcpy(s->str, key, len);
+    assert(JSON_type(json) == JSON_Object);
+    JSON_set_type((JSON) s, JSON_String);
+    pmap_record_t *r = poolmap_get(o->child, (char *)s, 0);
 #endif
-            , 0);
     return (JSON) r->v;
 }
 
