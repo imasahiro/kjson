@@ -93,6 +93,7 @@ static JSON JSONString_new2(string_builder *builder)
     JSONString *o = JSON_NEW_(UString, len);
     memcpy(o->str, s, len);
     o->length = len - 1;
+    o->str[len] = 0;
     free(s);
 #ifdef USE_NUMBOX
     return toJSON(ValueU((JSON)o));
@@ -106,6 +107,7 @@ JSON JSONString_new(char *s, size_t len)
     JSONString *o = JSON_NEW_(String, len+1);
     memcpy(o->str, s, len);
     o->length = len;
+    o->str[len] = 0;
 #ifdef USE_NUMBOX
     return toJSON(ValueS((JSON)o));
 #else
@@ -340,25 +342,29 @@ static char skip_space(input_stream *ins, char c)
     return -1;
 }
 static JSON parseNOP(input_stream *ins, char c) { return NULL; }
+#define _M 0x80 |
+static const uint8_t string_table[] = {
+    0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0,
+    0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0,
+    0   ,0   ,_M 2,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,4   ,0   ,0,
+    4   ,4   ,4   ,4   ,4   ,4   ,4   ,4   ,4   ,4   ,0   ,0   ,0   ,0   ,0   ,0,
+    0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0,
+    0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,3   ,_M 0,0   ,0   ,0,
+    0   ,0   ,0   ,0   ,0   ,0   ,5   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,6   ,0,
+    0   ,0   ,0   ,0   ,5   ,0   ,0   ,0   ,0   ,0   ,0   ,1   ,0   ,0   ,0   ,0,
+    0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0,
+    0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0,
+    0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0,
+    0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0,
+    0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0,
+    0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0,
+    0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0,
+    0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0
+};
+#undef _M
+
 static JSON parseChild(input_stream *ins, char c)
 {
-    static const uint8_t dispatch[] = {
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,2,0,0,0,0,0,0,0,0,0,0,4,0,0,
-        4,4,4,4,4,4,4,4,4,4,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,
-        0,0,0,0,0,0,5,0,0,0,0,0,0,0,6,0,
-        0,0,0,0,5,0,0,0,0,0,0,1,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
     c = skip_space(ins, c);
     typedef JSON (*parseJSON)(input_stream *ins, char c);
     static const parseJSON dispatch_func[] = {
@@ -369,7 +375,7 @@ static JSON parseChild(input_stream *ins, char c)
         parseNumber,
         parseBoolean,
         parseNull};
-    return dispatch_func[(dispatch[(int)c])](ins, c);
+    return dispatch_func[0x7f & string_table[(int)c]](ins, c);
 }
 
 static unsigned int toHex(char c)
@@ -432,7 +438,7 @@ static const uint8_t string_info[] = {
 static char skipBSorDoubleQuote(input_stream *ins, char c)
 {
     for(; EOS(ins); c = NEXT(ins)) {
-        if (c == '\\' || c == '"') {
+        if (0x80 & string_table[(int)c]) {
             return c;
         }
     }
@@ -1039,10 +1045,10 @@ static void _JSON_toString(string_builder *sb, JSON json)
         CASE(UString, sb, json);
         default:
 #ifdef USE_NUMBOX
-    if (IsDouble((toVal(json)))) {
-        JSONDouble_toString(sb, (JSONDouble*)json);
-        return;
-    }
+            if (IsDouble((toVal(json)))) {
+                JSONDouble_toString(sb, (JSONDouble*)json);
+                return;
+            }
 #endif
             assert(0 && "NO tostring func");
 #undef CASE
