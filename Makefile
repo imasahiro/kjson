@@ -1,5 +1,5 @@
 target=Debug
-#target=Release
+target=Release
 .PHONY : all
 all:
 	make -C $(target) -j8
