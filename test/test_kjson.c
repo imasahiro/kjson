@@ -24,7 +24,7 @@ static void test_file(const char *file)
         memcpy(str+offset, buf, size);
         offset += size;
     }
-    JSON json = parseJSON(str, str+len);
+    JSON json = parseJSON(str, str+len, 0);
     //JSON_dump(stderr, json);
     size_t json_len;
     char *json_s = JSON_toString(json, &json_len);
@@ -69,7 +69,7 @@ static char data[] =
 
 static void test_string(void)
 {
-    JSON json = parseJSON(data, data+sizeof(data));
+    JSON json = parseJSON(data, data+sizeof(data), 0);
     JSONArray *child = toJSONArray(JSON_get(json, "app"));
     assert(child != NULL);
     assert(JSON_type((JSON)child) == JSON_Array);
@@ -106,7 +106,7 @@ static char data2[] =
 
 static void test_object_iterator(void)
 {
-    JSONObject *o = (JSONObject*) parseJSON(data2, data2+sizeof(data2));
+    JSONObject *o = (JSONObject*) parseJSON(data2, data2+sizeof(data2), 0);
     assert(JSON_type((JSON)o) == JSON_Object);
     //assert(JSON_length((JSON)child) == 3);
     /* XXX this test depends on imprementation of map data. */

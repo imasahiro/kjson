@@ -44,7 +44,7 @@ static void test_file(const char *file)
     }
     int i;
     for (i = 0; i < 128; ++i) {
-        JSON json = parseJSON(str, str+len);
+        JSON json = parseJSON(str, str+len, 0);
         JSON_free(json);
     }
     show_timer(file);

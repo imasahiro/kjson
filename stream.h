@@ -14,7 +14,6 @@ struct input_stream;
 typedef void (*istream_init)(struct input_stream *, void **args);
 typedef void (*istream_deinit)(struct input_stream *);
 typedef char (*istream_next)(struct input_stream *);
-typedef void (*istream_prev)(struct input_stream *, char c);
 typedef bool (*istream_eos)(struct input_stream *);
 
 union io_data {
@@ -28,29 +27,28 @@ typedef struct input_stream {
     union io_data d0;
     union io_data d1;
     union io_data d2;
+    long flags;
     istream_next   fnext;
     istream_eos    feos;
-    istream_prev   fprev;
     istream_deinit fdeinit;
 } input_stream;
 
 typedef const struct input_stream_api_t {
     istream_init   finit;
     istream_next   fnext;
-    istream_prev fprev;
     istream_eos    feos;
     istream_deinit fdeinit;
 } input_stream_api;
 
-input_stream *new_string_input_stream(char *buf, size_t len);
+input_stream *new_string_input_stream(char *buf, size_t len, long option);
 input_stream *new_file_input_stream(char *filename, size_t bufsize);
 
 void input_stream_delete(input_stream *ins);
 
-static inline void input_stream_unput(input_stream *ins, char c)
-{
-    ins->fprev(ins, c);
-}
+//static inline void input_stream_unput(input_stream *ins, char c)
+//{
+//    ins->fprev(ins, c);
+//}
 
 static inline union io_data _input_stream_save(input_stream *ins)
 {
@@ -67,11 +65,11 @@ static inline char string_input_stream_next(input_stream *ins)
     return *(ins->d0.str)++;
 }
 
-static inline void string_input_stream_prev(input_stream *ins, char c)
-{
-    --(ins->d0.str);
-    *ins->d0.str = c;
-}
+//static inline void string_input_stream_prev(input_stream *ins, char c)
+//{
+//    --(ins->d0.str);
+//    *ins->d0.str = c;
+//}
 
 static inline bool string_input_stream_eos(input_stream *ins)
 {

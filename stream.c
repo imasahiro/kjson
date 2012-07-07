@@ -5,14 +5,15 @@
 extern "C" {
 #endif
 
-static inline input_stream *new_input_stream(void **args, input_stream_api *api)
+static inline input_stream *new_input_stream(void **args, input_stream_api *api,
+        long flags)
 {
     input_stream *ins = (input_stream *) calloc(1, sizeof(input_stream));
     api->finit(ins, args);
     ins->fdeinit = api->fdeinit;
     ins->fnext   = api->fnext;
-    ins->fprev   = api->fprev;
     ins->feos    = api->feos;
+    ins->flags   = flags;
     return ins;
 }
 
@@ -32,7 +33,7 @@ static void string_input_stream_deinit(input_stream *ins)
     ins->d0.str = ins->d1.str = NULL;
 }
 
-input_stream *new_string_input_stream(char *buf, size_t len)
+input_stream *new_string_input_stream(char *buf, size_t len, long flags)
 {
     void *args[] = {
         (void*)buf, (void*)len
@@ -40,11 +41,10 @@ input_stream *new_string_input_stream(char *buf, size_t len)
     static const input_stream_api string_input_stream_api = {
         string_input_stream_init,
         string_input_stream_next,
-        string_input_stream_prev,
         string_input_stream_eos,
         string_input_stream_deinit
     };
-    input_stream *ins = new_input_stream(args, &string_input_stream_api);
+    input_stream *ins = new_input_stream(args, &string_input_stream_api, flags);
     return ins;
 }
 

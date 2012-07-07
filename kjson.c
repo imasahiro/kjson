@@ -736,9 +736,9 @@ static JSON parseJSON_stream(input_stream *ins)
     return parse(ins);
 }
 
-JSON parseJSON(char *s, char *e)
+JSON parseJSON(char *s, char *e, kjson_parse_option opt)
 {
-    input_stream *ins = new_string_input_stream(s, e - s);
+    input_stream *ins = new_string_input_stream(s, e - s, opt);
     JSON json = parseJSON_stream(ins);
     input_stream_delete(ins);
     return json;

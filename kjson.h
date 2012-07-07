@@ -164,7 +164,14 @@ void JSONArray_set(JSONObject *o, int id, JSON value);
 void JSONArray_append(JSONArray *a, JSON o);
 void JSON_free(JSON o);
 void JSON_dump(FILE *fp, JSON json);
-JSON parseJSON(char *s, char *e);
+
+typedef enum kjson_parse_option {
+    KJSON_NOP = 0,
+    KJSON_USE_BUFFERD,
+    KJSON_USE_ALLOC
+} kjson_parse_option;
+
+JSON parseJSON(char *s, char *e, kjson_parse_option opt);
 //JSON parseJSON_fromFILE(char *file);
 char *JSON_toString(JSON json, size_t *len);
 

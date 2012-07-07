@@ -40,7 +40,7 @@ static void show_timer(const char *s)
 }
 
 static void kjson(char *buf, size_t len) {
-    JSON json = parseJSON(buf, buf+len);
+    JSON json = parseJSON(buf, buf+len, 0);
     size_t length;
     char *str = JSON_toString(json, &length);
     JSON_free(json);
