@@ -12,6 +12,7 @@
 extern "C" {
 #endif
 
+static void _JSON_free(JSON o);
 static uintptr_t json_keygen1(char *key, uint32_t klen)
 {
     (void)klen;
@@ -43,7 +44,7 @@ static int json_keycmp(uintptr_t k0, uintptr_t k1)
 static void json_recfree(pmap_record_t *r)
 {
     JSON json = (JSON) r->v;
-    JSON_free(json);
+    _JSON_free(json);
 }
 
 #define JSON_NEW(T) (JSON##T *) JSON_new(JSON_##T)
@@ -191,7 +192,7 @@ static void JSONArray_free(JSON o)
     JSONArray *a = toJSONArray(o);
     JSON *s, *e;
     JSON_ARRAY_EACH(a, s, e) {
-        JSON_free(*s);
+        _JSON_free(*s);
     }
     free(a->list);
     free(a);
@@ -205,12 +206,31 @@ static void JSONInt64_free(JSON json)
 #endif
     free(o);
 }
-void JSON_free(JSON o)
+static void JSONNOP_free(JSON o) {}
+static void _JSON_free(JSON o)
 {
 #ifdef USE_NUMBOX
-    if (IsDouble((toVal(o))))
-        return;
-#endif
+    kjson_type type = JSON_type(o);
+    typedef void (*freeJSON)(JSON);
+    static const freeJSON dispatch[] = {
+        /* 00 */JSONNOP_free,
+        /* 01 */JSONString_free,
+        /* 02 */JSONNOP_free,
+        /* 03 */JSONObject_free,
+        /* 04 */JSONNOP_free,
+        /* 05 */JSONArray_free,
+        /* 06 */JSONNOP_free,
+        /* 07 */JSONNOP_free,
+        /* 08 */JSONNOP_free,
+        /* 09 */JSONString_free,
+        /* 10 */JSONNOP_free,
+        /* 11 */JSONInt64_free,
+        /* 12 */JSONNOP_free,
+        /* 13 */JSONNOP_free,
+        /* 14 */JSONNOP_free,
+        /* 15 */JSONNOP_free};
+    dispatch[type](o);
+#else
     switch (JSON_type(o)) {
         case JSON_Object:
             JSONObject_free(o);
@@ -228,6 +248,10 @@ void JSON_free(JSON o)
         default:
             break;
     }
+#endif
+}
+void JSON_free(JSON o) {
+    _JSON_free(o);
 }
 
 void JSONArray_append(JSONArray *a, JSON o)
@@ -261,20 +285,20 @@ void JSONObject_set(JSONObject *o, JSON key, JSON value)
 }
 
 /* Parser functions */
-#define NEXT(itr) itr->fnext(itr->ins)
-#define EOS(itr)  itr->feos(itr->ins)
-static JSON parseNull(input_stream_iterator *itr, char c);
-static JSON parseNumber(input_stream_iterator *itr, char c);
-static JSON parseBoolean(input_stream_iterator *itr, char c);
-static JSON parseObject(input_stream_iterator *itr, char c);
-static JSON parseArray(input_stream_iterator *itr, char c);
-static JSON parseString(input_stream_iterator *itr, char c);
+#define NEXT(ins) string_input_stream_next(ins)
+#define EOS(ins)  string_input_stream_eos(ins)
+static JSON parseNull(input_stream *ins, char c);
+static JSON parseNumber(input_stream *ins, char c);
+static JSON parseBoolean(input_stream *ins, char c);
+static JSON parseObject(input_stream *ins, char c);
+static JSON parseArray(input_stream *ins, char c);
+static JSON parseString(input_stream *ins, char c);
 
-static char skip_space(input_stream_iterator *itr, char c)
+static char skip_space(input_stream *ins, char c)
 {
     if (c)
         goto L_top;
-    for_each_istream_iterator(itr, c) {
+    for_each_istream(ins, c) {
         L_top:;
         switch (c) {
             case ' ':
@@ -288,27 +312,37 @@ static char skip_space(input_stream_iterator *itr, char c)
     }
     return -1;
 }
-
-static JSON parseChild(input_stream_iterator *itr, char c)
+static JSON parseNOP(input_stream *ins, char c) { return NULL; }
+static JSON parseChild(input_stream *ins, char c)
 {
-    c = skip_space(itr, c);
-    switch (c) {
-        case '{':
-            return parseObject(itr, c);
-        case '"':
-            return parseString(itr, c);
-        case '[':
-            return parseArray(itr, c);
-        case '0':case '1':case '2':case '3':case '4':
-        case '5':case '6':case '7':case '8':case '9':
-        case '-':
-            return parseNumber(itr, c);
-        case 't':case 'f':
-            return parseBoolean(itr, c);
-        case 'n':
-            return parseNull(itr, c);
-    }
-    return NULL;
+    static const uint8_t dispatch[] = {
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,2,0,0,0,0,0,0,0,0,0,0,4,0,0,
+        4,4,4,4,4,4,4,4,4,4,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,
+        0,0,0,0,0,0,5,0,0,0,0,0,0,0,6,0,
+        0,0,0,0,5,0,0,0,0,0,0,1,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+    c = skip_space(ins, c);
+    typedef JSON (*parseJSON)(input_stream *ins, char c);
+    static const parseJSON dispatch_func[] = {
+        parseNOP,
+        parseObject,
+        parseString,
+        parseArray,
+        parseNumber,
+        parseBoolean,
+        parseNull};
+    return dispatch_func[(dispatch[(int)c])](ins, c);
 }
 
 static unsigned int toHex(char c)
@@ -338,17 +372,17 @@ static void writeUnicode(unsigned int data, string_builder *sb)
     }
 }
 
-static void parseUnicode(input_stream_iterator *itr, string_builder *sb)
+static void parseUnicode(input_stream *ins, string_builder *sb)
 {
     unsigned int data = 0;
-    data  = toHex(NEXT(itr)) * 4096; assert(EOS(itr));
-    data += toHex(NEXT(itr)) *  256; assert(EOS(itr));
-    data += toHex(NEXT(itr)) *   16; assert(EOS(itr));
-    data += toHex(NEXT(itr)) *    1; assert(EOS(itr));
+    data  = toHex(NEXT(ins)) * 4096; assert(EOS(ins));
+    data += toHex(NEXT(ins)) *  256; assert(EOS(ins));
+    data += toHex(NEXT(ins)) *   16; assert(EOS(ins));
+    data += toHex(NEXT(ins)) *    1; assert(EOS(ins));
     writeUnicode(data, sb);
 }
 
-static void parseEscape(input_stream_iterator *itr, string_builder *sb, char c)
+static void parseEscape(input_stream *ins, string_builder *sb, char c)
 {
     switch (c) {
         case '"':  c = '"';  break;
@@ -359,15 +393,15 @@ static void parseEscape(input_stream_iterator *itr, string_builder *sb, char c)
         case 'n': c = '\n';  break;
         case 'r': c = '\r';  break;
         case 't': c = '\t';  break;
-        case 'u': parseUnicode(itr, sb); return;
+        case 'u': parseUnicode(ins, sb); return;
         default: assert(0 && "Unknown espace");
     }
     string_builder_add(sb, c);
 }
 
-static char skipBSorDoubleQuote(input_stream_iterator *itr, char c)
+static char skipBSorDoubleQuote(input_stream *ins, char c)
 {
-    for(; EOS(itr); c = NEXT(itr)) {
+    for(; EOS(ins); c = NEXT(ins)) {
         if (c == '\\' || c == '"') {
             return c;
         }
@@ -375,15 +409,15 @@ static char skipBSorDoubleQuote(input_stream_iterator *itr, char c)
     return c;
 }
 
-static JSON parseString(input_stream_iterator *itr, char c)
+static JSON parseString(input_stream *ins, char c)
 {
     assert(c == '"' && "Missing open quote at start of JSONString");
     union io_data state;
-    _input_stream_save(itr->ins, &state);
-    c = NEXT(itr);
-    c = skipBSorDoubleQuote(itr, c);
+    state = _input_stream_save(ins);
+    c = NEXT(ins);
+    c = skipBSorDoubleQuote(ins, c);
     union io_data state2;
-    _input_stream_save(itr->ins, &state2);
+    state2 = _input_stream_save(ins);
     string_builder sb; string_builder_init(&sb);
     if (c == '"') {/* fast path */
         return (JSON)JSONString_new(state.str, state2.str - state.str - 1);
@@ -393,11 +427,11 @@ static JSON parseString(input_stream_iterator *itr, char c)
     }
     assert(c == '\\');
     goto L_escape;
-    for(; EOS(itr); c = NEXT(itr)) {
+    for(; EOS(ins); c = NEXT(ins)) {
         switch (c) {
             case '\\':
             L_escape:;
-                parseEscape(itr, &sb, NEXT(itr));
+                parseEscape(ins, &sb, NEXT(ins));
                 continue;
             case '"':
                 goto L_end;
@@ -410,20 +444,20 @@ static JSON parseString(input_stream_iterator *itr, char c)
     return (JSON)JSONString_new2(&sb);
 }
 
-static JSON parseObject(input_stream_iterator *itr, char c)
+static JSON parseObject(input_stream *ins, char c)
 {
     assert(c == '{' && "Missing open brace '{' at start of json object");
     JSON json = JSONObject_new();
-    for (c = skip_space(itr, 0); EOS(itr); c = skip_space(itr, 0)) {
+    for (c = skip_space(ins, 0); EOS(ins); c = skip_space(ins, 0)) {
         JSONString *key = NULL;
         JSON val = NULL;
         assert(c == '"' && "Missing open quote for element key");
-        key = (JSONString *) parseString(itr, c);
-        c = skip_space(itr, 0);
+        key = (JSONString *) parseString(ins, c);
+        c = skip_space(ins, 0);
         assert(c == ':' && "Missing ':' after key in object");
-        val = parseChild(itr, 0);
+        val = parseChild(ins, 0);
         _JSONObject_set(toJSONObject(json), key, val);
-        c = skip_space(itr, 0);
+        c = skip_space(ins, 0);
         if (c == '}') {
             break;
         }
@@ -432,20 +466,20 @@ static JSON parseObject(input_stream_iterator *itr, char c)
     return json;
 }
 
-static JSON parseArray(input_stream_iterator *itr, char c)
+static JSON parseArray(input_stream *ins, char c)
 {
     JSON json = JSONArray_new();
     JSONArray *a = toJSONArray(json);
     assert(c == '[' && "Missing open brace '[' at start of json array");
-    c = skip_space(itr, 0);
+    c = skip_space(ins, 0);
     if (c == ']') {
         /* array with no elements "[]" */
         return json;
     }
-    for (; EOS(itr); c = skip_space(itr, 0)) {
-        JSON val = parseChild(itr, c);
+    for (; EOS(ins); c = skip_space(ins, 0)) {
+        JSON val = parseChild(ins, c);
         JSONArray_append(a, val);
-        c = skip_space(itr, 0);
+        c = skip_space(ins, 0);
         if (c == ']') {
             break;
         }
@@ -454,17 +488,17 @@ static JSON parseArray(input_stream_iterator *itr, char c)
     return json;
 }
 
-static JSON parseBoolean(input_stream_iterator *itr, char c)
+static JSON parseBoolean(input_stream *ins, char c)
 {
     int val = 0;
     if (c == 't') {
-        if(NEXT(itr) == 'r' && NEXT(itr) == 'u' && NEXT(itr) == 'e') {
+        if(NEXT(ins) == 'r' && NEXT(ins) == 'u' && NEXT(ins) == 'e') {
             val = 1;
         }
     }
     else if (c == 'f') {
-        if (NEXT(itr) == 'a' && NEXT(itr) == 'l' &&
-                NEXT(itr) == 's' && NEXT(itr) == 'e') {
+        if (NEXT(ins) == 'a' && NEXT(ins) == 'l' &&
+                NEXT(ins) == 's' && NEXT(ins) == 'e') {
         }
     }
     else {
@@ -473,39 +507,42 @@ static JSON parseBoolean(input_stream_iterator *itr, char c)
     return JSONBool_new(val);
 }
 
-static JSON parseNumber(input_stream_iterator *itr, char c)
+static JSON parseNumber(input_stream *ins, char c)
 {
     assert((c == '-' || ('0' <= c && c <= '9')) && "It do not seem as Number");
     kjson_type type = JSON_Int32;
-    union io_data state;
-    _input_stream_save(itr->ins, &state);
+    union io_data state, state2;
+    state = _input_stream_save(ins);
     bool negative = false;
     int64_t val = 0;
-    if (c == '-') { negative = true; c = NEXT(itr); }
-    if (c == '0') { c = NEXT(itr); }
+    JSON n;
+    if (c == '-') { negative = true; c = NEXT(ins); }
+    if (c == '0') { c = NEXT(ins); }
     else if ('1' <= c && c <= '9') {
-        for (; '0' <= c && c <= '9' && EOS(itr); c = NEXT(itr)) {
+        for (; '0' <= c && c <= '9' && EOS(ins); c = NEXT(ins)) {
             val = val * 10 + (c - '0');
         }
     }
+    if (c != '.' && c != 'e' && c != 'E') {
+        goto L_emit;
+    }
     if (c == '.') {
         type = JSON_Double;
-        for (c = NEXT(itr); '0' <= c && c <= '9' &&
-                EOS(itr); c = NEXT(itr)) {}
+        for (c = NEXT(ins); '0' <= c && c <= '9' &&
+                EOS(ins); c = NEXT(ins)) {}
     }
     if (c == 'e' || c == 'E') {
         type = JSON_Double;
-        c = NEXT(itr);
+        c = NEXT(ins);
         if (c == '+' || c == '-') {
-            c = NEXT(itr);
+            c = NEXT(ins);
         }
-        for (; '0' <= c && c <= '9' && EOS(itr); c = NEXT(itr)) {}
+        for (; '0' <= c && c <= '9' && EOS(ins); c = NEXT(ins)) {}
     }
-    union io_data state2;
-    _input_stream_save(itr->ins, &state2);
+    L_emit:;
+    state2 = _input_stream_save(ins);
     state2.str -= 1;
-    _input_stream_resume(itr->ins, state2);
-    JSON n;
+    _input_stream_resume(ins, state2);
     if (type != JSON_Double) {
         val = (negative)? -val : val;
         n = JSONInt_new(val);
@@ -518,10 +555,10 @@ static JSON parseNumber(input_stream_iterator *itr, char c)
     return n;
 }
 
-static JSON parseNull(input_stream_iterator *itr, char c)
+static JSON parseNull(input_stream *ins, char c)
 {
     if (c == 'n') {
-        if(NEXT(itr) == 'u' && NEXT(itr) == 'l' && NEXT(itr) == 'l') {
+        if(NEXT(ins) == 'u' && NEXT(ins) == 'l' && NEXT(ins) == 'l') {
             return JSONNull_new();
         }
     }
@@ -531,14 +568,13 @@ static JSON parseNull(input_stream_iterator *itr, char c)
 
 static JSON parse(input_stream *ins)
 {
-    input_stream_iterator itr;
     char c = 0;
-    for_each_istream(ins, itr, c) {
+    for_each_istream(ins, c) {
         JSON json;
-        if ((c = skip_space(&itr, c)) == 0) {
+        if ((c = skip_space(ins, c)) == 0) {
             break;
         }
-        if ((json = parseChild(&itr, c)) != NULL)
+        if ((json = parseChild(ins, c)) != NULL)
             return json;
     }
     return NULL;
@@ -822,7 +858,8 @@ static void JSONArray_toString(string_builder *sb, JSONArray *a)
 #endif
     s = (a)->list;
     e = (a)->list+(a)->length;
-    goto L_internal;
+    if (s < e)
+        goto L_internal;
     for (; s < e; ++s) {
         string_builder_add(sb, ',');
         L_internal:

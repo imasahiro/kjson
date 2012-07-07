@@ -25,7 +25,7 @@ static void test_file(const char *file)
         offset += size;
     }
     JSON json = parseJSON(str, str+len);
-    JSON_dump(stderr, json);
+    //JSON_dump(stderr, json);
     size_t json_len;
     char *json_s = JSON_toString(json, &json_len);
     fprintf(stderr, "'%s'\n", json_s);

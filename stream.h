@@ -42,33 +42,19 @@ typedef const struct input_stream_api_t {
     istream_deinit fdeinit;
 } input_stream_api;
 
-typedef struct input_stream_iterator {
-    input_stream *ins;
-    istream_next fnext;
-    istream_eos  feos;
-    istream_prev fprev;
-} input_stream_iterator;
-
 input_stream *new_string_input_stream(char *buf, size_t len);
 input_stream *new_file_input_stream(char *filename, size_t bufsize);
 
 void input_stream_delete(input_stream *ins);
-
-static inline void input_stream_iterator_init(input_stream *ins, input_stream_iterator *itr)
-{
-    itr->ins   = ins;
-    itr->fnext = ins->fnext;
-    itr->feos  = ins->feos;
-}
 
 static inline void input_stream_unput(input_stream *ins, char c)
 {
     ins->fprev(ins, c);
 }
 
-static inline void _input_stream_save(input_stream *ins, union io_data *data)
+static inline union io_data _input_stream_save(input_stream *ins)
 {
-    *data = ins->d0;
+    return ins->d0;
 }
 
 static inline void _input_stream_resume(input_stream *ins, union io_data data)
@@ -76,12 +62,24 @@ static inline void _input_stream_resume(input_stream *ins, union io_data data)
     ins->d0 = data;
 }
 
-#define for_each_istream(INS, ITR, CUR)\
-        input_stream_iterator_init(INS, &ITR);\
-        for (CUR = itr.fnext(INS); itr.feos(INS); CUR = itr.fnext(INS))
-#define for_each_istream_iterator(ITR, CUR) \
-    for (CUR = (ITR)->fnext((ITR)->ins); (ITR)->feos((ITR)->ins);\
-            CUR = (ITR)->fnext((ITR)->ins))
+static inline char string_input_stream_next(input_stream *ins)
+{
+    return *(ins->d0.str)++;
+}
+
+static inline void string_input_stream_prev(input_stream *ins, char c)
+{
+    --(ins->d0.str);
+    *ins->d0.str = c;
+}
+
+static inline bool string_input_stream_eos(input_stream *ins)
+{
+    return ins->d0.str != ins->d1.str;
+}
+
+#define for_each_istream(INS, CUR)\
+        for (CUR = string_input_stream_next(INS); string_input_stream_eos(INS); CUR = string_input_stream_next(INS))
 
 #ifdef __cplusplus
 }

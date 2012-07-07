@@ -12,10 +12,9 @@ static void test_string(void)
         ans += (char)i;
     }
     input_stream *ins = new_string_input_stream(buf, 1024);
-    input_stream_iterator itr = {};
     int sum = 0;
     char cur;
-    for_each_istream(ins, itr, cur) {
+    for_each_istream(ins, cur) {
         sum += cur;
     }
     assert(sum == ans);

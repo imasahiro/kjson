@@ -27,22 +27,6 @@ static void string_input_stream_init(input_stream *ins, void **args)
     ins->d2.u   = 0;
 }
 
-static char string_input_stream_next(input_stream *ins)
-{
-    return *(ins->d0.str)++;
-}
-
-static void string_input_stream_prev(input_stream *ins, char c)
-{
-    --(ins->d0.str);
-    *ins->d0.str = c;
-}
-
-static bool string_input_stream_eos(input_stream *ins)
-{
-    return ins->d0.str != ins->d1.str;
-}
-
 static void string_input_stream_deinit(input_stream *ins)
 {
     ins->d0.str = ins->d1.str = NULL;
