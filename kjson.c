@@ -435,8 +435,9 @@ static void parseEscape(input_stream *ins, string_builder *sb, char c)
 static const uint8_t string_info[] = {
 };
 
-static char skipBSorDoubleQuote(input_stream *ins, char c)
+static char skipBSorDoubleQuote(input_stream *ins, char ch)
 {
+    int c = ch;
     for(; EOS(ins); c = NEXT(ins)) {
         if (0x80 & string_table[(int)c]) {
             return c;
