@@ -861,11 +861,12 @@ JSONString *JSONObject_iterator_next(JSONObject_iterator *itr, JSON *val)
     return NULL;
 }
 
-static void JSONString_toString(string_builder *sb, JSONString *o);
+static void JSONString_toString(string_builder *sb, JSON json);
 static void _JSON_toString(string_builder *sb, JSON json);
 
-static void JSONObject_toString(string_builder *sb, JSONObject *o)
+static void JSONObject_toString(string_builder *sb, JSON json)
 {
+    JSONObject *o = toJSONObject(json);
     pmap_record_t *r;
     poolmap_iterator itr = {0};
     string_builder_add(sb, '{');
@@ -877,15 +878,16 @@ static void JSONObject_toString(string_builder *sb, JSONObject *o)
     while ((r = poolmap_next(o->child, &itr)) != NULL) {
         string_builder_add(sb, ',');
         L_internal:
-        JSONString_toString(sb, (JSONString*)r->k);
+        JSONString_toString(sb, (JSON)r->k);
         string_builder_add(sb, ':');
         _JSON_toString(sb, (JSON)r->v);
     }
     string_builder_add(sb, '}');
 }
 
-static void JSONArray_toString(string_builder *sb, JSONArray *a)
+static void JSONArray_toString(string_builder *sb, JSON json)
 {
+    JSONArray *a = toJSONArray(json);
     JSON *s, *e;
     string_builder_add(sb, '[');
 #ifdef USE_NUMBOX
@@ -903,8 +905,9 @@ static void JSONArray_toString(string_builder *sb, JSONArray *a)
     string_builder_add(sb, ']');
 }
 
-static void JSONString_toString(string_builder *sb, JSONString *o)
+static void JSONString_toString(string_builder *sb, JSON json)
 {
+    JSONString *o = toJSONString(json);
 #ifdef USE_NUMBOX
     o = toJSONString(toStr(toVal((JSON)o)));
 #endif
@@ -945,8 +948,9 @@ static char *toUTF8(string_builder *sb, char *s, char *e)
     return s;
 }
 
-static void JSONUString_toString(string_builder *sb, JSONString *o)
+static void JSONUString_toString(string_builder *sb, JSON json)
 {
+    JSONString *o = toJSONString(json);
 #ifdef USE_NUMBOX
     o = toJSONString(toStr(toVal((JSON)o)));
 #endif
@@ -977,8 +981,9 @@ static void JSONUString_toString(string_builder *sb, JSONString *o)
     string_builder_add(sb, '"');
 }
 
-static void JSONInt32_toString(string_builder *sb, JSONInt *o)
+static void JSONInt32_toString(string_builder *sb, JSON json)
 {
+    JSONInt *o = (JSONInt *) json;
     int32_t i;
 #ifdef USE_NUMBOX
     i = toInt32(toVal(o));
@@ -987,8 +992,9 @@ static void JSONInt32_toString(string_builder *sb, JSONInt *o)
 #endif
     string_builder_add_int(sb, i);
 }
-static void JSONInt64_toString(string_builder *sb, JSONInt64 *o)
+static void JSONInt64_toString(string_builder *sb, JSON json)
 {
+    JSONInt64 *o = (JSONInt64 *) json;
     int64_t i;
 #ifdef USE_NUMBOX
     o = ((JSONInt64 *) toInt64(toVal(o)));
@@ -997,8 +1003,9 @@ static void JSONInt64_toString(string_builder *sb, JSONInt64 *o)
     string_builder_add_int(sb, i);
 }
 
-static void JSONDouble_toString(string_builder *sb, JSONDouble *o)
+static void JSONDouble_toString(string_builder *sb, JSON json)
 {
+    JSONDouble *o = (JSONDouble *) json;
     char buf[64];
     double d;
 #ifdef USE_NUMBOX
@@ -1012,8 +1019,9 @@ static void JSONDouble_toString(string_builder *sb, JSONDouble *o)
     string_builder_add_string(sb, buf, len);
 }
 
-static void JSONBool_toString(string_builder *sb, JSONBool *o)
+static void JSONBool_toString(string_builder *sb, JSON json)
 {
+    JSONBool *o = (JSONBool *) json;
     int b;
 #ifdef USE_NUMBOX
     b = toBool(toVal(o));
@@ -1025,13 +1033,40 @@ static void JSONBool_toString(string_builder *sb, JSONBool *o)
     string_builder_add_string(sb, str, len);
 }
 
-static void JSONNull_toString(string_builder *sb, JSONNull *o)
+static void JSONNull_toString(string_builder *sb, JSON json)
 {
     string_builder_add_string(sb, "null", 4);
 }
 
+static void JSONNOP_toString(string_builder *sb, JSON json)
+{
+    assert(0 && "Invalid type");
+}
+
 static void _JSON_toString(string_builder *sb, JSON json)
 {
+#ifdef USE_NUMBOX
+    kjson_type type = JSON_type(json);
+    typedef void (*toString)(string_builder *sb, JSON);
+    static const toString dispatch_toStr[] = {
+        /* 00 */JSONDouble_toString,
+        /* 01 */JSONString_toString,
+        /* 02 */JSONInt32_toString,
+        /* 03 */JSONObject_toString,
+        /* 04 */JSONBool_toString,
+        /* 05 */JSONArray_toString,
+        /* 06 */JSONNull_toString,
+        /* 07 */JSONDouble_toString,
+        /* 08 */JSONNOP_toString,
+        /* 09 */JSONUString_toString,
+        /* 10 */JSONNOP_toString,
+        /* 11 */JSONInt64_toString,
+        /* 12 */JSONNOP_toString,
+        /* 13 */JSONNOP_toString,
+        /* 14 */JSONNOP_toString,
+        /* 15 */JSONNOP_toString};
+    dispatch_toStr[type](sb, json);
+#else
     switch (JSON_type(json)) {
 #define CASE(T, SB, O) case JSON_##T: JSON##T##_toString(SB, (JSON##T *) O); break
         CASE(Object, sb, json);
@@ -1053,6 +1088,7 @@ static void _JSON_toString(string_builder *sb, JSON json)
             assert(0 && "NO tostring func");
 #undef CASE
     }
+#endif
 }
 
 char *JSON_toString(JSON json, size_t *len)
