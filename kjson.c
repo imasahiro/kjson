@@ -432,28 +432,28 @@ static void parseEscape(input_stream *ins, string_builder *sb, char c)
     string_builder_add(sb, c);
 }
 
-static const uint8_t string_info[] = {
-};
-
+#define   likely(x)   __builtin_expect(!!(x), 1)
+#define unlikely(x)   __builtin_expect(!!(x), 0)
 static char skipBSorDoubleQuote(input_stream *ins, char ch)
 {
-    int c = ch;
-    for(; EOS(ins); c = NEXT(ins)) {
-        if (0x80 & string_table[(int)c]) {
-            return c;
+    register int c = ch;
+    register char *      str = ins->d0.str;
+    register char *const end = ins->d1.str;
+    for(; str != end; c = *str++) {
+        if (0x80 & string_table[c]) {
+            break;
         }
     }
+    ins->d0.str = str;
     return c;
 }
 
 static JSON parseString(input_stream *ins, char c)
 {
+    union io_data state, state2;
     assert(c == '"' && "Missing open quote at start of JSONString");
-    union io_data state;
     state = _input_stream_save(ins);
-    c = NEXT(ins);
-    c = skipBSorDoubleQuote(ins, c);
-    union io_data state2;
+    c = skipBSorDoubleQuote(ins, NEXT(ins));
     state2 = _input_stream_save(ins);
     if (c == '"') {/* fast path */
         return (JSON)JSONString_new(state.str, state2.str - state.str - 1);
