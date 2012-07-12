@@ -14,6 +14,7 @@
 #ifdef USE_YAJL
 #include <yajl/yajl_parse.h>
 #include <yajl/yajl_gen.h>
+#include <yajl/yajl_version.h>
 #endif
 #include "kjson.h"
 
@@ -44,7 +45,11 @@ void bench_json(void)
 {
 #ifdef USE_YAJL
     puts("== JSON ==");
-    yajl_gen g = yajl_gen_alloc(NULL, NULL);
+    yajl_gen g = yajl_gen_alloc(NULL
+#if YAJL_MAJOR < 2
+            ,NULL
+#endif
+            );
     yajl_callbacks callbacks = {
         NULL,
         NULL,
@@ -58,7 +63,11 @@ void bench_json(void)
         NULL,
         NULL
     };
-    yajl_handle h = yajl_alloc(&callbacks, NULL, NULL, NULL);
+    yajl_handle h = yajl_alloc(&callbacks, NULL,
+#if YAJL_MAJOR < 2
+            NULL,
+#endif
+            NULL);
     const unsigned char * buf;
     size_t len;
     reset_timer();
@@ -84,9 +93,17 @@ void bench_json(void)
     }
     show_timer("parse integer");
     yajl_gen_free(g);
-    g = yajl_gen_alloc(NULL, NULL);
+    g = yajl_gen_alloc(NULL
+#if YAJL_MAJOR < 2
+            ,NULL
+#endif
+            );
     yajl_free(h);
-    h = yajl_alloc(&callbacks, NULL, NULL, NULL);
+    h = yajl_alloc(&callbacks, NULL,
+#if YAJL_MAJOR < 2
+            NULL,
+#endif
+            NULL);
     reset_timer();
     {
         unsigned int i;

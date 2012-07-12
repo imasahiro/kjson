@@ -19,12 +19,12 @@ typedef int  (*fn_keycmp)(uintptr_t k0, uintptr_t k1);
 typedef void (*fn_efree)(pmap_record_t *r);
 typedef struct poolmap_t {
     pmap_record_t *records;
-    fn_keygen fkey0;
-    fn_keygen fkey1;
-    fn_keycmp fcmp;
     uint32_t mask;
     uint32_t used_size;
     uint32_t record_size;
+    fn_keygen fkey0;
+    fn_keygen fkey1;
+    fn_keycmp fcmp;
     fn_efree  ffree;
 } poolmap_t;
 
@@ -54,18 +54,6 @@ pmap_status_t poolmap_set(poolmap_t *m, char *key, uint32_t klen, void *val);
 pmap_status_t poolmap_set2(poolmap_t *m, char *key, uint32_t klen, pmap_record_t *);
 void poolmap_remove(poolmap_t *m, char *key, uint32_t klen);
 pmap_record_t *poolmap_next(poolmap_t *m, poolmap_iterator *itr);
-
-#ifndef CLZ
-#define CLZ(n) __builtin_clzl(n)
-#endif
-
-#ifndef BITS
-#define BITS (sizeof(void*) * 8)
-#endif
-
-#ifndef SizeToKlass
-#define SizeToKlass(N) ((uint32_t)(BITS - CLZ(N - 1)))
-#endif
 
 #ifdef __cplusplus
 }

@@ -1,6 +1,7 @@
 #include "kjson.h"
 #include "hash.h"
 #include "map.h"
+#include "internal.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -10,7 +11,6 @@
 extern "C" {
 #endif
 
-#define cast(T, V) ((T)(V))
 #define POOLMAP_INITSIZE      4
 
 static inline void map_do_bzero(void *ptr, size_t size)

@@ -12,6 +12,7 @@
 #ifdef USE_YAJL
 #include <yajl/yajl_parse.h>
 #include <yajl/yajl_gen.h>
+#include <yajl/yajl_version.h>
 #endif
 
 #ifdef USE_JANSSON
@@ -62,8 +63,16 @@ static void json_c(char *buf, size_t len) {
 #ifdef USE_YAJL
 static void yajl(char *buf, size_t len) {
     const unsigned char *t;
-    yajl_gen g = yajl_gen_alloc(NULL, NULL);
-    yajl_handle h = yajl_alloc(NULL, NULL, NULL, NULL);
+    yajl_gen g = yajl_gen_alloc(NULL
+#if YAJL_MAJOR < 2
+            , NULL
+#endif
+            );
+    yajl_handle h = yajl_alloc(NULL, NULL
+#if YAJL_MAJOR < 2
+            , NULL
+#endif
+            , NULL);
     yajl_status stat = yajl_parse(h, (unsigned char*)buf, len);
     stat = yajl_parse_complete(h);
     assert(stat == yajl_status_ok);

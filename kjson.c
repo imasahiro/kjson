@@ -3,6 +3,7 @@
 #include "string_builder.h"
 #include "map.h"
 #include "hash.h"
+#include "internal.h"
 
 #include <stdlib.h>
 #include <assert.h>
