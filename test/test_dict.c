@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
+#include <stdlib.h>
 #include <sys/time.h>
 
 #define N (1024 * 1024 * 10)
