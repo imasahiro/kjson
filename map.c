@@ -68,10 +68,10 @@ static pmap_status_t pmap_set_no_resize(poolmap_t *m, pmap_record_t *rec)
             ++m->used_size;
             return POOLMAP_ADDED;
         }
-        if (r->hash == rec->hash && m->fcmp(r->k, rec->k)) {
+        if (r->hash == rec->hash && m->api->fcmp(r->k, rec->k)) {
             uintptr_t old0 = r->v;
             uint32_t  old1 = r->v2;
-            m->ffree(r);
+            m->api->ffree(r);
             pmap_record_copy(r, rec);
             rec->v  = old0;
             rec->v2 = old1;
@@ -111,34 +111,31 @@ static pmap_record_t *pmap_get_(poolmap_t *m, uint32_t hash, uintptr_t key)
     uint32_t idx = hash & m->record_size_mask;
     do {
         pmap_record_t *r = pmap_at(m, idx);
-        if (r->hash == hash && m->fcmp(r->k, key)) {
+        if (r->hash == hash && m->api->fcmp(r->k, key)) {
             return r;
         }
         idx = (idx + 1) & m->record_size_mask;
     } while (i++ < m->used_size);
     return NULL;
 }
-static void _poolmap_init(poolmap_t* m, uint32_t init, fn_keygen fkey0, fn_keygen fkey1, fn_keycmp fcmp, fn_efree ffree)
+static void _poolmap_init(poolmap_t* m, uint32_t init, const struct poolmap_entry_api *api)
 {
     if (init < POOLMAP_INITSIZE)
         init = POOLMAP_INITSIZE;
     pmap_record_reset(m, 1U << (SizeToKlass(init)));
-    m->fkey0 = fkey0;
-    m->fkey1 = fkey1;
-    m->fcmp  = fcmp;
-    m->ffree = ffree;
+    m->api = api;
 }
 
-poolmap_t* poolmap_new(uint32_t init, fn_keygen fkey0, fn_keygen fkey1, fn_keycmp fcmp, fn_efree ffree)
+poolmap_t* poolmap_new(uint32_t init, const struct poolmap_entry_api *api)
 {
     poolmap_t *m = cast(poolmap_t *, map_do_malloc(sizeof(*m)));
-    _poolmap_init(m, init, fkey0, fkey1, fcmp, ffree);
+    _poolmap_init(m, init, api);
     return m;
 }
 
-void poolmap_init(poolmap_t* m, uint32_t init, fn_keygen fkey0, fn_keygen fkey1, fn_keycmp fcmp, fn_efree ffree)
+void poolmap_init(poolmap_t* m, uint32_t init, const struct poolmap_entry_api *api)
 {
-    _poolmap_init(m, init, fkey0, fkey1, fcmp, ffree);
+    _poolmap_init(m, init, api);
 }
 
 void poolmap_dispose(poolmap_t *m)
@@ -148,7 +145,7 @@ void poolmap_dispose(poolmap_t *m)
         pmap_record_t *r = pmap_at(m, i);
         if (r->hash) {
             JSON_free((JSON)r->k);
-            m->ffree(r);
+            m->api->ffree(r);
         }
     }
     map_do_free(m->records, (m->record_size_mask+1) * sizeof(pmap_record_t));
@@ -163,16 +160,16 @@ void poolmap_delete(poolmap_t *m)
 
 pmap_record_t *poolmap_get(poolmap_t *m, char *key, uint32_t klen)
 {
-    uint32_t hash = m->fkey0(key, klen);
-    pmap_record_t *r = pmap_get_(m, hash, m->fkey1(key, klen));
+    uint32_t hash = m->api->fkey0(key, klen);
+    pmap_record_t *r = pmap_get_(m, hash, m->api->fkey1(key, klen));
     return r;
 }
 
 pmap_status_t poolmap_set(poolmap_t *m, char *key, uint32_t klen, void *val)
 {
     pmap_record_t r;
-    r.hash = m->fkey0(key, klen);
-    r.k  = m->fkey1(key, klen);
+    r.hash = m->api->fkey0(key, klen);
+    r.k  = m->api->fkey1(key, klen);
     r.v  = cast(uintptr_t, val);
     r.v2 = 0;
     return pmap_set_(m, &r);
@@ -180,15 +177,15 @@ pmap_status_t poolmap_set(poolmap_t *m, char *key, uint32_t klen, void *val)
 
 pmap_status_t poolmap_set2(poolmap_t *m, char *key, uint32_t klen, pmap_record_t *r)
 {
-    r->k  = m->fkey1(key, klen);
-    r->hash = m->fkey0(key, klen);
+    r->k  = m->api->fkey1(key, klen);
+    r->hash = m->api->fkey0(key, klen);
     return pmap_set_(m, r);
 }
 
 void poolmap_remove(poolmap_t *m, char *key, uint32_t klen)
 {
-    uint32_t hash = m->fkey0(key, klen);
-    pmap_record_t *r = pmap_get_(m, hash, m->fkey1(key, klen));
+    uint32_t hash = m->api->fkey0(key, klen);
+    pmap_record_t *r = pmap_get_(m, hash, m->api->fkey1(key, klen));
     if (r) {
         r->hash = 0;
         r->k = 0;

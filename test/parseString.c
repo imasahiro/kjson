@@ -26,7 +26,7 @@ static const unsigned int TASK_STR_LEN = 1<<15;
 //static const unsigned int TASK_STR_LEN = 1<<11;
 static const char* TASK_STR_PTR;
 
-static int loop_count = 16;
+static int loop_count = 2;
 void bench_kjson(void)
 {
     puts("== KJSON ==");

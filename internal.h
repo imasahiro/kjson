@@ -14,4 +14,11 @@
 #define SizeToKlass(N) ((uint32_t)(BITS - CLZ(N - 1)))
 #endif
 
+#ifndef unlikely
+#define unlikely(x)   __builtin_expect(!!(x), 0)
+#endif
+
+#ifndef likely
+#define likely(x)     __builtin_expect(!!(x), 1)
+#endif
 #endif /* end of include guard */

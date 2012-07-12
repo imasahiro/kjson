@@ -36,7 +36,7 @@ SET(CMAKE_C_FLAGS         "-Wall -Wno-variadic-macros")
 SET(CMAKE_C_FLAGS_RELEASE "-O3 -g")
 SET(CMAKE_C_FLAGS_DEBUG   "-O0 -g3")
 
-set(JSON_SRC ./kjson.c ./map.c ./stream.c)
+set(JSON_SRC kjson.c map.c dict.c stream.c)
 add_library(kjson SHARED ${JSON_SRC})
 
 ## Test cases
@@ -108,5 +108,8 @@ target_link_libraries(parseJSON kjson)
 add_executable(parseString test/parseString.c)
 add_test(parseString parseString)
 target_link_libraries(parseString kjson)
+
+add_executable(test_dict test/test_dict.c dict.c map.c)
+add_test(test_dict test_dict)
 
 install(TARGETS kjson LIBRARY DESTINATION lib)

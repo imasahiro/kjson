@@ -125,11 +125,14 @@ JSON JSONNull_new()
 #endif
 }
 
+static const struct poolmap_entry_api API = {
+    json_keygen0, json_keygen1, json_keycmp, json_recfree
+};
+
 JSON JSONObject_new()
 {
     JSONObject *o = JSON_NEW(Object);
-    poolmap_init(&(o->child), 0, json_keygen0,
-            json_keygen1, json_keycmp, json_recfree);
+    poolmap_init(&(o->child), 0, &API);
 #ifdef USE_NUMBOX
     o = toJSONObject(toJSON(ValueO((JSON)o)));
 #endif
