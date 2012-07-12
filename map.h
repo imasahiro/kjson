@@ -19,9 +19,8 @@ typedef int  (*fn_keycmp)(uintptr_t k0, uintptr_t k1);
 typedef void (*fn_efree)(pmap_record_t *r);
 typedef struct poolmap_t {
     pmap_record_t *records;
-    uint32_t mask;
+    uint32_t record_size_mask;
     uint32_t used_size;
-    uint32_t record_size;
     fn_keygen fkey0;
     fn_keygen fkey1;
     fn_keycmp fcmp;
