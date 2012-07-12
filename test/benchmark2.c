@@ -1,6 +1,10 @@
 //#define USE_JSON_C
 //#define USE_YAJL
 //#define USE_JANSSON
+#undef USE_JSON_C
+#undef USE_YAJL
+#undef USE_JANSSON
+
 
 #ifdef USE_JSON_C
 #include <json/json.h>
@@ -59,10 +63,10 @@ static void json_c(char *buf, size_t len) {
 #ifdef USE_YAJL
 static void yajl(char *buf, size_t len) {
     const unsigned char *t;
-    yajl_gen g = yajl_gen_alloc(NULL);
-    yajl_handle h = yajl_alloc(NULL, NULL, NULL);
+    yajl_gen g = yajl_gen_alloc(NULL, NULL);
+    yajl_handle h = yajl_alloc(NULL, NULL, NULL, NULL);
     yajl_status stat = yajl_parse(h, (unsigned char*)buf, len);
-    stat = yajl_complete_parse(h);
+    stat = yajl_parse_complete(h);
     assert(stat == yajl_status_ok);
     yajl_gen_get_buf(g, &t, &len);
     yajl_gen_free(g);

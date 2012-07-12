@@ -44,7 +44,7 @@ void bench_json(void)
 {
 #ifdef USE_YAJL
     puts("== JSON ==");
-    yajl_gen g = yajl_gen_alloc(NULL);
+    yajl_gen g = yajl_gen_alloc(NULL, NULL);
     yajl_callbacks callbacks = {
         NULL,
         NULL,
@@ -58,7 +58,7 @@ void bench_json(void)
         NULL,
         NULL
     };
-    yajl_handle h = yajl_alloc(&callbacks, NULL, NULL);
+    yajl_handle h = yajl_alloc(&callbacks, NULL, NULL, NULL);
     const unsigned char * buf;
     size_t len;
     reset_timer();
@@ -84,9 +84,9 @@ void bench_json(void)
     }
     show_timer("parse integer");
     yajl_gen_free(g);
-    g = yajl_gen_alloc(NULL);
+    g = yajl_gen_alloc(NULL, NULL);
     yajl_free(h);
-    h = yajl_alloc(&callbacks, NULL, NULL);
+    h = yajl_alloc(&callbacks, NULL, NULL, NULL);
     reset_timer();
     {
         unsigned int i;
