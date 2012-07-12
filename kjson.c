@@ -127,7 +127,7 @@ JSON JSONNull_new()
 JSON JSONObject_new()
 {
     JSONObject *o = JSON_NEW(Object);
-    o->child = poolmap_new(0, json_keygen0,
+    poolmap_init(&(o->child), 0, json_keygen0,
             json_keygen1, json_keycmp, json_recfree);
 #ifdef USE_NUMBOX
     o = toJSONObject(toJSON(ValueO((JSON)o)));
@@ -203,7 +203,7 @@ static void JSONObject_free(JSON json)
 #ifdef USE_NUMBOX
     o = toJSONObject(toObj(toVal((JSON)o)));
 #endif
-    poolmap_delete(o->child);
+    poolmap_dispose(&o->child);
     free(o);
 }
 
@@ -303,7 +303,7 @@ static void _JSONObject_set(JSONObject *o, JSONString *key, JSON value)
 #endif
     assert(key && value);
     assert(JSON_type(value) < 16);
-    poolmap_set(o->child, (char *) key, 0, value);
+    poolmap_set(&o->child, (char *) key, 0, value);
 }
 
 void JSONObject_set(JSONObject *o, JSON key, JSON value)
@@ -697,7 +697,7 @@ static void JSONObject_dump(FILE *fp, JSONObject *o)
 #ifdef USE_NUMBOX
     o = toJSONObject(toObj(toVal((JSON)o)));
 #endif
-    while ((r = poolmap_next(o->child, &itr)) != NULL) {
+    while ((r = poolmap_next(&o->child, &itr)) != NULL) {
         fputs("", fp);
         JSONString_dump(fp, (JSONString*)r->k);
         fputs(" : ", fp);
@@ -755,7 +755,7 @@ static JSON _JSON_get(JSON json, char *key)
     tmp.str = key;
     tmp.len = len;
     o = toJSONObject(toObj(toVal((JSON)o)));
-    pmap_record_t *r = poolmap_get(o->child, (char *)&tmp, 0);
+    pmap_record_t *r = poolmap_get(&o->child, (char *)&tmp, 0);
 #else
     char tmp[sizeof(union JSON) + len];
     JSONString *s = (JSONString *) tmp;
@@ -854,7 +854,7 @@ JSONString *JSONObject_iterator_next(JSONObject_iterator *itr, JSON *val)
 {
     JSONObject *o = itr->obj;
     pmap_record_t *r;
-    while ((r = poolmap_next(o->child, (poolmap_iterator*) itr)) != NULL) {
+    while ((r = poolmap_next(&o->child, (poolmap_iterator*) itr)) != NULL) {
         *val = (JSON)r->v;
         return (JSONString*)r->k;
     }
@@ -874,9 +874,9 @@ static void JSONObject_toString(string_builder *sb, JSON json)
 #ifdef USE_NUMBOX
     o = toJSONObject(toObj(toVal((JSON)o)));
 #endif
-    r = poolmap_next(o->child, &itr);
+    r = poolmap_next(&o->child, &itr);
     goto L_internal;
-    while ((r = poolmap_next(o->child, &itr)) != NULL) {
+    while ((r = poolmap_next(&o->child, &itr)) != NULL) {
         string_builder_add(sb, ',');
         L_internal:
         JSONString_toString(sb, (JSON)r->k);

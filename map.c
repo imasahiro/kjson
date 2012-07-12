@@ -119,10 +119,8 @@ static pmap_record_t *pmap_get_(poolmap_t *m, uint32_t hash, uintptr_t key)
     } while (i++ < m->used_size);
     return NULL;
 }
-
-poolmap_t* poolmap_new(uint32_t init, fn_keygen fkey0, fn_keygen fkey1, fn_keycmp fcmp, fn_efree ffree)
+static void _poolmap_init(poolmap_t* m, uint32_t init, fn_keygen fkey0, fn_keygen fkey1, fn_keycmp fcmp, fn_efree ffree)
 {
-    poolmap_t *m = cast(poolmap_t *, map_do_malloc(sizeof(*m)));
     if (init < POOLMAP_INITSIZE)
         init = POOLMAP_INITSIZE;
     pmap_record_reset(m, 1U << (SizeToKlass(init)));
@@ -130,12 +128,22 @@ poolmap_t* poolmap_new(uint32_t init, fn_keygen fkey0, fn_keygen fkey1, fn_keycm
     m->fkey1 = fkey1;
     m->fcmp  = fcmp;
     m->ffree = ffree;
+}
+
+poolmap_t* poolmap_new(uint32_t init, fn_keygen fkey0, fn_keygen fkey1, fn_keycmp fcmp, fn_efree ffree)
+{
+    poolmap_t *m = cast(poolmap_t *, map_do_malloc(sizeof(*m)));
+    _poolmap_init(m, init, fkey0, fkey1, fcmp, ffree);
     return m;
 }
 
-void poolmap_delete(poolmap_t *m)
+void poolmap_init(poolmap_t* m, uint32_t init, fn_keygen fkey0, fn_keygen fkey1, fn_keycmp fcmp, fn_efree ffree)
 {
-    assert(m != 0);
+    _poolmap_init(m, init, fkey0, fkey1, fcmp, ffree);
+}
+
+void poolmap_dispose(poolmap_t *m)
+{
     uint32_t i, size = m->record_size;
     for (i = 0; i < size; ++i) {
         pmap_record_t *r = pmap_at(m, i);
@@ -144,8 +152,13 @@ void poolmap_delete(poolmap_t *m)
             m->ffree(r);
         }
     }
-
     map_do_free(m->records, m->record_size * sizeof(pmap_record_t));
+}
+
+void poolmap_delete(poolmap_t *m)
+{
+    assert(m != 0);
+    poolmap_dispose(m);
     map_do_free(m, sizeof(*m));
 }
 

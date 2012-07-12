@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "numbox.h"
+#include "map.h"
 
 #define USE_NUMBOX
 #ifndef KJSON_H_
@@ -65,12 +66,11 @@ typedef struct JSONInt64 {
     int64_t val;
 } JSONInt64;
 
-struct poolmap_t;
 typedef struct JSONObject {
 #ifndef USE_NUMBOX
     kjson_type type;
 #endif
-    struct poolmap_t *child;
+    poolmap_t child;
 } JSONObject;
 
 union JSON {
