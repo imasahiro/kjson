@@ -4,9 +4,8 @@
 #include <string.h>
 #include <stdlib.h>
 
-static void test_file(const char *file)
+static char *loadFile(const char *file, size_t *file_len)
 {
-    fprintf(stderr, "--- {{ test %s --- \n", file);
     size_t len = 1024, size, offset = 0;
     char *str = malloc(1024);
     char *end = str + 1024;
@@ -24,6 +23,15 @@ static void test_file(const char *file)
         memcpy(str+offset, buf, size);
         offset += size;
     }
+    *file_len = offset;
+    return str;
+}
+
+static void test_file(const char *file)
+{
+    fprintf(stderr, "--- {{ test %s --- \n", file);
+    size_t len;
+    char *str = loadFile(file, &len);
     JSON json = parseJSON(str, str+len, 0);
     //JSON_dump(stderr, json);
     size_t json_len;
@@ -149,6 +157,12 @@ int main(int argc, char const* argv[])
         "./test/test08.json",
         "./test/test09.json",
         "./test/test10.json",
+        "./test/test11.json",
+        "./test/test12.json",
+        "./test/test13.json",
+        "./test/test14.json",
+        "./test/array1000.json",
+        "./test/simple.json",
         "./test/benchmark1.json",
         "./test/benchmark2.json",
         "./test/benchmark3.json",
