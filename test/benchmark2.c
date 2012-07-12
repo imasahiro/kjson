@@ -74,7 +74,11 @@ static void yajl(char *buf, size_t len) {
 #endif
             , NULL);
     yajl_status stat = yajl_parse(h, (unsigned char*)buf, len);
+#if YAJL_MAJOR < 2
     stat = yajl_parse_complete(h);
+#else
+    stat = yajl_complete_parse(h);
+#endif
     assert(stat == yajl_status_ok);
     yajl_gen_get_buf(g, &t, &len);
     yajl_gen_free(g);
