@@ -29,6 +29,10 @@ int main() {
             case '\\':
                 fprintf(stderr, "_M 0,");
                 break;
+            case ' ':case '\r':case '\n':case '\t':
+                fprintf(stderr, "_N 0,");
+                break;
+
             default:
                 fprintf(stderr, "0   ,");
                 break;

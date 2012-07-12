@@ -5,7 +5,6 @@
 #undef USE_YAJL
 #undef USE_JANSSON
 
-
 #ifdef USE_JSON_C
 #include <json/json.h>
 #endif

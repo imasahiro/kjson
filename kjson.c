@@ -323,30 +323,12 @@ static JSON parseObject(input_stream *ins, char c);
 static JSON parseArray(input_stream *ins, char c);
 static JSON parseString(input_stream *ins, char c);
 
-static char skip_space(input_stream *ins, char c)
-{
-    if (c)
-        goto L_top;
-    for_each_istream(ins, c) {
-        L_top:;
-        switch (c) {
-            case ' ':
-            case '\r':
-            case '\n':
-            case '\t':
-                continue;
-            default:
-                return c;
-        }
-    }
-    return -1;
-}
-static JSON parseNOP(input_stream *ins, char c) { return NULL; }
+#define _N 0x40 |
 #define _M 0x80 |
-static const uint8_t string_table[] = {
+static const unsigned string_table[] = {
+    0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,_N 0,_N 0,0   ,0   ,_N 0,0   ,0,
     0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0,
-    0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0,
-    0   ,0   ,_M 2,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,4   ,0   ,0,
+    _N 0,0   ,_M 2,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,4   ,0   ,0,
     4   ,4   ,4   ,4   ,4   ,4   ,4   ,4   ,4   ,4   ,0   ,0   ,0   ,0   ,0   ,0,
     0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0,
     0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,3   ,_M 0,0   ,0   ,0,
@@ -363,6 +345,33 @@ static const uint8_t string_table[] = {
 };
 #undef _M
 
+static char skip_space(input_stream *ins, char ch)
+{
+    int c = ch;
+    for (c = !c?NEXT(ins):c; EOS(ins); c = NEXT(ins)) {
+        if (!(0x40 & string_table[c])) {
+            return c;
+        }
+    }
+    return -1;
+}
+
+static char skipBSorDoubleQuote(input_stream *ins, char ch)
+{
+    register int c = ch;
+    register char *      str = ins->d0.str;
+    register char *const end = ins->d1.str;
+    for(; str != end; c = *str++) {
+        if (0x80 & string_table[c]) {
+            break;
+        }
+    }
+    ins->d0.str = str;
+    return c;
+}
+
+static JSON parseNOP(input_stream *ins, char c) { return NULL; }
+
 static JSON parseChild(input_stream *ins, char c)
 {
     c = skip_space(ins, c);
@@ -375,7 +384,7 @@ static JSON parseChild(input_stream *ins, char c)
         parseNumber,
         parseBoolean,
         parseNull};
-    return dispatch_func[0x7f & string_table[(int)c]](ins, c);
+    return dispatch_func[0x7 & string_table[(int)c]](ins, c);
 }
 
 static unsigned int toHex(char c)
@@ -430,22 +439,6 @@ static void parseEscape(input_stream *ins, string_builder *sb, char c)
         default: assert(0 && "Unknown espace");
     }
     string_builder_add(sb, c);
-}
-
-#define   likely(x)   __builtin_expect(!!(x), 1)
-#define unlikely(x)   __builtin_expect(!!(x), 0)
-static char skipBSorDoubleQuote(input_stream *ins, char ch)
-{
-    register int c = ch;
-    register char *      str = ins->d0.str;
-    register char *const end = ins->d1.str;
-    for(; str != end; c = *str++) {
-        if (0x80 & string_table[c]) {
-            break;
-        }
-    }
-    ins->d0.str = str;
-    return c;
 }
 
 static JSON parseString(input_stream *ins, char c)
