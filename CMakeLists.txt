@@ -113,3 +113,6 @@ add_executable(test_dict test/test_dict.c map.c)
 add_test(test_dict test_dict)
 
 install(TARGETS kjson LIBRARY DESTINATION lib)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/kjson.h DESTINATION include/kjson)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/numbox.h DESTINATION include/kjson)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/map.h DESTINATION include/kjson)

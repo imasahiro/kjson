@@ -2,7 +2,6 @@
 #include "numbox.h"
 #include "map.h"
 
-#define USE_NUMBOX
 #ifndef KJSON_H_
 #define KJSON_H_
 
@@ -10,6 +9,7 @@
 extern "C" {
 #endif
 
+#define USE_NUMBOX
 typedef enum kjson_type {
     /** ($type & 1 == 0) means $type extends Number */
     JSON_Double =  0, /* 0000 */
@@ -27,7 +27,7 @@ typedef enum kjson_type {
 } kjson_type;
 
 union JSON;
-typedef union JSON * JSON;
+typedef union JSON *JSON;
 
 typedef struct JSONString {
 #ifndef USE_NUMBOX
@@ -150,9 +150,9 @@ static inline int JSONBool_get(JSON json)
 }
 
 /* [New API] */
-JSON JSONNull_new();
-JSON JSONArray_new();
-JSON JSONObject_new();
+JSON JSONNull_new(void);
+JSON JSONArray_new(void);
+JSON JSONObject_new(void);
 JSON JSONDouble_new(double val);
 JSON JSONString_new(char *s, size_t len);
 JSON JSONInt_new(int64_t val);
@@ -172,7 +172,6 @@ typedef enum kjson_parse_option {
 } kjson_parse_option;
 
 JSON parseJSON(char *s, char *e, kjson_parse_option opt);
-//JSON parseJSON_fromFILE(char *file);
 char *JSON_toString(JSON json, size_t *len);
 
 #ifdef USE_NUMBOX
