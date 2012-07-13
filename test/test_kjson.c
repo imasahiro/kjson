@@ -117,23 +117,15 @@ static void test_object_iterator(void)
     JSONObject *o = (JSONObject*) parseJSON(data2, data2+sizeof(data2), 0);
     assert(JSON_type((JSON)o) == JSON_Object);
     //assert(JSON_length((JSON)child) == 3);
-    /* XXX this test depends on imprementation of map data. */
-    static const kjson_type types[] = {
-        JSON_Bool,
-        JSON_Int32,
-        JSON_String,
-        JSON_Double
-    };
 
-    int i = 0;
     JSONString *Key;
     JSON Val;
     JSONObject_iterator Itr;
 
     JSON_OBJECT_EACH(o, Itr, Key, Val) {
+        char *str = JSONString_get((JSON)Key);
         assert(JSON_type((JSON)Key) == JSON_String);
-        assert(JSON_type(Val) == types[i]);
-        ++i;
+        assert(JSON_type(Val) == JSON_type(JSON_get((JSON)o, str)));
         fprintf(stderr, "<");
         JSON_dump(stderr, (JSON)Key);
         fprintf(stderr, ":");
@@ -160,7 +152,6 @@ int main(int argc, char const* argv[])
         "./test/test11.json",
         "./test/test12.json",
         "./test/test13.json",
-        "./test/test14.json",
         "./test/array1000.json",
         "./test/simple.json",
         "./test/benchmark1.json",

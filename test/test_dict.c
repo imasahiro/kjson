@@ -39,7 +39,6 @@ static void show_timer(const char *s)
     printf("%20s: %f sec\n", s, sec);
 }
 
-static dictmap_t *D[N];
 static poolmap_t *P[N];
 static char *data[] = {
     "0000000000000000",
@@ -58,33 +57,6 @@ static const int len[] = {
 static const struct poolmap_entry_api API = {
     entry_keygen, entry_keygen, entry_key_eq, entry_free
 };
-
-static void test_dict() {
-    int i;
-    pmap_record_t *r;
-    dictmap_t *d = dictmap_new(&API);
-    reset_timer();
-    for (i = 0; i < N; i++) {
-        D[i] = dictmap_new(&API);
-    }
-    show_timer("dict:new");
-    reset_timer();
-    for (i = 0; i < N; i++) {
-        dictmap_set(d, data[i % 4], len[i % 4], d);
-    }
-    show_timer("dict:set");
-    reset_timer();
-    for (i = 0; i < N; i++) {
-        r = dictmap_get(d, data[i % 4], len[i % 4]);
-    }
-    show_timer("dict:get");
-    reset_timer();
-    for (i = 0; i < N; i++) {
-        dictmap_delete(D[i]);
-    }
-    show_timer("dict:delete");
-    dictmap_delete(d);
-}
 
 static void test_pool() {
     int i;
@@ -112,6 +84,35 @@ static void test_pool() {
     show_timer("pool:delete");
     poolmap_delete(p);
 }
+static void test_converter() {
+    static char *data2[] = {
+        "0000000000000000",
+        "1111111111111111",
+        "2222222222222222",
+        "3333333333333333",
+        "4444444444444444",
+        "5555555555555555"
+    };
+    static const int len2[] = {
+        sizeof("0000000000000000")-1,
+        sizeof("1111111111111111")-1,
+        sizeof("2222222222222222")-1,
+        sizeof("3333333333333333")-1,
+        sizeof("4444444444444444")-1,
+        sizeof("5555555555555555")-1
+    };
+    int i;
+    poolmap_t *p = poolmap_new(4, &API);
+    pmap_record_t *r;
+    for (i = 0; i < 6; i++) {
+        poolmap_set(p, data2[i], len2[i], p);
+    }
+    for (i = 0; i < 6; i++) {
+        r = poolmap_get(p, data2[i], len2[i]);
+        assert(r != NULL);
+    }
+    poolmap_delete(p);
+}
 
 int main(int argc, char const* argv[])
 {
@@ -121,8 +122,8 @@ int main(int argc, char const* argv[])
     if (argc > 1 && strncmp(argv[1], "-t", 2) == 0) {
         loop_count = atoi(argv[1]+2);
     }
+    test_converter();
     for (i = 0; i < loop_count; i++) {
-        test_dict();
         test_pool();
     }
     return 0;

@@ -25,21 +25,31 @@ typedef struct poolmap_entry_api {
     fn_efree  ffree;
 } poolmap_entry_api_t;
 
-typedef struct poolmap_t {
-    const struct poolmap_entry_api *api;
+struct map_api;
+typedef struct map_api poolmap_api_t;
+
+typedef struct hashmap_t {
+    const poolmap_api_t *op;
+    const poolmap_entry_api_t *api;
     pmap_record_t *records;
     uint32_t used_size;
     uint32_t record_size_mask;
     char alignment[16];
-} __attribute__((__aligned__(8))) poolmap_t;
+} __attribute__((__aligned__(8))) hashmap_t;
 
 #define DICTMAP_THRESHOLD 4
 typedef struct dictmap_t {
+    const poolmap_api_t *op;
     const struct poolmap_entry_api *api;
     const pmap_record_t *records;
     uint32_t  used_size;
     uint32_t  hash_list[DICTMAP_THRESHOLD];
 } __attribute__((__aligned__(8))) dictmap_t;
+
+typedef union poolmap_t {
+    hashmap_t h;
+    dictmap_t d;
+} poolmap_t;
 
 typedef struct map_iterator {
     long index;
@@ -51,31 +61,48 @@ typedef enum pmap_status_t {
     POOLMAP_ADDED  = 2
 } pmap_status_t;
 
-static inline uint32_t poolmap_size(poolmap_t *m)
-{
-    return m->used_size;
-}
+struct map_api {
+    pmap_record_t *(*_get)(poolmap_t *m, char *key, uint32_t tlen);
+    pmap_status_t  (*_set)(poolmap_t *m, char *key, uint32_t klen, void *val);
+    pmap_record_t *(*_next)(poolmap_t *m, poolmap_iterator *itr);
+    void (*_remove)(poolmap_t *m, char *key, uint32_t klen);
+    void (*_init)(poolmap_t* m, uint32_t init, const poolmap_entry_api_t *api);
+    void (*_dispose)(poolmap_t *m);
+};
 
-int pool_global_init(void);
-int pool_global_deinit(void);
 poolmap_t* poolmap_new(uint32_t init, const poolmap_entry_api_t *api);
 void poolmap_init(poolmap_t* m, uint32_t init, const poolmap_entry_api_t *api);
 void poolmap_delete(poolmap_t *m);
-void poolmap_dispose(poolmap_t *m);
-pmap_record_t *poolmap_get(poolmap_t *m, char *key, uint32_t tlen);
-pmap_status_t poolmap_set(poolmap_t *m, char *key, uint32_t klen, void *val);
-pmap_status_t poolmap_set2(poolmap_t *m, char *key, uint32_t klen, pmap_record_t *);
-void poolmap_remove(poolmap_t *m, char *key, uint32_t klen);
-pmap_record_t *poolmap_next(poolmap_t *m, poolmap_iterator *itr);
 
-dictmap_t* dictmap_new(const poolmap_entry_api_t *api);
-void dictmap_init(dictmap_t* m, const poolmap_entry_api_t *api);
-pmap_status_t dictmap_set(dictmap_t *m, char *key, uint32_t klen, void *val);
-void dictmap_remove(dictmap_t *m, char *key, uint32_t klen);
-pmap_record_t *dictmap_get(dictmap_t *m, char *key, uint32_t klen);
-pmap_record_t *dictmap_next(dictmap_t *m, poolmap_iterator *itr);
-void dictmap_dispose(dictmap_t *m);
-void dictmap_delete(dictmap_t *m);
+static inline void poolmap_dispose(poolmap_t *m)
+{
+    m->h.op->_dispose(m);
+}
+
+static inline pmap_record_t *poolmap_get(poolmap_t *m, char *key, uint32_t klen)
+{
+    return m->h.op->_get(m, key, klen);
+}
+
+static inline pmap_status_t poolmap_set(poolmap_t *m, char *key, uint32_t klen, void *val)
+{
+    return m->h.op->_set(m, key, klen, val);
+}
+
+static inline void poolmap_remove(poolmap_t *m, char *key, uint32_t klen)
+{
+    return m->h.op->_remove(m, key, klen);
+}
+
+static inline pmap_record_t *poolmap_next(poolmap_t *m, poolmap_iterator *itr)
+{
+    return m->h.op->_next(m, itr);
+}
+
+static inline uint32_t poolmap_size(poolmap_t *m)
+{
+    return m->h.used_size;
+}
 
 #ifdef __cplusplus
 }

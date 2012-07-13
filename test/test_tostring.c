@@ -13,7 +13,7 @@ static void test_obj()
     JSONObject_set((JSONObject *) o, JSONString_new("c", 1), JSONDouble_new(3.14));
     size_t len;
     char *s = JSON_toString(o, &len);
-    assert(strncmp(s, "{\"c\":3.14,\"a\":true,\"b\":100}", len) == 0);
+    assert(strncmp(s, "{\"a\":true,\"b\":100,\"c\":3.14}", len) == 0);
     JSON_free(o);
     fprintf(stderr, "'%s'\n", s);
     free((char*)s);
