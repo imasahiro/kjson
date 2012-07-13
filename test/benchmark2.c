@@ -26,22 +26,7 @@
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
-
-static struct timeval g_timer;
-
-static void reset_timer()
-{
-    gettimeofday(&g_timer, NULL);
-}
-
-static void show_timer(const char *s)
-{
-    struct timeval endtime;
-    gettimeofday(&endtime, NULL);
-    double sec = (endtime.tv_sec - g_timer.tv_sec)
-        + (double)(endtime.tv_usec - g_timer.tv_usec) / 1000 / 1000;
-    printf("%-8s: %f sec\n", s, sec);
-}
+#include "benchmark.h"
 
 static void kjson(char *buf, size_t len) {
     JSON json = parseJSON(buf, buf+len, 0);
