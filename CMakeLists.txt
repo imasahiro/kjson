@@ -21,7 +21,11 @@ set(JSON_TEST
         "./test/test08.json"
         "./test/test09.json"
         "./test/test10.json"
-        "./test/test11.json")
+        "./test/test11.json"
+        "./test/test12.json"
+        "./test/test13.json"
+        "./test/test14.json"
+        "./test/test15.json")
 
 set(JSON_BENCHMARK
         "./test/benchmark1.json"

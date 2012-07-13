@@ -485,6 +485,9 @@ static JSON parseObject(input_stream *ins, char c)
     for (c = skip_space(ins, 0); EOS(ins); c = skip_space(ins, 0)) {
         JSONString *key = NULL;
         JSON val = NULL;
+        if (c == '}') {
+            break;
+        }
         assert(c == '"' && "Missing open quote for element key");
         key = (JSONString *) parseString(ins, c);
         c = skip_space(ins, 0);
@@ -871,14 +874,15 @@ static void JSONObject_toString(string_builder *sb, JSON json)
 #ifdef USE_NUMBOX
     o = toJSONObject(toObj(toVal((JSON)o)));
 #endif
-    r = poolmap_next(&o->child, &itr);
-    goto L_internal;
-    while ((r = poolmap_next(&o->child, &itr)) != NULL) {
-        string_builder_add(sb, ',');
-        L_internal:
-        JSONString_toString(sb, (JSON)r->k);
-        string_builder_add(sb, ':');
-        _JSON_toString(sb, (JSON)r->v);
+    if ((r = poolmap_next(&o->child, &itr)) != NULL) {
+        goto L_internal;
+        while ((r = poolmap_next(&o->child, &itr)) != NULL) {
+            string_builder_add(sb, ',');
+            L_internal:
+            JSONString_toString(sb, (JSON)r->k);
+            string_builder_add(sb, ':');
+            _JSON_toString(sb, (JSON)r->v);
+        }
     }
     string_builder_add(sb, '}');
 }
