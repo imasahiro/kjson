@@ -101,9 +101,8 @@ target_link_libraries(benchmark1 kjson ${bench1_libs})
 add_executable(benchmark2 test/benchmark2.c)
 target_link_libraries(benchmark2 kjson ${bench2_libs})
 
-add_executable(parseJSON test/parseJson.c)
-add_test(parseJSON parseJSON)
-target_link_libraries(parseJSON kjson)
+add_executable(benchmark3 test/benchmark3.c)
+target_link_libraries(benchmark3 kjson)
 
 add_executable(parseString test/parseString.c)
 add_test(parseString parseString)

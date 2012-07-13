@@ -83,12 +83,44 @@ static void test_double()
         free(s);
     }
 }
+static void test_string()
+{
+    size_t len;
+    char *s;
+#define STRING(S) S, S+strlen(S)
+    {
+        JSON n = parseJSON(STRING("\"ABC\""), 0);
+        s = JSON_toString(n, &len);
+        assert(strncmp(s, "\"ABC\"", len) == 0);
+        JSON_free(n);
+        fprintf(stderr, "'%s'\n", s);
+        free(s);
+    }
+    {
+        JSON n = parseJSON(STRING("\"http:\\/\\/twitter.com\\/\""), 0);
+        s = JSON_toString(n, &len);
+        assert(strncmp(s, "\"http:\\/\\/twitter.com\\/\"", len) == 0);
+        JSON_free(n);
+        fprintf(stderr, "'%s'\n", s);
+        free(s);
+    }
+    {
+        JSON n = parseJSON(STRING("\"A\\nB\\r\\nC\""), 0);
+        s = JSON_toString(n, &len);
+        assert(strncmp(s, "\"A\\nB\\r\\nC\"", len) == 0);
+        JSON_free(n);
+        fprintf(stderr, "'%s'\n", s);
+        free(s);
+    }
 
+#undef STRING
+}
 int main(int argc, char const* argv[])
 {
     test_int();
     test_double();
     test_array();
     test_obj();
+    test_string();
     return 0;
 }

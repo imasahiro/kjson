@@ -159,6 +159,10 @@ int main(int argc, char const* argv[])
         "./test/benchmark3.json",
         "./test/benchmark4.json",
         "./test/benchmark5.json",
+        "./test/delicious_popular.json",
+        "./test/twitter_public.json",
+        "./test/lastfm.json",
+        "./test/yelp.json",
     };
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))

@@ -967,11 +967,11 @@ static void JSONUString_toString(string_builder *sb, JSON json)
             case '"':  string_builder_add_string(sb, "\\\"", 2); break;
             case '\\': string_builder_add_string(sb, "\\\\", 2); break;
             case '/':  string_builder_add_string(sb, "\\/" , 2); break;
-            case '\b': string_builder_add_string(sb, "\b", 2); break;
-            case '\f': string_builder_add_string(sb, "\f", 2); break;
-            case '\n': string_builder_add_string(sb, "\n", 2); break;
-            case '\r': string_builder_add_string(sb, "\r", 2); break;
-            case '\t': string_builder_add_string(sb, "\t", 2); break;
+            case '\b': string_builder_add_string(sb, "\\b", 2); break;
+            case '\f': string_builder_add_string(sb, "\\f", 2); break;
+            case '\n': string_builder_add_string(sb, "\\n", 2); break;
+            case '\r': string_builder_add_string(sb, "\\r", 2); break;
+            case '\t': string_builder_add_string(sb, "\\t", 2); break;
             default:
                 string_builder_add(sb, c);
         }
