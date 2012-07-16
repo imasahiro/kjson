@@ -51,7 +51,7 @@ void bench_kjson(void)
     for (i=0; i<loop_count; i++) {
         reset_timer();
         {
-            o = parseJSON(buf, buf + len, 0);
+            o = parseJSON(buf, buf + len);
             if (o == NULL) {
                 fprintf(stderr, "Errro\n");
             }

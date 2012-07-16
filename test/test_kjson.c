@@ -32,7 +32,7 @@ static void test_file(const char *file)
     fprintf(stderr, "--- {{ test %s --- \n", file);
     size_t len;
     char *str = loadFile(file, &len);
-    JSON json = parseJSON(str, str+len, 0);
+    JSON json = parseJSON(str, str+len);
     //JSON_dump(stderr, json);
     size_t json_len;
     char *json_s = JSON_toString(json, &json_len);
@@ -77,7 +77,7 @@ static char data[] =
 
 static void test_string(void)
 {
-    JSON json = parseJSON(data, data+sizeof(data), 0);
+    JSON json = parseJSON(data, data+sizeof(data));
     JSONArray *child = toJSONArray(JSON_get(json, "app"));
     assert(child != NULL);
     assert(JSON_type((JSON)child) == JSON_Array);
@@ -114,7 +114,7 @@ static char data2[] =
 
 static void test_object_iterator(void)
 {
-    JSONObject *o = (JSONObject*) parseJSON(data2, data2+sizeof(data2), 0);
+    JSONObject *o = (JSONObject*) parseJSON(data2, data2+sizeof(data2));
     assert(JSON_type((JSON)o) == JSON_Object);
     //assert(JSON_length((JSON)child) == 3);
 

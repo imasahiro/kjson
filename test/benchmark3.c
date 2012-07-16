@@ -35,7 +35,7 @@ static void test1()
     reset_timer();
     while ((str = loadLine(fp, buf)) != NULL) {
         len = strlen(str);
-        JSON json = parseJSON(str, str+len, 0);
+        JSON json = parseJSON(str, str+len);
         assert(JSON_type(json) == JSON_Object);
         JSON_free(json);
     }
@@ -51,7 +51,7 @@ static void test2()
     reset_timer();
     while ((str = loadLine(fp, buf)) != NULL) {
         len = strlen(str);
-        JSON json = parseJSON(str, str+len, 0);
+        JSON json = parseJSON(str, str+len);
         char *p = JSON_toString(json, &len);
         assert(JSON_type(json) == JSON_Object);
         assert(p);

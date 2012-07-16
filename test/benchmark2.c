@@ -29,7 +29,7 @@
 #include "benchmark.h"
 
 static void kjson(char *buf, size_t len) {
-    JSON json = parseJSON(buf, buf+len, 0);
+    JSON json = parseJSON(buf, buf+len);
     size_t length;
     char *str = JSON_toString(json, &length);
     JSON_free(json);

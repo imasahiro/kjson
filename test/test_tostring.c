@@ -89,7 +89,7 @@ static void test_string()
     char *s;
 #define STRING(S) S, S+strlen(S)
     {
-        JSON n = parseJSON(STRING("\"ABC\""), 0);
+        JSON n = parseJSON(STRING("\"ABC\""));
         s = JSON_toString(n, &len);
         assert(strncmp(s, "\"ABC\"", len) == 0);
         JSON_free(n);
@@ -97,7 +97,7 @@ static void test_string()
         free(s);
     }
     {
-        JSON n = parseJSON(STRING("\"http:\\/\\/twitter.com\\/\""), 0);
+        JSON n = parseJSON(STRING("\"http:\\/\\/twitter.com\\/\""));
         s = JSON_toString(n, &len);
         assert(strncmp(s, "\"http:\\/\\/twitter.com\\/\"", len) == 0);
         JSON_free(n);
@@ -105,7 +105,7 @@ static void test_string()
         free(s);
     }
     {
-        JSON n = parseJSON(STRING("\"A\\nB\\r\\nC\""), 0);
+        JSON n = parseJSON(STRING("\"A\\nB\\r\\nC\""));
         s = JSON_toString(n, &len);
         assert(strncmp(s, "\"A\\nB\\r\\nC\"", len) == 0);
         JSON_free(n);
