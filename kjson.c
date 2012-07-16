@@ -48,8 +48,8 @@ static int json_keycmp(uintptr_t k0, uintptr_t k1)
     JSONString *s0 = toJSONString((JSON)k0);
     JSONString *s1 = toJSONString((JSON)k1);
 #ifdef USE_NUMBOX
-    char  *key = ((struct _string *) k1)->str;
-    size_t len = ((struct _string *) k1)->len;
+    char  *key;
+    size_t len;
     s0 = toJSONString(toStr(toVal(s0)));
     kjson_type type = JSON_type((JSON)s1);
     if (type > 0) {

@@ -11,6 +11,7 @@ static char *loadFile(const char *file, size_t *file_len)
     char *end = str + 1024;
     FILE *fp = fopen(file, "r");
     char buf[1024];
+    assert(fp);
     while (1) {
         size = fread(buf, 1, 1024, fp);
         if (size == 0)
@@ -24,6 +25,7 @@ static char *loadFile(const char *file, size_t *file_len)
         offset += size;
     }
     *file_len = offset;
+    fclose(fp);
     return str;
 }
 

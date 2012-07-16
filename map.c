@@ -295,8 +295,7 @@ static pmap_record_t *dictmap_next(poolmap_t *_m, poolmap_iterator *itr)
         itr->index = i+1;
         return r;
     }
-    itr->index = i;
-    assert(itr->index == m->used_size);
+    itr->index = m->used_size;
     return NULL;
 }
 
