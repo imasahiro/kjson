@@ -12,8 +12,22 @@ static char *loadLine(FILE *fp, char *buf)
     return fgets(buf, SIZE, fp);
 }
 #define JSON_FILE "./test/twitter.json"
-
+static int filesize = 0;
 static void test0()
+{
+    size_t len;
+    char buf[SIZE], *str;
+    FILE *fp = fopen(JSON_FILE, "r");
+    reset_timer();
+    while ((str = loadLine(fp, buf)) != NULL) {
+        len = strlen(str);
+        filesize += len;
+    }
+    show_timer("nop");
+    fclose(fp);
+}
+
+static void test1()
 {
     size_t len;
     char buf[SIZE], *str;
@@ -25,10 +39,11 @@ static void test0()
         assert(JSON_type(json) == JSON_Object);
         JSON_free(json);
     }
-    show_timer("parse");
+    _show_timer("parse", filesize);
     fclose(fp);
 }
-static void test1()
+
+static void test2()
 {
     size_t len;
     char buf[SIZE], *str;
@@ -43,7 +58,7 @@ static void test1()
         JSON_free(json);
         free(p);
     }
-    show_timer("pack/unpack");
+    _show_timer("pack/unpack", filesize);
     fclose(fp);
 }
 
@@ -53,6 +68,7 @@ int main(int argc, char const* argv[])
     for (i = 0; i < size; i++) {
         test0();
         test1();
+        test2();
     }
     return 0;
 }
