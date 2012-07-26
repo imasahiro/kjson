@@ -68,7 +68,7 @@ static int json_keycmp(uintptr_t k0, uintptr_t k1)
 #endif
 }
 
-static void json_recfree(pmap_record_t *r)
+static void json_recfree(map_record_t *r)
 {
     JSON json = (JSON) r->v;
     _JSON_free(json);
@@ -691,7 +691,7 @@ static void JSONDouble_dump(FILE *fp, JSONNumber *json)
 
 static void JSONObject_dump(FILE *fp, JSONObject *o)
 {
-    pmap_record_t *r;
+    map_record_t *r;
     poolmap_iterator itr = {0};
     fputs("{", fp);
 #ifdef USE_NUMBOX
@@ -755,7 +755,7 @@ static JSON _JSON_get(JSON json, char *key)
     tmp.str = key;
     tmp.len = len;
     o = toJSONObject(toObj(toVal((JSON)o)));
-    pmap_record_t *r = poolmap_get(&o->child, (char *)&tmp, 0);
+    map_record_t *r = poolmap_get(&o->child, (char *)&tmp, 0);
 #else
     char tmp[sizeof(union JSON) + len];
     JSONString *s = (JSONString *) tmp;
@@ -763,7 +763,7 @@ static JSON _JSON_get(JSON json, char *key)
     memcpy(s->str, key, len);
     assert(JSON_type(json) == JSON_Object);
     JSON_set_type((JSON) s, JSON_String);
-    pmap_record_t *r = poolmap_get(o->child, (char *)s, 0);
+    map_record_t *r = poolmap_get(o->child, (char *)s, 0);
 #endif
     return (JSON) r->v;
 }
@@ -853,7 +853,7 @@ int JSONObject_iterator_init(JSONObject_iterator *itr, JSONObject *obj)
 JSONString *JSONObject_iterator_next(JSONObject_iterator *itr, JSON *val)
 {
     JSONObject *o = itr->obj;
-    pmap_record_t *r;
+    map_record_t *r;
     while ((r = poolmap_next(&o->child, (poolmap_iterator*) itr)) != NULL) {
         *val = (JSON)r->v;
         return (JSONString*)r->k;
@@ -868,7 +868,7 @@ static void _JSON_toString(string_builder *sb, JSON json);
 static void JSONObject_toString(string_builder *sb, JSON json)
 {
     JSONObject *o = toJSONObject(json);
-    pmap_record_t *r;
+    map_record_t *r;
     poolmap_iterator itr = {0};
     string_builder_add(sb, '{');
 #ifdef USE_NUMBOX

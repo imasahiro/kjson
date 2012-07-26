@@ -14,7 +14,7 @@ static int entry_key_eq(uintptr_t k0, uintptr_t k1)
     return strcmp(s0, s1) == 0;
 }
 
-static void entry_free(pmap_record_t *r)
+static void entry_free(map_record_t *r)
 {
 }
 
@@ -60,7 +60,7 @@ static const struct poolmap_entry_api API = {
 
 static void test_pool() {
     int i;
-    pmap_record_t *r;
+    map_record_t *r;
     poolmap_t *p = poolmap_new(4, &API);
     reset_timer();
     for (i = 0; i < N; i++) {
@@ -103,7 +103,7 @@ static void test_converter() {
     };
     int i;
     poolmap_t *p = poolmap_new(4, &API);
-    pmap_record_t *r;
+    map_record_t *r;
     for (i = 0; i < 6; i++) {
         poolmap_set(p, data2[i], len2[i], p);
     }
