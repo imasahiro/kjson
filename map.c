@@ -1,5 +1,4 @@
 #include "kjson.h"
-#include "hash.h"
 #include "map.h"
 #include "internal.h"
 #include <stdio.h>
@@ -12,6 +11,7 @@ extern "C" {
 #endif
 
 #define POOLMAP_INITSIZE DICTMAP_THRESHOLD
+#define DELTA 8
 
 #define _MALLOC(SIZE)    malloc(SIZE)
 #define _FREE(PTR, SIZE) free(PTR)
@@ -45,10 +45,9 @@ static void hashmap_record_reset(hashmap_t *m, size_t newsize)
 
 static map_status_t hashmap_set_no_resize(hashmap_t *m, map_record_t *rec)
 {
-    unsigned i = 0, idx = rec->hash & m->record_size_mask;
-    map_record_t *r;
-    do {
-        r = m->base.records+idx;
+    unsigned i, idx = rec->hash & m->record_size_mask;
+    for (i = 0; i < DELTA; ++i) {
+        map_record_t *r = m->base.records+idx;
         if (r->hash == 0) {
             map_record_copy(r, rec);
             ++m->used_size;
@@ -64,44 +63,49 @@ static map_status_t hashmap_set_no_resize(hashmap_t *m, map_record_t *rec)
             return POOLMAP_UPDATE;
         }
         idx = (idx + 1) & m->record_size_mask;
-    } while (i++ < m->used_size);
-    assert(0);
+    }
+    return POOLMAP_FAILED;
 }
 
 static void hashmap_record_resize(hashmap_t *m)
 {
-    map_record_t *old = m->base.records;
-    unsigned i, oldsize = (m->record_size_mask+1);
+    unsigned oldsize = (m->record_size_mask+1);
+    unsigned newsize = oldsize;
+    map_record_t *head = m->base.records;
 
-    hashmap_record_reset(m, oldsize*2);
-    for (i = 0; i < oldsize; ++i) {
-        map_record_t *r = old + i;
-        if (r->hash) {
-            hashmap_set_no_resize(m, r);
+    do {
+        unsigned i;
+        newsize *= 2;
+        hashmap_record_reset(m, newsize);
+        for (i = 0; i < oldsize; ++i) {
+            map_record_t *r = head + i;
+            if (r->hash && hashmap_set_no_resize(m, r) == POOLMAP_FAILED)
+                continue;
         }
-    }
-    _FREE(old, oldsize*sizeof(map_record_t));
+    } while (0);
+    _FREE(head, oldsize*sizeof(map_record_t));
 }
 
 static map_status_t hashmap_set(hashmap_t *m, map_record_t *rec)
 {
-    if (m->used_size > (m->record_size_mask+1) * 3 / 4) {
+    map_status_t res;
+    do {
+        if ((res = hashmap_set_no_resize(m, rec)) != POOLMAP_FAILED)
+            return res;
         hashmap_record_resize(m);
-    }
-    return hashmap_set_no_resize(m, rec);
+    } while (1);
 }
 
 static map_record_t *hashmap_get(hashmap_t *m, unsigned hash, uintptr_t key)
 {
-    unsigned i = 0;
-    unsigned idx = hash & m->record_size_mask;
-    do {
-        map_record_t *r = hashmap_at(m, idx);
+    unsigned i, idx = hash & m->record_size_mask;
+    for (i = 0; i < DELTA; ++i) {
+        map_record_t *r = m->base.records+idx;
         if (r->hash == hash && m->base.entry_api->fcmp(r->k, key)) {
             return r;
         }
         idx = (idx + 1) & m->record_size_mask;
-    } while (i++ < m->used_size);
+    }
     return NULL;
 }
 
