@@ -1,7 +1,7 @@
 //#define USE_JSON_C
 //#define USE_YAJL
 //#define USE_JANSSON
-#define USE_RAPIDJSON
+//#define USE_RAPIDJSON
 #undef USE_JSON_C
 //#undef USE_YAJL
 #undef USE_JANSSON
@@ -124,31 +124,32 @@ static char *loadFile(const char *file, size_t *length)
     return json;
 }
 
+struct f {
+    const char *name;
+    void (*func)(char *buf, size_t len);
+};
+const struct f data[] = {
+    {"kjson",  kjson},
+#ifdef USE_JSON_C
+    {"json-c", json_c},
+#endif
+#ifdef USE_YAJL
+    {"yajl",   yajl},
+#endif
+#ifdef USE_JANSSON
+    {"jansson", jansson},
+#endif
+#ifdef USE_RAPIDJSON
+    {"rapidjson", rapidjson_run},
+#endif
+};
+
 static void test(const char *file)
 {
     size_t len;
     char *str = loadFile(file, &len);;
     assert(len == strlen(str));
     int i, j, k;
-    struct f {
-        const char *name;
-        void (*func)(char *buf, size_t len);
-    } data[] = {
-        {"kjson",  kjson},
-#ifdef USE_JSON_C
-        {"json-c", json_c},
-#endif
-#ifdef USE_YAJL
-        {"yajl",   yajl},
-#endif
-#ifdef USE_JANSSON
-        {"jansson", jansson},
-#endif
-#ifdef USE_RAPIDJSON
-        {"rapidjson", rapidjson_run},
-#endif
-
-    };
     for (k = 0; k < loop_count; k++) {
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
         for (j = 0; j < ARRAY_SIZE(data); j++) {

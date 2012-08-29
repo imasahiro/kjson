@@ -118,6 +118,10 @@ add_test(test_dict test_dict)
 add_executable(check_cpp test/check_cpp_build.cpp)
 add_test(check_cpp check_cpp)
 
+add_executable(test_whitespace test/test_whitespace.c)
+add_test(test_whitespace test_whitespace)
+target_link_libraries(test_whitespace kjson)
+
 install(TARGETS kjson LIBRARY DESTINATION lib)
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/kjson.h DESTINATION include/kjson)
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/numbox.h DESTINATION include/kjson)
