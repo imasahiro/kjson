@@ -1,6 +1,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <assert.h>
+#include "kmemory.h"
 
 #ifndef KJSON_ARRAY_H_
 #define KJSON_ARRAY_H_
@@ -25,7 +26,7 @@ typedef struct ARRAY(T) ARRAY(T)
 
 #define DEF_ARRAY_OP(T)\
 static inline ARRAY(T) *ARRAY_init_##T (ARRAY(T) *a, size_t initsize) {\
-	a->list = (T*) malloc(sizeof(T)*initsize);\
+	a->list = (T*) KJSON_MALLOC(sizeof(T)*initsize);\
 	a->capacity  = initsize;\
 	a->size  = 0;\
 	return a;\
@@ -50,7 +51,7 @@ static inline void ARRAY_##T##_ensureSize(ARRAY(T) *a, size_t size) {\
 	a->list = (T*)realloc(a->list, sizeof(T) * a->capacity);\
 }\
 static inline void ARRAY_##T##_dispose(ARRAY(T) *a) {\
-	free(a->list);\
+	KJSON_FREE(a->list);\
 	a->size     = 0;\
 	a->capacity = 0;\
 	a->list     = NULL;\
@@ -58,7 +59,7 @@ static inline void ARRAY_##T##_dispose(ARRAY(T) *a) {\
 
 #define DEF_ARRAY_OP_NOPOINTER(T)\
 static inline ARRAY(T) *ARRAY_init_##T (ARRAY(T) *a, size_t initsize) {\
-	a->list = (T*) malloc(sizeof(T)*initsize);\
+	a->list = (T*) KJSON_MALLOC(sizeof(T)*initsize);\
 	a->capacity  = initsize;\
 	a->size  = 0;\
 	return a;\
@@ -83,7 +84,7 @@ static inline void ARRAY_##T##_ensureSize(ARRAY(T) *a, size_t size) {\
 	a->list = (T*)realloc(a->list, sizeof(T) * a->capacity);\
 }\
 static inline void ARRAY_##T##_dispose(ARRAY(T) *a) {\
-	free(a->list);\
+	KJSON_FREE(a->list);\
 	a->size     = 0;\
 	a->capacity = 0;\
 	a->list     = NULL;\

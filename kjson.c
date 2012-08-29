@@ -12,35 +12,26 @@
 extern "C" {
 #endif
 
-#ifdef __cplusplus
-static inline JSON toJSON(Value v) {
-    JSON json;
-    json.bits = v.bits;
-    return json;
-}
-#else
-#define toJSON(O) ((JSON) O)
-#endif
-#define JSON_NEW(T) (JSON##T *) (malloc((sizeof(JSON##T))))
+#define JSON_NEW(T) (JSON##T *) (KJSON_MALLOC((sizeof(JSON##T))))
 
 static JSON JSONString_new2(string_builder *builder)
 {
     size_t len;
     char *s = string_builder_tostring(builder, &len, 1);
     JSONString *o = JSON_NEW(UString);
-    o->str = (char *) malloc(len+1);
+    o->str = (char *) KJSON_MALLOC(len+1);
     memcpy(o->str, s, len);
     o->hashcode = 0;
     o->length = len - 1;
     o->str[len] = 0;
-    free(s);
+    KJSON_FREE(s);
     return toJSON(ValueU(o));
 }
 
 JSON JSONString_new(char *s, size_t len)
 {
     JSONString *o = JSON_NEW(String);
-    o->str = (char *) malloc(len+1);
+    o->str = (char *) KJSON_MALLOC(len+1);
     memcpy(o->str, s, len);
     o->hashcode = 0;
     o->length = len;
@@ -85,7 +76,7 @@ JSON JSONInt_new(int64_t val)
     }
 }
 
-JSON JSONBool_new(int val)
+JSON JSONBool_new(bool val)
 {
     return toJSON(ValueB(val));
 }
@@ -101,20 +92,20 @@ static void JSONObject_free(JSON json)
 {
     JSONObject *o = toObj(json.val);
     kmap_dispose(&o->child);
-    free(o);
+    KJSON_FREE(o);
 }
 
 void _JSONString_free(JSONString *obj)
 {
-    free(obj->str);
-    free(obj);
+    KJSON_FREE(obj->str);
+    KJSON_FREE(obj);
 }
 
 static void JSONString_free(JSON json)
 {
     JSONString *o = toStr(json.val);
-    free(o->str);
-    free(o);
+    KJSON_FREE(o->str);
+    KJSON_FREE(o);
 }
 
 static void JSONArray_free(JSON json)
@@ -125,14 +116,14 @@ static void JSONArray_free(JSON json)
         _JSON_free(*s);
     }
 
-    free(a->list);
-    free(a);
+    KJSON_FREE(a->list);
+    KJSON_FREE(a);
 }
 
 static void JSONInt64_free(JSON json)
 {
     JSONInt64 *o = toInt64(json.val);
-    free(o);
+    KJSON_FREE(o);
 }
 
 static void _JSON_free(JSON o)
@@ -162,8 +153,8 @@ static void _JSON_free(JSON o)
 static void _JSONArray_append(JSONArray *a, JSON o)
 {
     if (a->length + 1 >= a->capacity) {
-        uint32_t newsize = 1 << SizeToKlass(a->capacity * 2 + 1);
-        a->list = (JSON*) realloc(a->list, newsize * sizeof(JSON));
+        uint32_t newsize = 1 << LOG2(a->capacity * 2 + 1);
+        a->list = (JSON*) KJSON_REALLOC(a->list, newsize * sizeof(JSON));
         a->capacity = newsize;
     }
     a->list[a->length++] = o;
@@ -529,7 +520,7 @@ static JSON _JSON_get(JSON json, const char *key)
     tmp.length = len;
     tmp.hashcode = 0;
     map_record_t *r = kmap_get(&o->child, &tmp);
-    return (r) ? (JSON) r->v : JSON_default;
+    return (r) ? toJSON(ValueP(r->v)) : JSON_default;
 }
 
 JSON JSON_get(JSON json, const char *key)
@@ -543,7 +534,7 @@ int JSON_getInt(JSON json, const char *key)
     return toInt32(v.val);
 }
 
-int JSON_getBool(JSON json, const char *key)
+bool JSON_getBool(JSON json, const char *key)
 {
     JSON v = _JSON_get(json, key);
     return toBool(v.val);
@@ -592,7 +583,7 @@ JSON JSONObject_iterator_next(JSONObject_iterator *itr, JSON *val)
     JSONObject *o = itr->obj;
     map_record_t *r;
     while ((r = kmap_next(&o->child, (kmap_iterator*) itr)) != NULL) {
-        *val = (JSON)r->v;
+        *val = toJSON(ValueP(r->v));
         return toJSON(ValueS(r->k));
     }
     JSON obj; obj.bits = 0;
@@ -622,7 +613,7 @@ static void JSONObject_toString(string_builder *sb, JSON json)
             L_internal:
             _JSONString_toString(sb, r->k);
             string_builder_add(sb, ':');
-            _JSON_toString(sb, (JSON)r->v);
+            _JSON_toString(sb, toJSON(ValueP(r->v)));
         }
     }
     string_builder_add(sb, '}');
@@ -791,6 +782,8 @@ char *JSON_toStringWithLength(JSON json, size_t *len)
 
 /* [Dump functions] */
 #ifdef KJSON_DEBUG_MODE
+static void JSON_dump(FILE *fp, JSON json);
+
 static void JSONString_dump(FILE *fp, JSON json)
 {
     JSONString *str = toStr(json.val);
@@ -875,11 +868,6 @@ void JSON_dump(FILE *fp, JSON json)
             assert(0 && "NO dump func");
 #undef CASE
     }
-}
-
-void JSON_dump_(JSON s)
-{
-    JSON_dump(stderr, s);
 }
 
 #endif /* defined(KJSON_DEBUG_MODE) */

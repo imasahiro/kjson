@@ -23,13 +23,13 @@ int main(int argc, char const* argv[])
     fclose(fp);
 
     JSON o = parseJSON(json, json + len);
-    assert(o);
-    if (o == NULL) {
+    assert(o.bits != 0);
+    if (!JSON_isValid(o)) {
         fprintf(stderr, "Error\n");
         exit(EXIT_FAILURE);
     }
     JSON a = JSON_get(o, "a");
-    assert(a);
+    assert(a.bits != 0);
     JSON_free(o);
     free(json);
     return 0;

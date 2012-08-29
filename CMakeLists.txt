@@ -10,6 +10,31 @@ if(NOT CMAKE_BUILD_TYPE)
 	set(CMAKE_BUILD_TYPE "Release")
 endif()
 
+SET(CMAKE_C_FLAGS         "-Wall -Wno-variadic-macros")
+SET(CMAKE_C_FLAGS_RELEASE "-O3 -g")
+SET(CMAKE_C_FLAGS_DEBUG   "-O0 -g3")
+
+set(JSON_SRC kjson.c map.c stream.c)
+add_library(kjson SHARED ${JSON_SRC})
+
+# jemalloc
+SET(SEARCH_DIRS
+	/usr/local
+	/opt/local # DarwinPorts
+)
+
+find_path(JEMALLOC_INCLUDE_DIR NAMES jemalloc.h
+	HINTS ${SEARCH_DIRS} PATH_SUFFIXES include/jemalloc)
+
+find_library(JEMALLOC_LIBRARY NAMES jemalloc
+	HINTS ${SEARCH_DIRS} PATH_SUFFIXES lib64 lib)
+
+if(JEMALLOC_INCLUDE_DIR AND JEMALLOC_LIBRARY)
+	add_definitions(-DHAVE_JEMALLOC_H=1)
+	target_link_libraries(kjson ${JEMALLOC_LIBRARY})
+endif(JEMALLOC_INCLUDE_DIR AND JEMALLOC_LIBRARY)
+
+## Test cases
 set(JSON_TEST
         "./test/test01.json"
         "./test/test02.json"
@@ -36,14 +61,7 @@ set(JSON_BENCHMARK
         "./test/benchmark6.json"
         "./test/benchmark7.json")
 
-SET(CMAKE_C_FLAGS         "-Wall -Wno-variadic-macros")
-SET(CMAKE_C_FLAGS_RELEASE "-O3 -g")
-SET(CMAKE_C_FLAGS_DEBUG   "-O0 -g3")
 
-set(JSON_SRC kjson.c map.c stream.c)
-add_library(kjson SHARED ${JSON_SRC})
-
-## Test cases
 set(JSON_TEST_CODE_LIST)
 set(JSON_BENCH_CODE_LIST)
 foreach(it ${JSON_TEST})
@@ -112,8 +130,8 @@ add_executable(parseString test/parseString.c)
 add_test(parseString parseString)
 target_link_libraries(parseString kjson)
 
-#add_executable(check_cpp test/check_cpp_build.cpp)
-#add_test(check_cpp check_cpp)
+add_executable(check_cpp test/check_cpp_build.cpp)
+add_test(check_cpp check_cpp)
 
 add_executable(test_whitespace test/test_whitespace.c)
 add_test(test_whitespace test_whitespace)

@@ -1,3 +1,4 @@
+#include "kmemory.h"
 #include "stream.h"
 #include <assert.h>
 
@@ -8,7 +9,7 @@ extern "C" {
 static inline input_stream *new_input_stream(void **args, input_stream_api *api,
         long flags)
 {
-    input_stream *ins = (input_stream *) calloc(1, sizeof(input_stream));
+    input_stream *ins = (input_stream *) KJSON_CALLOC(1, sizeof(input_stream));
     api->finit(ins, args);
     ins->fdeinit = api->fdeinit;
     ins->fnext   = api->fnext;
@@ -51,7 +52,7 @@ input_stream *new_string_input_stream(const char *buf, size_t len, long flags)
 void input_stream_delete(input_stream *ins)
 {
     ins->fdeinit(ins);
-    free(ins);
+    KJSON_FREE(ins);
 }
 
 #ifdef __cplusplus

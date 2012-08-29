@@ -74,7 +74,7 @@ unsigned JSON_length(JSON json);
 JSON *JSON_getArray(JSON json, const char *key, size_t *len);
 const char *JSON_getString(JSON json, const char *key, size_t *len);
 double JSON_getDouble(JSON json, const char *key);
-int JSON_getBool(JSON json, const char *key);
+bool JSON_getBool(JSON json, const char *key);
 int JSON_getInt(JSON json, const char *key);
 JSON JSON_get(JSON json, const char *key);
 
@@ -106,14 +106,13 @@ JSON JSONObject_new(void);
 JSON JSONDouble_new(double val);
 JSON JSONString_new(char *s, size_t len);
 JSON JSONInt_new(int64_t val);
-JSON JSONBool_new(int val);
+JSON JSONBool_new(bool val);
 
 /* [Other API] */
 void JSONObject_set(JSON obj, JSON key, JSON value);
 void JSONArray_set(JSON ary, int id, JSON value);
 void JSONArray_append(JSON ary, JSON o);
 void JSON_free(JSON o);
-void JSON_dump(FILE *fp, JSON json);
 
 JSON parseJSON(const char *s, const char *e);
 char *JSON_toStringWithLength(JSON json, size_t *len);

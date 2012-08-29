@@ -1,3 +1,4 @@
+#include "kmemory.h"
 #include "kjson.h"
 #include "internal.h"
 #include <string.h>
@@ -11,8 +12,16 @@ extern "C" {
 #define KMAP_INITSIZE DICTMAP_THRESHOLD
 #define DELTA 8
 
-#define _MALLOC(SIZE)    malloc(SIZE)
-#define _FREE(PTR, SIZE) free(PTR)
+#define _MALLOC(SIZE)    KJSON_MALLOC(SIZE)
+#define _FREE(PTR, SIZE) KJSON_FREE(PTR)
+
+#ifndef unlikely
+#define unlikely(x)   __builtin_expect(!!(x), 0)
+#endif
+
+#ifndef likely
+#define likely(x)     __builtin_expect(!!(x), 1)
+#endif
 
 static inline uint32_t djbhash(const char *p, uint32_t len)
 {
@@ -67,7 +76,7 @@ static void hashmap_record_reset(hashmap_t *m, size_t newsize)
     unsigned alloc_size = sizeof(map_record_t) * newsize;
     m->used_size = 0;
     (m->record_size_mask) = newsize - 1;
-    m->base.records = (map_record_t *) calloc(1, alloc_size);
+    m->base.records = (map_record_t *) KJSON_CALLOC(1, alloc_size);
 }
 
 static map_status_t hashmap_set_no_resize(hashmap_t *m, map_record_t *rec)
@@ -81,7 +90,7 @@ static map_status_t hashmap_set_no_resize(hashmap_t *m, map_record_t *rec)
             return KMAP_ADDED;
         }
         if (r->hash == rec->hash && JSONString_equal(r->k, rec->k)) {
-            JSON_free((JSON) r->v);
+            JSON_free(toJSON(ValueP(r->v)));
             map_record_copy(r, rec);
             return KMAP_UPDATE;
         }
@@ -138,7 +147,7 @@ static void hashmap_init(hashmap_t *m, unsigned init)
 {
     if (init < KMAP_INITSIZE)
         init = KMAP_INITSIZE;
-    hashmap_record_reset(m, 1U << (SizeToKlass(init)));
+    hashmap_record_reset(m, 1U << LOG2(init));
 }
 
 static void hashmap_api_init(kmap_t *m, unsigned init)
@@ -153,7 +162,7 @@ static void hashmap_api_dispose(kmap_t *_m)
     for (i = 0; i < size; ++i) {
         map_record_t *r = hashmap_at(m, i);
         if (r->hash) {
-            JSON_free((JSON) r->k);
+            JSON_free(toJSON(ValueS(r->k)));
         }
     }
     _FREE(m->base.records, (m->record_size_mask+1) * sizeof(map_record_t));
@@ -273,7 +282,7 @@ static map_status_t dictmap_set(dictmap_t *m, map_record_t *rec)
             if (!unlikely(JSONString_equal(r->k, rec->k))) {
                 continue;
             }
-            JSON_free((JSON)r->v);
+            JSON_free(toJSON(ValueP(r->v)));
             dictmap_record_copy(r, rec);
             return KMAP_UPDATE;
         }
@@ -346,7 +355,7 @@ static void dictmap_api_dispose(kmap_t *_m)
         if (likely(m->hash_list[i])) {
             map_record_t *r = dictmap_at(m, i);
             _JSONString_free(r->k);
-            JSON_free((JSON)r->v);
+            JSON_free(toJSON(ValueP(r->v)));
         }
     }
     _FREE(m->base.records, m->used_size * sizeof(map_record_t));
@@ -385,7 +394,7 @@ void kmap_init(kmap_t *m, unsigned init)
 void kmap_delete(kmap_t *m)
 {
     kmap_dispose(m);
-    free(m);
+    KJSON_FREE(m);
 }
 
 static void dictmap_convert2hashmap(dictmap_t *_m)

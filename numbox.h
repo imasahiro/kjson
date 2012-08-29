@@ -68,6 +68,9 @@ static inline Value ValueA(struct JSONArray *aval) {
 static inline Value ValueN() {
     Value v; v.bits = TagNull; return v;
 }
+static inline Value ValueP(uint64_t bits) {
+    Value v; v.bits = bits; return v;
+}
 static inline uint64_t Tag(Value v) { return (v.bits &  TagMask); }
 static inline uint64_t Val(Value v) { return (v.bits & ~TagMask); }
 static inline double toDouble(Value v) {
