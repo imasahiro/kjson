@@ -117,7 +117,6 @@ add_test(test_dict test_dict)
 
 add_executable(check_cpp test/check_cpp_build.cpp)
 add_test(check_cpp check_cpp)
-target_link_libraries(check_cpp kjson)
 
 install(TARGETS kjson LIBRARY DESTINATION lib)
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/kjson.h DESTINATION include/kjson)
