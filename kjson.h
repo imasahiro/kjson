@@ -71,7 +71,7 @@ typedef struct JSONObject {
 #ifndef USE_NUMBOX
     kjson_type type;
 #endif
-    poolmap_t child;
+    kmap_t child;
 } JSONObject;
 
 union JSONValue {

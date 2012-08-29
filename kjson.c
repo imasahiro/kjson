@@ -125,14 +125,14 @@ JSON JSONNull_new()
 #endif
 }
 
-static const struct poolmap_entry_api API = {
+static const struct kmap_entry_api API = {
     json_keygen0, json_keygen1, json_keycmp, json_recfree
 };
 
 JSON JSONObject_new()
 {
     JSONObject *o = JSON_NEW(Object);
-    poolmap_init(&(o->child), 0, &API);
+    kmap_init(&(o->child), 0, &API);
 #ifdef USE_NUMBOX
     o = toJSONObject(toJSON(ValueO((JSON)o)));
 #endif
@@ -207,7 +207,7 @@ static void JSONObject_free(JSON json)
 #ifdef USE_NUMBOX
     o = toJSONObject(toObj(toVal((JSON)o)));
 #endif
-    poolmap_dispose(&o->child);
+    kmap_dispose(&o->child);
     free(o);
 }
 
@@ -307,7 +307,7 @@ static void _JSONObject_set(JSONObject *o, JSONString *key, JSON value)
 #endif
     assert(key && value);
     assert(JSON_type(value) < 16);
-    poolmap_set(&o->child, (char *) key, 0, value);
+    kmap_set(&o->child, (char *) key, 0, value);
 }
 
 void JSONObject_set(JSONObject *o, JSON key, JSON value)
@@ -367,7 +367,6 @@ static unsigned char skipBSorDoubleQuote(input_stream *ins, unsigned char c)
     register unsigned char *      str = (unsigned char *) ins->d0.str;
     register unsigned char *const end = (unsigned char *) ins->d1.str;
     for(; str != end; ch = *str++) {
-        assert(ch >= 0);
         if (0x80 & string_table[ch]) {
             break;
         }
@@ -696,12 +695,12 @@ static void JSONDouble_dump(FILE *fp, JSONNumber *json)
 static void JSONObject_dump(FILE *fp, JSONObject *o)
 {
     map_record_t *r;
-    poolmap_iterator itr = {0};
+    kmap_iterator itr = {0};
     fputs("{", fp);
 #ifdef USE_NUMBOX
     o = toJSONObject(toObj(toVal((JSON)o)));
 #endif
-    while ((r = poolmap_next(&o->child, &itr)) != NULL) {
+    while ((r = kmap_next(&o->child, &itr)) != NULL) {
         fputs("", fp);
         JSONString_dump(fp, (JSONString*)r->k);
         fputs(" : ", fp);
@@ -759,7 +758,7 @@ static JSON _JSON_get(JSON json, const char *key)
     tmp.str = (char *)key;
     tmp.len = len;
     o = toJSONObject(toObj(toVal((JSON)o)));
-    map_record_t *r = poolmap_get(&o->child, (char *)&tmp, 0);
+    map_record_t *r = kmap_get(&o->child, (char *)&tmp, 0);
 #else
     char tmp[sizeof(union JSONValue) + len];
     JSONString *s = (JSONString *) tmp;
@@ -767,7 +766,7 @@ static JSON _JSON_get(JSON json, const char *key)
     memcpy(s->str, key, len);
     assert(JSON_type(json) == JSON_Object);
     JSON_set_type((JSON) s, JSON_String);
-    map_record_t *r = poolmap_get(o->child, (char *)s, 0);
+    map_record_t *r = kmap_get(o->child, (char *)s, 0);
 #endif
     return (JSON) r->v;
 }
@@ -858,7 +857,7 @@ JSONString *JSONObject_iterator_next(JSONObject_iterator *itr, JSON *val)
 {
     JSONObject *o = itr->obj;
     map_record_t *r;
-    while ((r = poolmap_next(&o->child, (poolmap_iterator*) itr)) != NULL) {
+    while ((r = kmap_next(&o->child, (kmap_iterator*) itr)) != NULL) {
         *val = (JSON)r->v;
         return (JSONString*)r->k;
     }
@@ -873,14 +872,14 @@ static void JSONObject_toString(string_builder *sb, JSON json)
 {
     JSONObject *o = toJSONObject(json);
     map_record_t *r;
-    poolmap_iterator itr = {0};
+    kmap_iterator itr = {0};
     string_builder_add(sb, '{');
 #ifdef USE_NUMBOX
     o = toJSONObject(toObj(toVal((JSON)o)));
 #endif
-    if ((r = poolmap_next(&o->child, &itr)) != NULL) {
+    if ((r = kmap_next(&o->child, &itr)) != NULL) {
         goto L_internal;
-        while ((r = poolmap_next(&o->child, &itr)) != NULL) {
+        while ((r = kmap_next(&o->child, &itr)) != NULL) {
             string_builder_add(sb, ',');
             L_internal:
             JSONString_toString(sb, (JSON)r->k);

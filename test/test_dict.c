@@ -24,7 +24,7 @@ static uintptr_t entry_keygen(char *key, uint32_t len)
     return (uintptr_t) key;
 }
 
-static const struct poolmap_entry_api API = {
+static const struct kmap_entry_api API = {
     entry_keygen, entry_keygen, entry_key_eq, entry_free
 };
 
@@ -39,7 +39,7 @@ static uintptr_t number_keygen(char *key, uint32_t len)
     return (uintptr_t) key;
 }
 
-static const struct poolmap_entry_api NUMBER_API = {
+static const struct kmap_entry_api NUMBER_API = {
     number_keygen, number_keygen, number_key_eq, number_free
 };
 
@@ -59,7 +59,7 @@ static void show_timer(const char *s)
     printf("%20s: %f sec\n", s, sec);
 }
 
-static poolmap_t *P[N];
+static kmap_t *P[N];
 static char *data[] = {
     "0000000000000000",
     "1111111111111111",
@@ -80,59 +80,59 @@ static const int len[] = {
 static void test_pool() {
     int i;
     map_record_t *r;
-    poolmap_t *p = poolmap_new(4, &API);
+    kmap_t *p = kmap_new(4, &API);
     reset_timer();
     for (i = 0; i < N; i++) {
-        P[i] = poolmap_new(4, &API);
+        P[i] = kmap_new(4, &API);
     }
     show_timer("pool:new");
     reset_timer();
     for (i = 0; i < N; i++) {
-        poolmap_set(p, data[i % 4], len[i % 4], p);
+        kmap_set(p, data[i % 4], len[i % 4], p);
     }
     show_timer("pool:set");
     reset_timer();
     for (i = 0; i < N; i++) {
-        r = poolmap_get(p, data[i % 4], len[i % 4]);
+        r = kmap_get(p, data[i % 4], len[i % 4]);
     }
     show_timer("pool:get");
     reset_timer();
     for (i = 0; i < N; i++) {
-        poolmap_delete(P[i]);
+        kmap_delete(P[i]);
     }
     show_timer("pool:delete");
-    poolmap_delete(p);
+    kmap_delete(p);
 }
 
 static void test_converter() {
     int i;
-    poolmap_t *p = poolmap_new(4, &API);
+    kmap_t *p = kmap_new(4, &API);
     map_record_t *r;
     for (i = 0; i < 6; i++) {
-        poolmap_set(p, data[i], len[i], p);
+        kmap_set(p, data[i], len[i], p);
     }
     for (i = 0; i < 6; i++) {
-        r = poolmap_get(p, data[i], len[i]);
+        r = kmap_get(p, data[i], len[i]);
         assert(r != NULL);
     }
-    poolmap_delete(p);
+    kmap_delete(p);
 }
 
 static void test_huge_map() {
     int i;
     map_record_t *r;
-    poolmap_t *p = poolmap_new(8, &NUMBER_API);
+    kmap_t *p = kmap_new(8, &NUMBER_API);
     reset_timer();
     for (i = 1; i <= M; i++) {
         uintptr_t val = (uintptr_t)(i);
-        poolmap_set(p, (char*)val, 0, (void*)val);
+        kmap_set(p, (char*)val, 0, (void*)val);
     }
     show_timer("map:set");
 
     reset_timer();
     for (i = 1; i <= M; i++) {
         uintptr_t val = (uintptr_t)(0-(i+1));
-        r = poolmap_get(p, (char*)val, 0);
+        r = kmap_get(p, (char*)val, 0);
         assert(r == NULL);
     }
     show_timer("map:get:miss");
@@ -140,17 +140,17 @@ static void test_huge_map() {
     reset_timer();
     for (i = 1; i <= M; i++) {
         uintptr_t val = (uintptr_t)(i);
-        r = poolmap_get(p, (char*)val, 0);
+        r = kmap_get(p, (char*)val, 0);
         assert(r->v == val);
     }
     show_timer("map:get");
-    poolmap_delete(p);
+    kmap_delete(p);
 }
 
 int main(int argc, char const* argv[])
 {
     int i;
-    assert(sizeof(poolmap_t) == sizeof(dictmap_t));
+    assert(sizeof(kmap_t) == sizeof(dictmap_t));
     int loop_count = 1;
     if (argc > 1 && strncmp(argv[1], "-t", 2) == 0) {
         loop_count = atoi(argv[1]+2);
