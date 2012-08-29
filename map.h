@@ -34,7 +34,6 @@ struct map_base {
     map_record_t *records;
 } __attribute__ ((packed));
 
-
 typedef struct hashmap_t {
     struct map_base base;
     unsigned used_size;

@@ -17,7 +17,7 @@ typedef char (*istream_next)(struct input_stream *);
 typedef bool (*istream_eos)(struct input_stream *);
 
 union io_data {
-    char *str;
+    unsigned char *str;
     FILE *fp;
     uintptr_t u;
     void *ptr;
@@ -40,15 +40,10 @@ typedef const struct input_stream_api_t {
     istream_deinit fdeinit;
 } input_stream_api;
 
-input_stream *new_string_input_stream(char *buf, size_t len, long option);
+input_stream *new_string_input_stream(const char *buf, size_t len, long option);
 input_stream *new_file_input_stream(char *filename, size_t bufsize);
 
 void input_stream_delete(input_stream *ins);
-
-//static inline void input_stream_unput(input_stream *ins, char c)
-//{
-//    ins->fprev(ins, c);
-//}
 
 static inline union io_data _input_stream_save(input_stream *ins)
 {
@@ -65,19 +60,14 @@ static inline char string_input_stream_next(input_stream *ins)
     return *(ins->d0.str)++;
 }
 
-//static inline void string_input_stream_prev(input_stream *ins, char c)
-//{
-//    --(ins->d0.str);
-//    *ins->d0.str = c;
-//}
-
 static inline bool string_input_stream_eos(input_stream *ins)
 {
     return ins->d0.str != ins->d1.str;
 }
 
 #define for_each_istream(INS, CUR)\
-        for (CUR = string_input_stream_next(INS); string_input_stream_eos(INS); CUR = string_input_stream_next(INS))
+    for (CUR = string_input_stream_next(INS);\
+            string_input_stream_eos(INS); CUR = string_input_stream_next(INS))
 
 #ifdef __cplusplus
 }

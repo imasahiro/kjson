@@ -102,7 +102,7 @@ endif()
 add_executable(benchmark1 test/benchmark1.c)
 target_link_libraries(benchmark1 kjson ${bench1_libs})
 
-add_executable(benchmark2 test/benchmark2.c)
+add_executable(benchmark2 test/benchmark2.cpp)
 target_link_libraries(benchmark2 kjson ${bench2_libs})
 
 add_executable(benchmark3 test/benchmark3.c)
@@ -114,6 +114,10 @@ target_link_libraries(parseString kjson)
 
 add_executable(test_dict test/test_dict.c map.c)
 add_test(test_dict test_dict)
+
+add_executable(check_cpp test/check_cpp_build.cpp)
+add_test(check_cpp check_cpp)
+target_link_libraries(check_cpp kjson)
 
 install(TARGETS kjson LIBRARY DESTINATION lib)
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/kjson.h DESTINATION include/kjson)

@@ -94,7 +94,7 @@ static void test_string(void)
         assert(JSON_get(*I, "version") != NULL);
         assert(JSON_get(*I, "flag") != NULL);
         size_t len;
-        char *name = JSON_getString(*I, "name", &len);
+        const char *name = JSON_getString(*I, "name", &len);
         int   line = JSON_getInt(*I, "line");
         double ver  = JSON_getDouble(*I, "version");
         assert(len == strlen(names[i]) && strncmp(name, names[i], len) == 0);

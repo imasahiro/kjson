@@ -307,7 +307,7 @@ static void dictmap_api_remove(poolmap_t *_m, char *key, unsigned klen)
 static map_record_t *dictmap_api_next(poolmap_t *_m, poolmap_iterator *itr)
 {
     dictmap_t *m = (dictmap_t *)_m;
-    int i;
+    unsigned i;
     for (i = itr->index; i < m->used_size; ++i) {
         map_record_t *r = dictmap_at(m, i);
         itr->index = i+1;
@@ -328,7 +328,7 @@ static map_record_t *dictmap_api_get(poolmap_t *_m, char *key, unsigned klen)
 static void dictmap_api_dispose(poolmap_t *_m)
 {
     dictmap_t *m = (dictmap_t *)_m;
-    int i;
+    unsigned i;
     for (i = 0; i < m->used_size; ++i) {
         if (likely(m->hash_list[i])) {
             map_record_t *r = dictmap_at(m, i);

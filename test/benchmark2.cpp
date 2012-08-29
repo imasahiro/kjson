@@ -1,9 +1,11 @@
 //#define USE_JSON_C
 //#define USE_YAJL
 //#define USE_JANSSON
+#define USE_RAPIDJSON
 #undef USE_JSON_C
-#undef USE_YAJL
+//#undef USE_YAJL
 #undef USE_JANSSON
+//#undef USE_RAPIDJSON
 
 #ifdef USE_JSON_C
 #include <json/json.h>
@@ -82,38 +84,68 @@ static void jansson(char *buf, size_t len) {
 }
 #endif
 
-static int loop_count = 128;
-static const char json_text[] = "\n"
-"{\n"
-"   \"a\" : \"Alpha\",\n"
-"   \"b\" : true,\n"
-"   \"c\" : 12345,\n"
-"   \"d\" : [true, [false, [12345, null], 3.967, [\"something\", false], null]],\n"
-"   \"e\" : { \"one\" : 1, \"two\" : 2},\n"
-"   \"f\" : null,\n"
-"   \"h\" : { \"a\" : { \"b\" : { \"c\" : "
-"             { \"d\" : {\"e\" : { \"f\" : { \"g\" : null }}}}}}},\n"
-"   \"i\" : [[[[[[[null]]]]]]]\n"
-"}\n";
+#ifdef USE_RAPIDJSON
+#define RAPIDJSON_SSE2
+#include "rapidjson/rapidjson.h"
+#include "rapidjson/document.h"
+#include "rapidjson/prettywriter.h"
+#include "rapidjson/stringbuffer.h"
+#include "rapidjson/filestream.h"
+#include "rapidjson/filereadstream.h"
 
-static void test_file(const char *file)
+static void rapidjson_run(char *buf, size_t len) {
+    using namespace rapidjson;
+    Document doc;
+    doc.ParseInsitu<0>(buf);
+    assert(doc.IsObject() == true);
+}
+#endif
+
+static int loop_count = 128;
+
+static char *loadFile(const char *file, size_t *length)
 {
-    char *str = (char*)json_text;
-    size_t len = strlen(json_text);
+    char pathbuf[1024];
+    snprintf(pathbuf, 1024, "%s", file);
+    FILE *fp = fopen(pathbuf, "rb");
+    if (!fp) {
+        snprintf(pathbuf, 1024, "../%s", file);
+        fp = fopen(pathbuf, "rb");
+    }
+    assert(fp != 0);
+    fseek(fp, 0, SEEK_END);
+    size_t len = (size_t)ftell(fp);
+    fseek(fp, 0, SEEK_SET);
+    char *json = (char*)calloc(1, len + 1);
+    assert(len == fread(json, 1, len, fp));
+    json[len] = '\0';
+    fclose(fp);
+    *length = len;
+    return json;
+}
+
+static void test(const char *file)
+{
+    size_t len;
+    char *str = loadFile(file, &len);;
+    assert(len == strlen(str));
     int i, j, k;
     struct f {
         const char *name;
         void (*func)(char *buf, size_t len);
     } data[] = {
+        {"kjson",  kjson},
 #ifdef USE_JSON_C
         {"json-c", json_c},
 #endif
-        {"kjson",  kjson},
 #ifdef USE_YAJL
         {"yajl",   yajl},
 #endif
 #ifdef USE_JANSSON
         {"jansson", jansson},
+#endif
+#ifdef USE_RAPIDJSON
+        {"rapidjson", rapidjson_run},
 #endif
 
     };
@@ -135,6 +167,8 @@ int main(int argc, char const* argv[])
         int n = atoi(argv[1]+2);
         loop_count = n;
     }
-    test_file("simple.json");
+    test("test/simple.json");
+    test("test/twitter_public.json");
+    test("test/twitter.json");
     return 0;
 }

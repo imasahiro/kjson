@@ -5,7 +5,7 @@
 #ifndef KJSON_STRING_BUILDER_H_
 #define KJSON_STRING_BUILDER_H_
 
-DEF_ARRAY_STRUCT0(char, int);
+DEF_ARRAY_STRUCT0(char, unsigned);
 DEF_ARRAY_T(char);
 DEF_ARRAY_OP_NOPOINTER(char);
 
@@ -88,11 +88,11 @@ static inline void string_builder_add_int64(string_builder *builder, int64_t i)
     char *e = put_i(p, i);
     builder->buf.size += e - p;
 }
-static inline void string_builder_add_string(string_builder *builder, char *s, size_t len)
+static inline void string_builder_add_string(string_builder *builder, const char *s, size_t len)
 {
     ARRAY_ensureSize(char, &builder->buf, len);
     char *p = builder->buf.list + ARRAY_size(builder->buf);
-    char *const e = s + len;
+    const char *const e = s + len;
     while (s < e) {
         *p++ = *s++;
     }

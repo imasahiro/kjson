@@ -1,9 +1,10 @@
 #include <stdio.h>
-#include "numbox.h"
-#include "map.h"
 
 #ifndef KJSON_H_
 #define KJSON_H_
+
+#include "numbox.h"
+#include "map.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -26,14 +27,14 @@ typedef enum kjson_type {
     JSON_reserved  =  7 /* 0111 */
 } kjson_type;
 
-union JSON;
-typedef union JSON *JSON;
+union JSONValue;
+typedef union JSONValue *JSON;
 
 typedef struct JSONString {
 #ifndef USE_NUMBOX
     kjson_type type;
 #endif
-    int length;
+    unsigned length;
     char str[1];
 } JSONString;
 typedef JSONString JSONUString;
@@ -73,7 +74,7 @@ typedef struct JSONObject {
     poolmap_t child;
 } JSONObject;
 
-union JSON {
+union JSONValue {
 #ifndef USE_NUMBOX
     struct JSON_base {
         kjson_type type;
@@ -88,7 +89,7 @@ union JSON {
 #ifdef USE_NUMBOX
 typedef JSONNumber JSONNull;
 #else
-typedef union JSON JSONNull;
+typedef union JSONValue JSONNull;
 #endif
 
 /* [Converter API] */
@@ -104,12 +105,12 @@ JSON_CONVERTER(Null)
 
 /* [Getter API] */
 unsigned JSON_length(JSON json);
-JSON *JSON_getArray(JSON json, char *key, size_t *len);
-char *JSON_getString(JSON json, char *key, size_t *len);
-double JSON_getDouble(JSON json, char *key);
-int JSON_getBool(JSON json, char *key);
-int JSON_getInt(JSON json, char *key);
-JSON JSON_get(JSON json, char *key);
+JSON *JSON_getArray(JSON json, const char *key, size_t *len);
+const char *JSON_getString(JSON json, const char *key, size_t *len);
+double JSON_getDouble(JSON json, const char *key);
+int JSON_getBool(JSON json, const char *key);
+int JSON_getInt(JSON json, const char *key);
+JSON JSON_get(JSON json, const char *key);
 
 static inline char *JSONString_get(JSON json)
 {
@@ -165,7 +166,7 @@ void JSONArray_append(JSONArray *a, JSON o);
 void JSON_free(JSON o);
 void JSON_dump(FILE *fp, JSON json);
 
-JSON parseJSON(char *s, char *e);
+JSON parseJSON(const char *s, const char *e);
 char *JSON_toString(JSON json, size_t *len);
 
 #ifdef USE_NUMBOX
@@ -194,7 +195,6 @@ static inline kjson_type JSON_type(JSON json) {
         else\
         for (I = (A)->list + N,\
             E = (A)->list+(A)->length; I < E; ++I)
-
 
 typedef struct JSONObject_iterator {
     long index;

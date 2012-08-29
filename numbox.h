@@ -19,7 +19,7 @@
 #define TagArray    ((TagBaseMask | 0x5ULL) << TagBitShift)
 #define TagInt64    ((TagBaseMask | 0xbULL) << TagBitShift)
 
-union JSON;
+union JSONValue;
 typedef union numbox {
     void    *pval;
     double   dval;
@@ -37,22 +37,22 @@ static inline Value ValueI(int32_t ival) {
     Value v; v.bits = n | TagInt32; return v;
 }
 
-static inline Value ValueIO(union JSON *oval) {
+static inline Value ValueIO(union JSONValue *oval) {
     Value v; v.bits = (uint64_t)oval | TagInt64; return v;
 }
 static inline Value ValueB(bool bval) {
     Value v; v.bits = (uint64_t)bval | TagBoolean; return v;
 }
-static inline Value ValueO(union JSON *oval) {
+static inline Value ValueO(union JSONValue *oval) {
     Value v; v.bits = (uint64_t)oval | TagObject; return v;
 }
-static inline Value ValueS(union JSON *sval) {
+static inline Value ValueS(union JSONValue *sval) {
     Value v; v.bits = (uint64_t)sval | TagString; return v;
 }
-static inline Value ValueU(union JSON *sval) {
+static inline Value ValueU(union JSONValue *sval) {
     Value v; v.bits = (uint64_t)sval | TagUString; return v;
 }
-static inline Value ValueA(union JSON *aval) {
+static inline Value ValueA(union JSONValue *aval) {
     Value v; v.bits = (uint64_t)aval | TagArray; return v;
 }
 static inline Value ValueN() {
@@ -75,23 +75,23 @@ static inline int32_t toInt32(Value v) {
 static inline bool toBool(Value v) {
     return (bool) Val(v);
 }
-static inline union JSON *toObj(Value v) {
-    return (union JSON*) Val(v);
+static inline union JSONValue *toObj(Value v) {
+    return (union JSONValue*) Val(v);
 }
-static inline union JSON *toStr(Value v) {
-    return (union JSON*) Val(v);
+static inline union JSONValue *toStr(Value v) {
+    return (union JSONValue*) Val(v);
 }
-static inline union JSON *toUStr(Value v) {
-    return (union JSON*) Val(v);
+static inline union JSONValue *toUStr(Value v) {
+    return (union JSONValue*) Val(v);
 }
-static inline union JSON *toAry(Value v) {
-    return (union JSON*) Val(v);
+static inline union JSONValue *toAry(Value v) {
+    return (union JSONValue*) Val(v);
 }
-static inline union JSON *toNul(Value v) {
-    return (union JSON*) Val(v);
+static inline union JSONValue *toNul(Value v) {
+    return (union JSONValue*) Val(v);
 }
-static inline union JSON *toInt64(Value v) {
-    return (union JSON*) Val(v);
+static inline union JSONValue *toInt64(Value v) {
+    return (union JSONValue*) Val(v);
 }
 static inline bool IsDouble(Value v) {
     return Tag(v) <= TagDouble;

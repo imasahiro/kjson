@@ -76,7 +76,7 @@ static void json_recfree(map_record_t *r)
 
 static inline JSON toJSON(Value v) { return (JSON) v.pval; }
 
-#define JSON_NEW_(T, SIZE) (JSON##T *) JSON_new(JSON_##T, (sizeof(union JSON) + SIZE))
+#define JSON_NEW_(T, SIZE) (JSON##T *) JSON_new(JSON_##T, (sizeof(union JSONValue) + SIZE))
 #define JSON_NEW(T)        JSON_NEW_(T, 0);
 
 static inline JSON JSON_new(kjson_type type, size_t size)
@@ -294,7 +294,7 @@ void JSONArray_append(JSONArray *a, JSON o)
 #endif
     if (a->length + 1 >= a->capacity) {
         uint32_t newsize = 1 << SizeToKlass(a->capacity * 2 + 1);
-        a->list = realloc(a->list, newsize * sizeof(JSON));
+        a->list = (JSON*) realloc(a->list, newsize * sizeof(JSON));
         a->capacity = newsize;
     }
     a->list[a->length++] = o;
@@ -320,12 +320,12 @@ void JSONObject_set(JSONObject *o, JSON key, JSON value)
 /* Parser functions */
 #define NEXT(ins) string_input_stream_next(ins)
 #define EOS(ins)  string_input_stream_eos(ins)
-static JSON parseNull(input_stream *ins, char c);
-static JSON parseNumber(input_stream *ins, char c);
-static JSON parseBoolean(input_stream *ins, char c);
-static JSON parseObject(input_stream *ins, char c);
-static JSON parseArray(input_stream *ins, char c);
-static JSON parseString(input_stream *ins, char c);
+static JSON parseNull(input_stream *ins, unsigned char c);
+static JSON parseNumber(input_stream *ins, unsigned char c);
+static JSON parseBoolean(input_stream *ins, unsigned char c);
+static JSON parseObject(input_stream *ins, unsigned char c);
+static JSON parseArray(input_stream *ins, unsigned char c);
+static JSON parseString(input_stream *ins, unsigned char c);
 
 #define _N 0x40 |
 #define _M 0x80 |
@@ -349,37 +349,39 @@ static const unsigned string_table[] = {
 };
 #undef _M
 
-static char skip_space(input_stream *ins, char ch)
+static unsigned char skip_space(input_stream *ins, unsigned char c)
 {
-    int c = ch;
-    for (c = !c?NEXT(ins):c; EOS(ins); c = NEXT(ins)) {
-        if (!(0x40 & string_table[c])) {
-            return c;
+    int ch = c;
+    for (ch = !ch?NEXT(ins):ch; EOS(ins); ch = NEXT(ins)) {
+        assert(ch >= 0);
+        if (!(0x40 & string_table[ch])) {
+            return (unsigned char) ch;
         }
     }
-    return -1;
+    return 0;
 }
 
-static char skipBSorDoubleQuote(input_stream *ins, char ch)
+static unsigned char skipBSorDoubleQuote(input_stream *ins, unsigned char c)
 {
-    register int c = ch;
-    register char *      str = ins->d0.str;
-    register char *const end = ins->d1.str;
-    for(; str != end; c = *str++) {
-        if (0x80 & string_table[c]) {
+    register unsigned ch = c;
+    register unsigned char *      str = (unsigned char *) ins->d0.str;
+    register unsigned char *const end = (unsigned char *) ins->d1.str;
+    for(; str != end; ch = *str++) {
+        assert(ch >= 0);
+        if (0x80 & string_table[ch]) {
             break;
         }
     }
     ins->d0.str = str;
-    return c;
+    return ch;
 }
 
-static JSON parseNOP(input_stream *ins, char c) { return NULL; }
+static JSON parseNOP(input_stream *ins, unsigned char c) { return NULL; }
 
-static JSON parseChild(input_stream *ins, char c)
+static JSON parseChild(input_stream *ins, unsigned char c)
 {
     c = skip_space(ins, c);
-    typedef JSON (*parseJSON)(input_stream *ins, char c);
+    typedef JSON (*parseJSON)(input_stream *ins, unsigned char c);
     static const parseJSON dispatch_func[] = {
         parseNOP,
         parseObject,
@@ -391,7 +393,7 @@ static JSON parseChild(input_stream *ins, char c)
     return dispatch_func[0x7 & string_table[(int)c]](ins, c);
 }
 
-static unsigned int toHex(char c)
+static unsigned int toHex(unsigned char c)
 {
     return (c >= '0' && c <= '9') ? c - '0' :
         (c >= 'a' && c <= 'f') ? c - 'a' + 10:
@@ -428,7 +430,7 @@ static void parseUnicode(input_stream *ins, string_builder *sb)
     writeUnicode(data, sb);
 }
 
-static void parseEscape(input_stream *ins, string_builder *sb, char c)
+static void parseEscape(input_stream *ins, string_builder *sb, unsigned char c)
 {
     switch (c) {
         case '"':  c = '"';  break;
@@ -445,7 +447,7 @@ static void parseEscape(input_stream *ins, string_builder *sb, char c)
     string_builder_add(sb, c);
 }
 
-static JSON parseString(input_stream *ins, char c)
+static JSON parseString(input_stream *ins, unsigned char c)
 {
     union io_data state, state2;
     assert(c == '"' && "Missing open quote at start of JSONString");
@@ -453,11 +455,13 @@ static JSON parseString(input_stream *ins, char c)
     c = skipBSorDoubleQuote(ins, NEXT(ins));
     state2 = _input_stream_save(ins);
     if (c == '"') {/* fast path */
-        return (JSON)JSONString_new(state.str, state2.str - state.str - 1);
+        return (JSON) JSONString_new((char *)state.str,
+                state2.str - state.str - 1);
     }
     string_builder sb; string_builder_init(&sb);
     if (state2.str - state.str - 1 > 0) {
-        string_builder_add_string(&sb, state.str, state2.str - state.str - 1);
+        string_builder_add_string(&sb, (const char *) state.str,
+                state2.str - state.str - 1);
     }
     assert(c == '\\');
     goto L_escape;
@@ -478,7 +482,7 @@ static JSON parseString(input_stream *ins, char c)
     return (JSON)JSONString_new2(&sb);
 }
 
-static JSON parseObject(input_stream *ins, char c)
+static JSON parseObject(input_stream *ins, unsigned char c)
 {
     assert(c == '{' && "Missing open brace '{' at start of json object");
     JSON json = JSONObject_new();
@@ -503,7 +507,7 @@ static JSON parseObject(input_stream *ins, char c)
     return json;
 }
 
-static JSON parseArray(input_stream *ins, char c)
+static JSON parseArray(input_stream *ins, unsigned char c)
 {
     JSON json = JSONArray_new();
     JSONArray *a = toJSONArray(json);
@@ -525,7 +529,7 @@ static JSON parseArray(input_stream *ins, char c)
     return json;
 }
 
-static JSON parseBoolean(input_stream *ins, char c)
+static JSON parseBoolean(input_stream *ins, unsigned char c)
 {
     int val = 0;
     if (c == 't') {
@@ -544,7 +548,7 @@ static JSON parseBoolean(input_stream *ins, char c)
     return JSONBool_new(val);
 }
 
-static JSON parseNumber(input_stream *ins, char c)
+static JSON parseNumber(input_stream *ins, unsigned char c)
 {
     assert((c == '-' || ('0' <= c && c <= '9')) && "It do not seem as Number");
     kjson_type type = JSON_Int32;
@@ -584,15 +588,15 @@ static JSON parseNumber(input_stream *ins, char c)
         val = (negative)? -val : val;
         n = JSONInt_new(val);
     } else {
-        char *s = state.str-1;
-        char *e = state2.str;
+        char *s = (char *)state.str-1;
+        char *e = (char *)state2.str;
         double d = strtod(s, &e);
         n = JSONDouble_new(d);
     }
     return n;
 }
 
-static JSON parseNull(input_stream *ins, char c)
+static JSON parseNull(input_stream *ins, unsigned char c)
 {
     if (c == 'n') {
         if(NEXT(ins) == 'u' && NEXT(ins) == 'l' && NEXT(ins) == 'l') {
@@ -605,7 +609,7 @@ static JSON parseNull(input_stream *ins, char c)
 
 static JSON parse(input_stream *ins)
 {
-    char c = 0;
+    unsigned char c = 0;
     for_each_istream(ins, c) {
         JSON json;
         if ((c = skip_space(ins, c)) == 0) {
@@ -737,7 +741,7 @@ static JSON parseJSON_stream(input_stream *ins)
     return parse(ins);
 }
 
-JSON parseJSON(char *s, char *e)
+JSON parseJSON(const char *s, const char *e)
 {
     input_stream *ins = new_string_input_stream(s, e - s, 0);
     JSON json = parseJSON_stream(ins);
@@ -745,19 +749,19 @@ JSON parseJSON(char *s, char *e)
     return json;
 }
 
-static JSON _JSON_get(JSON json, char *key)
+static JSON _JSON_get(JSON json, const char *key)
 {
     JSONObject *o = toJSONObject(json);
     size_t len = strlen(key);
 
 #ifdef USE_NUMBOX
     struct _string tmp;
-    tmp.str = key;
+    tmp.str = (char *)key;
     tmp.len = len;
     o = toJSONObject(toObj(toVal((JSON)o)));
     map_record_t *r = poolmap_get(&o->child, (char *)&tmp, 0);
 #else
-    char tmp[sizeof(union JSON) + len];
+    char tmp[sizeof(union JSONValue) + len];
     JSONString *s = (JSONString *) tmp;
     s->length = len;
     memcpy(s->str, key, len);
@@ -768,12 +772,12 @@ static JSON _JSON_get(JSON json, char *key)
     return (JSON) r->v;
 }
 
-JSON JSON_get(JSON json, char *key)
+JSON JSON_get(JSON json, const char *key)
 {
     return _JSON_get(json, key);
 }
 
-int JSON_getInt(JSON json, char *key)
+int JSON_getInt(JSON json, const char *key)
 {
     JSON v = _JSON_get(json, key);
 #ifdef USE_NUMBOX
@@ -783,7 +787,7 @@ int JSON_getInt(JSON json, char *key)
 #endif
 }
 
-int JSON_getBool(JSON json, char *key)
+int JSON_getBool(JSON json, const char *key)
 {
     JSON v = _JSON_get(json, key);
 #ifdef USE_NUMBOX
@@ -794,7 +798,7 @@ int JSON_getBool(JSON json, char *key)
 
 }
 
-double JSON_getDouble(JSON json, char *key)
+double JSON_getDouble(JSON json, const char *key)
 {
     JSON v = _JSON_get(json, key);
 #ifdef USE_NUMBOX
@@ -806,7 +810,7 @@ double JSON_getDouble(JSON json, char *key)
 #endif
 }
 
-char *JSON_getString(JSON json, char *key, size_t *len)
+const char *JSON_getString(JSON json, const char *key, size_t *len)
 {
     JSONString *s = (JSONString *) _JSON_get(json, key);
 #ifdef USE_NUMBOX
@@ -816,7 +820,7 @@ char *JSON_getString(JSON json, char *key, size_t *len)
     return s->str;
 }
 
-JSON *JSON_getArray(JSON json, char *key, size_t *len)
+JSON *JSON_getArray(JSON json, const char *key, size_t *len)
 {
     JSONArray *a = (JSONArray *) _JSON_get(json, key);
 #ifdef USE_NUMBOX
@@ -918,7 +922,7 @@ static void JSONString_toString(string_builder *sb, JSON json)
     string_builder_add(sb, '"');
 }
 
-static int utf8_check_size(char s)
+static int utf8_check_size(unsigned char s)
 {
     uint8_t u = (uint8_t) s;
     assert (u >= 0x80);
@@ -935,7 +939,7 @@ static int utf8_check_size(char s)
 static char *toUTF8(string_builder *sb, char *s, char *e)
 {
     uint32_t v = 0;
-    int i, length = utf8_check_size(*s);
+    int i, length = utf8_check_size((unsigned char) (*s));
     if (length == 2) v = *s++ & 0x1f;
     else if (length == 3) v = *s++ & 0xf;
     else if (length == 4) v = *s++ & 0x7;
@@ -960,7 +964,7 @@ static void JSONUString_toString(string_builder *sb, JSON json)
     char *s = o->str;
     char *e = o->str + o->length;
     while (s < e) {
-        char c;
+        unsigned char c;
         if (*s & 0x80) {
             string_builder_add_string(sb, "\\u", 2);
             s = toUTF8(sb, s, e);
@@ -1030,7 +1034,7 @@ static void JSONBool_toString(string_builder *sb, JSON json)
 #else
     b = o->val;
 #endif
-    char *str  = (b) ? "true" : "false";
+    const char *str  = (b) ? "true" : "false";
     size_t len = (b) ? 4/*strlen("ture")*/ : 5/*strlen("false")*/;
     string_builder_add_string(sb, str, len);
 }
@@ -1109,6 +1113,7 @@ void JSON_dump_(JSON s)
 {
     JSON_dump(stderr, s);
 }
+
 #ifdef __cplusplus
 }
 #endif

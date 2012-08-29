@@ -29,7 +29,7 @@ static void test_array()
     assert(strncmp(s, "[\"a\",\"b\",\"c\"]", len) == 0);
     JSON_free(a);
     fprintf(stderr, "'%s'\n", s);
-    free((char*)s);
+    free(s);
 }
 static void test_int()
 {
