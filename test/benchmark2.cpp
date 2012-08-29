@@ -7,6 +7,7 @@
 #undef USE_JANSSON
 //#undef USE_RAPIDJSON
 
+#include "kjson.h"
 #ifdef USE_JSON_C
 #include <json/json.h>
 #endif
@@ -21,7 +22,6 @@
 #include <jansson.h>
 #endif
 
-#include "kjson.h"
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/time.h>
@@ -32,8 +32,7 @@
 
 static void kjson(char *buf, size_t len) {
     JSON json = parseJSON(buf, buf+len);
-    size_t length;
-    char *str = JSON_toString(json, &length);
+    char *str = JSON_toString(json);
     JSON_free(json);
     free(str);
 }

@@ -20,6 +20,10 @@
 #define TagInt64    ((TagBaseMask | 0xbULL) << TagBitShift)
 
 union JSONValue;
+struct JSONObject;
+struct JSONString;
+struct JSONArray;
+struct JSONInt64;
 typedef union numbox {
     void    *pval;
     double   dval;
@@ -37,29 +41,26 @@ static inline Value ValueI(int32_t ival) {
     Value v; v.bits = n | TagInt32; return v;
 }
 
-static inline Value ValueIO(union JSONValue *oval) {
+static inline Value ValueIO(struct JSONInt64 *oval) {
     Value v; v.bits = (uint64_t)oval | TagInt64; return v;
 }
 static inline Value ValueB(bool bval) {
     Value v; v.bits = (uint64_t)bval | TagBoolean; return v;
 }
-static inline Value ValueO(union JSONValue *oval) {
+static inline Value ValueO(struct JSONObject *oval) {
     Value v; v.bits = (uint64_t)oval | TagObject; return v;
 }
-static inline Value ValueS(union JSONValue *sval) {
+static inline Value ValueS(struct JSONString *sval) {
     Value v; v.bits = (uint64_t)sval | TagString; return v;
 }
-static inline Value ValueU(union JSONValue *sval) {
+static inline Value ValueU(struct JSONString *sval) {
     Value v; v.bits = (uint64_t)sval | TagUString; return v;
 }
-static inline Value ValueA(union JSONValue *aval) {
+static inline Value ValueA(struct JSONArray *aval) {
     Value v; v.bits = (uint64_t)aval | TagArray; return v;
 }
 static inline Value ValueN() {
     Value v; v.bits = TagNull; return v;
-}
-static inline Value Value_T(uint64_t val, uint8_t tag) {
-    Value v; v.bits = val | ((uint64_t)tag << TagBitShift); return v;
 }
 static inline Value toVal(void *val) {
     Value v; v.bits = (uint64_t) val; return v;
@@ -75,23 +76,23 @@ static inline int32_t toInt32(Value v) {
 static inline bool toBool(Value v) {
     return (bool) Val(v);
 }
-static inline union JSONValue *toObj(Value v) {
-    return (union JSONValue*) Val(v);
+static inline struct JSONObject *toObj(Value v) {
+    return (struct JSONObject *) Val(v);
 }
-static inline union JSONValue *toStr(Value v) {
-    return (union JSONValue*) Val(v);
+static inline struct JSONString *toStr(Value v) {
+    return (struct JSONString *) Val(v);
 }
-static inline union JSONValue *toUStr(Value v) {
-    return (union JSONValue*) Val(v);
+static inline struct JSONString *toUStr(Value v) {
+    return (struct JSONString *) Val(v);
 }
-static inline union JSONValue *toAry(Value v) {
-    return (union JSONValue*) Val(v);
+static inline struct JSONArray *toAry(Value v) {
+    return (struct JSONArray *) Val(v);
 }
-static inline union JSONValue *toNul(Value v) {
-    return (union JSONValue*) Val(v);
-}
-static inline union JSONValue *toInt64(Value v) {
-    return (union JSONValue*) Val(v);
+//static inline Value toNul(Value v) {
+//    return (Value) Val(v);
+//}
+static inline struct JSONInt64 *toInt64(Value v) {
+    return (struct JSONInt64 *) Val(v);
 }
 static inline bool IsDouble(Value v) {
     return Tag(v) <= TagDouble;

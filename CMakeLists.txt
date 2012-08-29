@@ -112,11 +112,8 @@ add_executable(parseString test/parseString.c)
 add_test(parseString parseString)
 target_link_libraries(parseString kjson)
 
-add_executable(test_dict test/test_dict.c map.c)
-add_test(test_dict test_dict)
-
-add_executable(check_cpp test/check_cpp_build.cpp)
-add_test(check_cpp check_cpp)
+#add_executable(check_cpp test/check_cpp_build.cpp)
+#add_test(check_cpp check_cpp)
 
 add_executable(test_whitespace test/test_whitespace.c)
 add_test(test_whitespace test_whitespace)

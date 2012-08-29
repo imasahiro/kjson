@@ -40,11 +40,11 @@ void bench_kjson(void)
         o = JSONArray_new();
         for(i=0; i < TASK_STR_LEN; ++i) {
             JSON v = JSONString_new((char*)TASK_STR_PTR, i);
-            JSONArray_append((JSONArray*)o, v);
+            JSONArray_append(o, v);
         }
     }
     show_timer("generate string");
-    buf = JSON_toString(o, &len);
+    buf = JSON_toStringWithLength(o, &len);
     JSON_free(o);
 
     int i;
@@ -52,7 +52,7 @@ void bench_kjson(void)
         reset_timer();
         {
             o = parseJSON(buf, buf + len);
-            if (o == NULL) {
+            if (o.bits == 0) {
                 fprintf(stderr, "Errro\n");
             }
         }

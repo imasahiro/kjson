@@ -52,7 +52,7 @@ static void test2()
     while ((str = loadLine(fp, buf)) != NULL) {
         len = strlen(str);
         JSON json = parseJSON(str, str+len);
-        char *p = JSON_toString(json, &len);
+        char *p = JSON_toStringWithLength(json, &len);
         assert(JSON_type(json) == JSON_Object);
         assert(p);
         JSON_free(json);

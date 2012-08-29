@@ -10,7 +10,6 @@
 extern "C" {
 #endif
 
-#define USE_NUMBOX
 typedef enum kjson_type {
     /** ($type & 1 == 0) means $type extends Number */
     JSON_Double =  0, /* 0000 */
@@ -28,37 +27,25 @@ typedef enum kjson_type {
 } kjson_type;
 
 union JSONValue;
-typedef union JSONValue *JSON;
+typedef union JSONValue JSON;
 
 typedef struct JSONString {
-#ifndef USE_NUMBOX
-    kjson_type type;
-#endif
     unsigned length;
-    char str[1];
+    unsigned hashcode;
+    char *str;
 } JSONString;
 typedef JSONString JSONUString;
 
 typedef struct JSONArray {
-#ifndef USE_NUMBOX
-    kjson_type type;
-#endif
     int  length;
     int  capacity;
     JSON *list;
 } JSONArray;
 
-#ifndef USE_NUMBOX
-typedef struct JSONNumber {
-    kjson_type type;
-    long val;
-} JSONNumber;
-#else
 typedef Value JSONNumber;
-#endif
 
 typedef JSONNumber JSONInt;
-typedef JSONInt JSONInt32;
+typedef JSONInt    JSONInt32;
 typedef JSONNumber JSONDouble;
 typedef JSONNumber JSONBool;
 
@@ -68,40 +55,19 @@ typedef struct JSONInt64 {
 } JSONInt64;
 
 typedef struct JSONObject {
-#ifndef USE_NUMBOX
-    kjson_type type;
-#endif
     kmap_t child;
 } JSONObject;
 
 union JSONValue {
-#ifndef USE_NUMBOX
-    struct JSON_base {
-        kjson_type type;
-    } base;
-#endif
-    JSONString str;
-    JSONArray  ary;
-    JSONNumber num;
-    JSONObject obj;
+    Value       val;
+    JSONNumber  num;
+    JSONString *str;
+    JSONArray  *ary;
+    JSONObject *obj;
+    uint64_t bits;
 };
 
-#ifdef USE_NUMBOX
 typedef JSONNumber JSONNull;
-#else
-typedef union JSONValue JSONNull;
-#endif
-
-/* [Converter API] */
-#define JSON_CONVERTER(T) static inline JSON##T *toJSON##T (JSON o) { return (JSON##T*) o; }
-JSON_CONVERTER(Object)
-JSON_CONVERTER(Array)
-JSON_CONVERTER(String)
-JSON_CONVERTER(Bool)
-JSON_CONVERTER(Number)
-JSON_CONVERTER(Double)
-JSON_CONVERTER(Null)
-#undef CONVERTER
 
 /* [Getter API] */
 unsigned JSON_length(JSON json);
@@ -114,40 +80,23 @@ JSON JSON_get(JSON json, const char *key);
 
 static inline char *JSONString_get(JSON json)
 {
-    JSONString *s = toJSONString(json);
-#ifdef USE_NUMBOX
-    s = toJSONString(toStr(toVal(s)));
-#endif
+    JSONString *s = toStr(json.val);
     return s->str;
 }
 
 static inline int32_t JSONInt_get(JSON json)
 {
-#ifdef USE_NUMBOX
-    return toInt32(toVal(json));
-#else
-    return (int32_t)((JSONNumber*) json)->val;
-#endif
+    return toInt32(json.val);
 }
 
 static inline double JSONDouble_get(JSON json)
 {
-#ifdef USE_NUMBOX
-    return toDouble(toVal(json));
-#else
-    union v { double f; long v; } v;
-    v.v = ((JSONNumber*)json)->val;
-    return v.f;
-#endif
+    return toDouble(json.val);
 }
 
 static inline int JSONBool_get(JSON json)
 {
-#ifdef USE_NUMBOX
-    return toBool(toVal(json));
-#else
-    return ((JSONNumber*)json)->val;
-#endif
+    return toBool(json.val);
 }
 
 /* [New API] */
@@ -160,56 +109,56 @@ JSON JSONInt_new(int64_t val);
 JSON JSONBool_new(int val);
 
 /* [Other API] */
-void JSONObject_set(JSONObject *o, JSON key, JSON value);
-void JSONArray_set(JSONObject *o, int id, JSON value);
-void JSONArray_append(JSONArray *a, JSON o);
+void JSONObject_set(JSON obj, JSON key, JSON value);
+void JSONArray_set(JSON ary, int id, JSON value);
+void JSONArray_append(JSON ary, JSON o);
 void JSON_free(JSON o);
 void JSON_dump(FILE *fp, JSON json);
 
 JSON parseJSON(const char *s, const char *e);
-char *JSON_toString(JSON json, size_t *len);
+char *JSON_toStringWithLength(JSON json, size_t *len);
+static inline char *JSON_toString(JSON json)
+{
+    size_t len;
+    char *s = JSON_toStringWithLength(json, &len);
+    return s;
+}
 
-#ifdef USE_NUMBOX
+static inline bool JSON_isValid(JSON json)
+{
+    return json.bits != 0;
+}
+
 static inline kjson_type JSON_type(JSON json) {
-    Value v; v.bits = (uint64_t)json;
+    Value v; v.bits = (uint64_t)json.val.bits;
     uint64_t tag = Tag(v);
     return (IsDouble((v)))?
         JSON_Double : (kjson_type) ((tag >> TagBitShift) & 15);
 }
-#define JSON_set_type(json, type) assert(0 && "Not supported")
-#else
-#define JSON_type(json) (((JSON) (json))->base.type)
-#define JSON_set_type(json, T) (((JSON) (json))->base.type) = T
-#endif
 #define JSON_TYPE_CHECK(T, O) (JSON_type(((JSON)O)) == JSON_##T)
-#ifdef USE_NUMBOX
-#define ARRAY_INIT(A) ((A = toJSONArray(toAry(toVal((JSON)A)))) != NULL)
-#else
-#define ARRAY_INIT(A) (A)
-#endif
 
-#define JSON_ARRAY_EACH(A, I, E) JSON_ARRAY_EACH_(A, I, E, 0)
-#define JSON_ARRAY_EACH_(A, I, E, N) \
-    if (!JSON_TYPE_CHECK(Array, (JSON)A)) {} else\
-        if (!ARRAY_INIT(A)) {}\
-        else\
+#define JSON_ARRAY_EACH(json, A, I, E) JSON_ARRAY_EACH_(json, A, I, E, 0)
+#define JSON_ARRAY_EACH_(json, A, I, E, N)\
+    if (!JSON_type((json)) == JSON_Array) {} else\
+        if (!(A = toAry((json).val)) != 0) {}\
+        else \
         for (I = (A)->list + N,\
-            E = (A)->list+(A)->length; I < E; ++I)
+                E = (A)->list+(A)->length; I != E; ++I)
 
 typedef struct JSONObject_iterator {
     long index;
     JSONObject *obj;
 } JSONObject_iterator;
 
-int JSONObject_iterator_init(JSONObject_iterator *itr, JSONObject *obj);
-JSONString *JSONObject_iterator_next(JSONObject_iterator *itr, JSON *val);
+int JSONObject_iterator_init(JSONObject_iterator *itr, JSON obj);
+JSON JSONObject_iterator_next(JSONObject_iterator *itr, JSON *val);
 
 #define OBJECT_INIT(O, ITR) (JSONObject_iterator_init(ITR, O))
 #define JSON_OBJECT_EACH(O, ITR, KEY, VAL)\
     if (!JSON_TYPE_CHECK(Object, (JSON)O)) {} else\
     if (!OBJECT_INIT(O, &ITR)) {}\
     else\
-    for (KEY = JSONObject_iterator_next(&ITR, &VAL); KEY;\
+    for (KEY = JSONObject_iterator_next(&ITR, &VAL); KEY.bits;\
             KEY = JSONObject_iterator_next(&ITR, &VAL))
 
 #ifdef __cplusplus

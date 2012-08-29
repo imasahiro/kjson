@@ -1,7 +1,10 @@
 #ifndef KJSON_INTERNAL_H_
 #define KJSON_INTERNAL_H_
 
-#define cast(T, V) ((T)(V))
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef CLZ
 #define CLZ(n) __builtin_clzl(n)
 #endif
@@ -20,5 +23,16 @@
 
 #ifndef likely
 #define likely(x)     __builtin_expect(!!(x), 1)
+#endif
+
+void _JSONString_free(JSONString *obj);
+
+#ifdef KJSON_DEBUG_MODE
+void JSON_dump(FILE *fp, JSON json);
+void JSON_dump_(JSON s);
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 #endif /* end of include guard */

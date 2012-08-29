@@ -35,9 +35,8 @@ static void test_file(const char *file)
     size_t len;
     char *str = loadFile(file, &len);
     JSON json = parseJSON(str, str+len);
-    //JSON_dump(stderr, json);
     size_t json_len;
-    char *json_s = JSON_toString(json, &json_len);
+    char *json_s = JSON_toStringWithLength(json, &json_len);
     fprintf(stderr, "'%s'\n", json_s);
     fprintf(stderr, "\n--- }} test %s --- \n", file);
     free(json_s);
@@ -80,19 +79,19 @@ static char data[] =
 static void test_string(void)
 {
     JSON json = parseJSON(data, data+sizeof(data));
-    JSONArray *child = toJSONArray(JSON_get(json, "app"));
-    assert(child != NULL);
-    assert(JSON_type((JSON)child) == JSON_Array);
-    assert(JSON_length((JSON)child) == 3);
+    JSON child = JSON_get(json, "app");
+    assert(JSON_isValid(child));
+    assert(JSON_type(child) == JSON_Array);
+    assert(JSON_length(child) == 3);
+    JSONArray *a;
     JSON *I, *E;
     int i = 0;
 
-
-    JSON_ARRAY_EACH(child, I, E) {
-        assert(JSON_get(*I, "name") != NULL);
-        assert(JSON_get(*I, "line") != NULL);
-        assert(JSON_get(*I, "version") != NULL);
-        assert(JSON_get(*I, "flag") != NULL);
+    JSON_ARRAY_EACH(child, a, I, E) {
+        assert(JSON_isValid(JSON_get(*I, "name")));
+        assert(JSON_isValid(JSON_get(*I, "line")));
+        assert(JSON_isValid(JSON_get(*I, "version")));
+        assert(JSON_isValid(JSON_get(*I, "flag")));
         size_t len;
         const char *name = JSON_getString(*I, "name", &len);
         int   line = JSON_getInt(*I, "line");
@@ -116,23 +115,23 @@ static char data2[] =
 
 static void test_object_iterator(void)
 {
-    JSONObject *o = (JSONObject*) parseJSON(data2, data2+sizeof(data2));
-    assert(JSON_type((JSON)o) == JSON_Object);
+    JSON o = parseJSON(data2, data2+sizeof(data2));
+    assert(JSON_type(o) == JSON_Object);
     //assert(JSON_length((JSON)child) == 3);
 
-    JSONString *Key;
+    JSON Key;
     JSON Val;
     JSONObject_iterator Itr;
 
     JSON_OBJECT_EACH(o, Itr, Key, Val) {
-        char *str = JSONString_get((JSON)Key);
-        assert(JSON_type((JSON)Key) == JSON_String);
-        assert(JSON_type(Val) == JSON_type(JSON_get((JSON)o, str)));
-        fprintf(stderr, "<");
-        JSON_dump(stderr, (JSON)Key);
-        fprintf(stderr, ":");
-        JSON_dump(stderr, Val);
-        fprintf(stderr, ">\n");
+        char *k, *v;
+        char *str = JSONString_get(Key);
+        assert(JSON_type(Key) == JSON_String);
+        assert(JSON_type(Val) == JSON_type(JSON_get(o, str)));
+        k = JSON_toString(Key);
+        v = JSON_toString(Val);
+        fprintf(stderr, "<'%s':'%s'>", k, v);
+        free(k); free(v);
     }
     JSON_free((JSON)o);
 }
