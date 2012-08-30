@@ -1,3 +1,4 @@
+#include <stdint.h>
 #ifndef KJSON_INTERNAL_H_
 #define KJSON_INTERNAL_H_
 
@@ -23,6 +24,14 @@ static inline JSON toJSON(Value v) {
 }
 #else
 #define toJSON(O) ((JSON) O)
+#endif
+
+#ifndef INT32_MAX
+#define INT32_MAX        2147483647
+#endif
+
+#ifndef INT32_MIN
+#define INT32_MIN        (-INT32_MAX-1)
 #endif
 
 #ifdef __cplusplus
