@@ -65,6 +65,7 @@ static void test2()
 int main(int argc, char const* argv[])
 {
     int i, size = 1;
+    fprintf(stderr, "benchmark3\n");
     for (i = 0; i < size; i++) {
         test0();
         test1();
