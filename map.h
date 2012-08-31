@@ -14,13 +14,11 @@ typedef struct kmap_record {
     uint64_t v;
 } __attribute__((__aligned__(8))) map_record_t;
 
-typedef int (*fn_keycmp)(struct JSONString *s0, struct JSONString *s1);
-
 struct map_api;
 typedef struct map_api kmap_api_t;
 
 struct map_base {
-    const kmap_api_t *op;
+    const kmap_api_t *api;
     map_record_t *records;
 } __attribute__ ((packed));
 
@@ -30,7 +28,7 @@ typedef struct hashmap_t {
     unsigned record_size_mask;
 } __attribute__((__aligned__(8))) hashmap_t;
 
-#define DICTMAP_THRESHOLD 4
+#define DICTMAP_THRESHOLD 3
 typedef struct dictmap_t {
     struct map_base base;
     unsigned  used_size;
@@ -67,27 +65,27 @@ void kmap_delete(kmap_t *m);
 
 static inline void kmap_dispose(kmap_t *m)
 {
-    m->h.base.op->_dispose(m);
+    m->h.base.api->_dispose(m);
 }
 
 static inline map_record_t *kmap_get(kmap_t *m, struct JSONString *key)
 {
-    return m->h.base.op->_get(m, key);
+    return m->h.base.api->_get(m, key);
 }
 
 static inline map_status_t kmap_set(kmap_t *m, struct JSONString *key, uint64_t val)
 {
-    return m->h.base.op->_set(m, key, val);
+    return m->h.base.api->_set(m, key, val);
 }
 
 static inline void kmap_remove(kmap_t *m, struct JSONString *key)
 {
-    return m->h.base.op->_remove(m, key);
+    return m->h.base.api->_remove(m, key);
 }
 
 static inline map_record_t *kmap_next(kmap_t *m, kmap_iterator *itr)
 {
-    return m->h.base.op->_next(m, itr);
+    return m->h.base.api->_next(m, itr);
 }
 
 static inline unsigned kmap_size(kmap_t *m)

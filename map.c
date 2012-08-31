@@ -55,7 +55,7 @@ static int JSONString_equal(JSONString *k0, JSONString *k1)
 static inline kmap_t *kmap_create(const kmap_api_t *api)
 {
 	kmap_t *m = (kmap_t *) _MALLOC(sizeof(*m));
-	m->h.base.op = api;
+	m->h.base.api = api;
 	return m;
 }
 
@@ -235,10 +235,9 @@ static kmap_t *dictmap_init(dictmap_t *m)
     int i;
     const size_t allocSize = sizeof(map_record_t)*DICTMAP_THRESHOLD;
     m->base.records = (map_record_t *) _MALLOC(allocSize);
-    uint64_t *hash_list = (uint64_t *) m->hash_list;
     m->used_size = 0;
-    for (i = 0; i < DICTMAP_THRESHOLD/2; ++i) {
-        hash_list[i] = 0;
+    for (i = 0; i < DICTMAP_THRESHOLD; ++i) {
+        m->hash_list[i] = 0;
     }
     return (kmap_t *) m;
 }
@@ -386,9 +385,9 @@ kmap_t *kmap_new(unsigned init)
 
 void kmap_init(kmap_t *m, unsigned init)
 {
-    const kmap_api_t *op = (init > DICTMAP_THRESHOLD) ? &HASH:&DICT;
-    m->h.base.op = op;
-    op->_init(m, init);
+    const kmap_api_t *api = (init > DICTMAP_THRESHOLD) ? &HASH:&DICT;
+    m->h.base.api = api;
+    api->_init(m, init);
 }
 
 void kmap_delete(kmap_t *m)
@@ -400,7 +399,7 @@ void kmap_delete(kmap_t *m)
 static void dictmap_convert2hashmap(dictmap_t *_m)
 {
     hashmap_t *m = (hashmap_t *) _m;
-    m->base.op = &HASH;
+    m->base.api = &HASH;
     m->record_size_mask = DICTMAP_THRESHOLD-1;
     hashmap_record_resize(m);
 }
