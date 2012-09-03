@@ -149,7 +149,7 @@ static void test(const char *file)
     char *str = loadFile(file, &len);;
     assert(len == strlen(str));
     int i, j, k;
-    fprintf(stderr, "  bench:%s, %ld\n", file, len);
+    fprintf(stderr, "  bench:%s, %d\n", file, (int)len);
     for (k = 0; k < loop_count; k++) {
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
         for (j = 0; j < ARRAY_SIZE(data); j++) {
