@@ -20,10 +20,10 @@ static void show_timer(const char *s)
     printf("%20s: %f sec\n", s, sec);
 }
 
-static const unsigned int TASK_INT_NUM = 1<<24;
-static const unsigned int TASK_STR_LEN = 1<<15;
-//static const unsigned int TASK_INT_NUM = 1<<20;
-//static const unsigned int TASK_STR_LEN = 1<<11;
+//static const unsigned int TASK_INT_NUM = 1<<24;
+//static const unsigned int TASK_STR_LEN = 1<<15;
+static const unsigned int TASK_INT_NUM = 1<<20;
+static const unsigned int TASK_STR_LEN = 1<<11;
 static const char* TASK_STR_PTR;
 
 static int loop_count = 2;
