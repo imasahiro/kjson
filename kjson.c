@@ -36,14 +36,12 @@
 extern "C" {
 #endif
 
-#define JSON_NEW(T) (JSON##T *) (KJSON_MALLOC((sizeof(JSON##T))))
-
 static JSON JSONString_new2(string_builder *builder)
 {
     size_t len;
     char *s = string_builder_tostring(builder, &len, 1);
-    JSONString *o = JSON_NEW(UString);
-    o->str = (char *) KJSON_MALLOC(len+1);
+    JSONString *o = (JSONString *) KJSON_MALLOC(sizeof(*o) + len + 1);
+    o->str = (char *) (o+1);
     memcpy(o->str, s, len);
     o->hashcode = 0;
     o->length = len - 1;
@@ -54,8 +52,8 @@ static JSON JSONString_new2(string_builder *builder)
 
 JSON JSONString_new(char *s, size_t len)
 {
-    JSONString *o = JSON_NEW(String);
-    o->str = (char *) KJSON_MALLOC(len+1);
+    JSONString *o = (JSONString *) KJSON_MALLOC(sizeof(*o)+len+1);
+    o->str = (char *) (o+1);
     memcpy(o->str, s, len);
     o->hashcode = 0;
     o->length = len;
@@ -70,14 +68,14 @@ JSON JSONNull_new()
 
 JSON JSONObject_new()
 {
-    JSONObject *o = JSON_NEW(Object);
+    JSONObject *o = (JSONObject *) KJSON_MALLOC(sizeof(*o));
     kmap_init(&(o->child), 0);
     return toJSON(ValueO(o));
 }
 
 JSON JSONArray_new()
 {
-    JSONArray *o = JSON_NEW(Array);
+    JSONArray *o = (JSONArray *) KJSON_MALLOC(sizeof(*o));
     o->length   = 0;
     o->capacity = 0;
     o->list   = NULL;
@@ -92,7 +90,7 @@ JSON JSONDouble_new(double val)
 JSON JSONInt_new(int64_t val)
 {
     if (val > (int64_t)INT32_MAX || val < (int64_t)INT32_MIN) {
-        JSONInt64 *i64 = (JSONInt64 *) JSON_NEW(Int64);
+        JSONInt64 *i64 = (JSONInt64 *) KJSON_MALLOC(sizeof(JSONInt64));
         i64->val = val;
         return toJSON(ValueIO(i64));
     } else {
@@ -121,14 +119,12 @@ static void JSONObject_free(JSON json)
 
 void _JSONString_free(JSONString *obj)
 {
-    KJSON_FREE(obj->str);
     KJSON_FREE(obj);
 }
 
 static void JSONString_free(JSON json)
 {
     JSONString *o = toStr(json.val);
-    KJSON_FREE(o->str);
     KJSON_FREE(o);
 }
 
