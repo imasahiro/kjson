@@ -164,7 +164,7 @@ static inline kjson_type JSON_type(JSON json) {
 #define JSON_ARRAY_EACH_(json, A, I, E, N)\
     if (!JSON_type((json)) == JSON_Array) {} else\
         if (!(A = toAry((json).val)) != 0) {}\
-        else \
+        else\
         for (I = (A)->list + N,\
                 E = (A)->list+(A)->length; I != E; ++I)
 
@@ -176,10 +176,9 @@ typedef struct JSONObject_iterator {
 int JSONObject_iterator_init(JSONObject_iterator *itr, JSON obj);
 JSON JSONObject_iterator_next(JSONObject_iterator *itr, JSON *val);
 
-#define OBJECT_INIT(O, ITR) (JSONObject_iterator_init(ITR, O))
 #define JSON_OBJECT_EACH(O, ITR, KEY, VAL)\
-    if (!JSON_TYPE_CHECK(Object, (JSON)O)) {} else\
-    if (!OBJECT_INIT(O, &ITR)) {}\
+    if (!JSON_TYPE_CHECK(Object, O)) {} else\
+    if (!(JSONObject_iterator_init(&ITR, O))) {}\
     else\
     for (KEY = JSONObject_iterator_next(&ITR, &VAL); KEY.bits;\
             KEY = JSONObject_iterator_next(&ITR, &VAL))

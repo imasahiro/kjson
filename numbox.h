@@ -32,16 +32,19 @@
 #define TagBitShift (47)
 #define TagBaseMask (0x1fff0ULL)
 #define TagBase     (TagBaseMask << TagBitShift)
-#define TagDouble   ((TagBaseMask | 0x0ULL) << TagBitShift)
-#define TagDouble2  ((TagBaseMask | 0x7ULL) << TagBitShift)
-#define TagInt32    ((TagBaseMask | 0x2ULL) << TagBitShift)
-#define TagBoolean  ((TagBaseMask | 0x4ULL) << TagBitShift)
-#define TagNull     ((TagBaseMask | 0x6ULL) << TagBitShift)
-#define TagObject   ((TagBaseMask | 0x3ULL) << TagBitShift)
-#define TagString   ((TagBaseMask | 0x1ULL) << TagBitShift)
-#define TagUString  ((TagBaseMask | 0x9ULL) << TagBitShift)
-#define TagArray    ((TagBaseMask | 0x5ULL) << TagBitShift)
-#define TagInt64    ((TagBaseMask | 0xbULL) << TagBitShift)
+
+enum NumBoxTag {
+    TagDouble   = (TagBaseMask | 0x0ULL) << TagBitShift,
+    TagDouble2  = (TagBaseMask | 0x7ULL) << TagBitShift,
+    TagInt32    = (TagBaseMask | 0x2ULL) << TagBitShift,
+    TagBoolean  = (TagBaseMask | 0x4ULL) << TagBitShift,
+    TagNull     = (TagBaseMask | 0x6ULL) << TagBitShift,
+    TagObject   = (TagBaseMask | 0x3ULL) << TagBitShift,
+    TagString   = (TagBaseMask | 0x1ULL) << TagBitShift,
+    TagUString  = (TagBaseMask | 0x9ULL) << TagBitShift,
+    TagArray    = (TagBaseMask | 0x5ULL) << TagBitShift,
+    TagInt64    = (TagBaseMask | 0xbULL) << TagBitShift
+};
 
 union JSONValue;
 struct JSONObject;

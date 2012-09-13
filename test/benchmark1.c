@@ -138,9 +138,9 @@ void bench_msgpack(void)
     {
         size_t off = 0;
         bool ret = msgpack_unpack_next(&msg, sbuf->data, sbuf->size, &off);
-        if(ret < 0) {
+        if (ret < 0) {
             fprintf(stderr, "Parse error.\n");
-        } else if(ret == 0) {
+        } else if (ret == 0) {
             fprintf(stderr, "Not finished.\n");
         }
     }
@@ -164,9 +164,9 @@ void bench_msgpack(void)
     {
         size_t off = 0;
         bool ret = msgpack_unpack_next(&msg, sbuf->data, sbuf->size, &off);
-        if(ret < 0) {
+        if (ret < 0) {
             fprintf(stderr, "Parse error.\n");
-        } else if(ret == 0) {
+        } else if (ret == 0) {
             fprintf(stderr, "Not finished.\n");
         }
     }

@@ -30,12 +30,8 @@
 extern "C" {
 #endif
 
-#ifndef CLZ
-#define CLZ(n) __builtin_clzl(n)
-#endif
-
 #ifndef LOG2
-#define LOG2(N) ((uint32_t)((sizeof(void*) * 8) - CLZ(N - 1)))
+#define LOG2(N) ((uint32_t)((sizeof(void*) * 8) - __builtin_clzl(N - 1)))
 #endif
 
 void _JSONString_free(JSONString *obj);

@@ -36,9 +36,6 @@ extern "C" {
 #define KMAP_INITSIZE DICTMAP_THRESHOLD
 #define DELTA 8
 
-#define _MALLOC(SIZE)    KJSON_MALLOC(SIZE)
-#define _FREE(PTR, SIZE) KJSON_FREE(PTR)
-
 #ifndef unlikely
 #define unlikely(x)   __builtin_expect(!!(x), 0)
 #endif
@@ -78,9 +75,9 @@ static int JSONString_equal(JSONString *k0, JSONString *k1)
 
 static inline kmap_t *kmap_create(const kmap_api_t *api)
 {
-	kmap_t *m = (kmap_t *) _MALLOC(sizeof(*m));
-	m->h.base.api = api;
-	return m;
+    kmap_t *m = (kmap_t *) KJSON_MALLOC(sizeof(*m));
+    m->h.base.api = api;
+    return m;
 }
 
 static void map_record_copy(map_record_t *dst, const map_record_t *src)
@@ -139,7 +136,7 @@ static void hashmap_record_resize(hashmap_t *m)
                 continue;
         }
     } while (0);
-    _FREE(head, oldsize*sizeof(map_record_t));
+    KJSON_FREE(head/*, oldsize*sizeof(map_record_t)*/);
 }
 
 static map_status_t hashmap_set(hashmap_t *m, map_record_t *rec)
@@ -189,7 +186,7 @@ static void hashmap_api_dispose(kmap_t *_m)
             JSON_free(toJSON(ValueS(r->k)));
         }
     }
-    _FREE(m->base.records, (m->record_size_mask+1) * sizeof(map_record_t));
+    KJSON_FREE(m->base.records/*, (m->record_size_mask+1) * sizeof(map_record_t)*/);
 }
 
 static map_record_t *hashmap_api_get(kmap_t *_m, JSONString *key)
@@ -258,7 +255,7 @@ static kmap_t *dictmap_init(dictmap_t *m)
 {
     int i;
     const size_t allocSize = sizeof(map_record_t)*DICTMAP_THRESHOLD;
-    m->base.records = (map_record_t *) _MALLOC(allocSize);
+    m->base.records = (map_record_t *) KJSON_MALLOC(allocSize);
     m->used_size = 0;
     for (i = 0; i < DICTMAP_THRESHOLD; ++i) {
         m->hash_list[i] = 0;
@@ -381,7 +378,7 @@ static void dictmap_api_dispose(kmap_t *_m)
             JSON_free(toJSON(ValueP(r->v)));
         }
     }
-    _FREE(m->base.records, m->used_size * sizeof(map_record_t));
+    KJSON_FREE(m->base.records/*, m->used_size * sizeof(map_record_t)*/);
 }
 
 static const kmap_api_t DICT = {

@@ -425,7 +425,7 @@ static JSON parseBoolean(input_stream *ins, unsigned char c)
 {
     int val = 0;
     if (c == 't') {
-        if(NEXT(ins) == 'r' && NEXT(ins) == 'u' && NEXT(ins) == 'e') {
+        if (NEXT(ins) == 'r' && NEXT(ins) == 'u' && NEXT(ins) == 'e') {
             val = 1;
         }
     }
@@ -491,7 +491,7 @@ static JSON parseNumber(input_stream *ins, unsigned char c)
 static JSON parseNull(input_stream *ins, unsigned char c)
 {
     if (c == 'n') {
-        if(NEXT(ins) == 'u' && NEXT(ins) == 'l' && NEXT(ins) == 'l') {
+        if (NEXT(ins) == 'u' && NEXT(ins) == 'l' && NEXT(ins) == 'l') {
             return JSONNull_new();
         }
     }
@@ -519,7 +519,7 @@ static JSON parse(input_stream *ins)
 #undef EOS
 #undef NEXT
 
-static JSON JSON_default = {{0}};
+static const JSON JSON_default = {{0}};
 
 static JSON parseJSON_stream(input_stream *ins)
 {

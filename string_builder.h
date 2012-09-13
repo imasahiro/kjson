@@ -85,7 +85,7 @@ static inline char *put_d(char *p, uint64_t v)
 
 static inline char *put_i(char *p, int64_t value)
 {
-    if(value < 0) {
+    if (value < 0) {
         p[0] = '-'; p++;
         value = -value;
     }
