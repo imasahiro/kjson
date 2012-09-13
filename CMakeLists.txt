@@ -13,6 +13,7 @@ endif()
 SET(CMAKE_C_FLAGS         "-Wall -Wno-variadic-macros")
 SET(CMAKE_C_FLAGS_RELEASE "-O3 -g")
 SET(CMAKE_C_FLAGS_DEBUG   "-O0 -g3")
+string(TOUPPER ${CMAKE_BUILD_TYPE} uppercase_CMAKE_BUILD_TYPE)
 
 set(JSON_SRC kjson.c map.c stream.c)
 add_library(kjson SHARED ${JSON_SRC})
