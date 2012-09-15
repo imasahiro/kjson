@@ -4,7 +4,6 @@
 
 #include "../kjson.c"
 #include "../map.c"
-#include "../stream.c"
 
 int main(int argc, char const* argv[])
 {
