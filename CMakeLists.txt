@@ -7,7 +7,7 @@ project(kjson)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 if(NOT CMAKE_BUILD_TYPE)
-	set(CMAKE_BUILD_TYPE "Release")
+    set(CMAKE_BUILD_TYPE "Release")
 endif()
 
 SET(CMAKE_C_FLAGS         "-Wall -Wno-variadic-macros")
@@ -15,24 +15,29 @@ SET(CMAKE_C_FLAGS_RELEASE "-O3 -g")
 SET(CMAKE_C_FLAGS_DEBUG   "-O0 -g3")
 string(TOUPPER ${CMAKE_BUILD_TYPE} uppercase_CMAKE_BUILD_TYPE)
 
+if(${CMAKE_BUILD_TYPE} STREQUAL "Release")
+    add_definitions(-DNDEBUG)
+endif()
+
+
 set(JSON_SRC kjson.c map.c)
 add_library(kjson SHARED ${JSON_SRC})
 
 # jemalloc
 SET(SEARCH_DIRS
-	/usr/local
-	/opt/local # DarwinPorts
+    /usr/local
+    /opt/local # DarwinPorts
 )
 
 find_path(JEMALLOC_INCLUDE_DIR NAMES jemalloc.h
-	HINTS ${SEARCH_DIRS} PATH_SUFFIXES include/jemalloc)
+    HINTS ${SEARCH_DIRS} PATH_SUFFIXES include/jemalloc)
 
 find_library(JEMALLOC_LIBRARY NAMES jemalloc
-	HINTS ${SEARCH_DIRS} PATH_SUFFIXES lib64 lib)
+    HINTS ${SEARCH_DIRS} PATH_SUFFIXES lib64 lib)
 
 if(JEMALLOC_INCLUDE_DIR AND JEMALLOC_LIBRARY)
-	add_definitions(-DHAVE_JEMALLOC_H=1)
-	target_link_libraries(kjson ${JEMALLOC_LIBRARY})
+    add_definitions(-DHAVE_JEMALLOC_H=1)
+    target_link_libraries(kjson ${JEMALLOC_LIBRARY})
 endif(JEMALLOC_INCLUDE_DIR AND JEMALLOC_LIBRARY)
 
 ## Test cases
@@ -66,12 +71,12 @@ set(JSON_BENCHMARK
 set(JSON_TEST_CODE_LIST)
 set(JSON_BENCH_CODE_LIST)
 foreach(it ${JSON_TEST})
-	set(JSON_TEST_CODE_LIST ${JSON_TEST_CODE_LIST}
+    set(JSON_TEST_CODE_LIST ${JSON_TEST_CODE_LIST}
             ${CMAKE_CURRENT_SOURCE_DIR}/${it})
 endforeach()
 
 foreach(it ${JSON_BENCH})
-	set(JSON_BENCH_CODE_LIST ${JSON_BENCH_CODE_LIST}
+    set(JSON_BENCH_CODE_LIST ${JSON_BENCH_CODE_LIST}
             ${CMAKE_CURRENT_SOURCE_DIR}/${it})
 endforeach()
 
@@ -102,20 +107,20 @@ set(bench1_libs)
 set(bench2_libs)
 
 if(HAVE_LIBMSGPACK)
-add_definitions(-DUSE_MSGPACK)
-set(bench1_libs ${bench1_libs} ${HAVE_LIBMSGPACK})
+    add_definitions(-DUSE_MSGPACK)
+    set(bench1_libs ${bench1_libs} ${HAVE_LIBMSGPACK})
 endif()
 if(HAVE_LIBYAJL)
-add_definitions(-DUSE_YAJL)
-set(bench1_libs ${bench1_libs} ${HAVE_LIBYAJL})
-set(bench2_libs ${bench2_libs} ${HAVE_LIBYAJL})
-endif()
+    add_definitions(-DUSE_YAJL)
+    set(bench1_libs ${bench1_libs} ${HAVE_LIBYAJL})
+    set(bench2_libs ${bench2_libs} ${HAVE_LIBYAJL})
+    endif()
 if(HAVE_LIBJANSSON)
-add_definitions(-DUSE_JANSSON)
-set(bench2_libs ${bench2_libs} ${HAVE_LIBJANSSON})
-elseif(HAVE_LIBJSON)
-add_definitions(-DUSE_JSON_C)
-set(bench2_libs ${bench2_libs} ${HAVE_LIBJSON})
+    add_definitions(-DUSE_JANSSON)
+    set(bench2_libs ${bench2_libs} ${HAVE_LIBJANSSON})
+    elseif(HAVE_LIBJSON)
+    add_definitions(-DUSE_JSON_C)
+    set(bench2_libs ${bench2_libs} ${HAVE_LIBJSON})
 endif()
 
 add_executable(benchmark1 test/benchmark1.c)
@@ -154,4 +159,3 @@ MESSAGE(STATUS "CMAKE_INSTALL_PREFIX = ${CMAKE_INSTALL_PREFIX}")
 MESSAGE(STATUS "Change a value with: cmake -D<Variable>=<Value>" )
 MESSAGE(STATUS "---------------------------------------------------------------------------" )
 MESSAGE(STATUS)
-

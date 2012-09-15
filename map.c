@@ -242,13 +242,6 @@ static const kmap_api_t HASH = {
     hashmap_api_dispose
 };
 
-static kmap_t *hashmap_new(unsigned init)
-{
-    kmap_t *m = kmap_create(&HASH);
-    hashmap_init((hashmap_t *) m, init);
-    return m;
-}
-
 /* [DICTMAP] */
 static kmap_t *dictmap_init(dictmap_t *m)
 {
@@ -391,20 +384,7 @@ static const kmap_api_t DICT = {
     dictmap_api_dispose
 };
 
-static kmap_t *dictmap_new()
-{
-    kmap_t *m = kmap_create(&DICT);
-    return dictmap_init((dictmap_t *) m);
-}
-
 /* [kmap] */
-kmap_t *kmap_new(unsigned init)
-{
-    kmap_t *m = (init <= DICTMAP_THRESHOLD) ?
-        dictmap_new() : hashmap_new(init);
-    return m;
-}
-
 void kmap_init(kmap_t *m, unsigned init)
 {
     const kmap_api_t *api = (init > DICTMAP_THRESHOLD) ? &HASH:&DICT;

@@ -56,7 +56,7 @@ typedef union JSONValue JSON;
 typedef struct JSONString {
     unsigned length;
     unsigned hashcode;
-    char *str;
+    const char *str;
 } JSONString;
 typedef JSONString JSONUString;
 
@@ -94,15 +94,12 @@ union JSONValue {
 typedef JSONNumber JSONNull;
 
 /* [Getter API] */
-unsigned JSON_length(JSON json);
 JSON *JSON_getArray(JSON json, const char *key, size_t *len);
 const char *JSON_getString(JSON json, const char *key, size_t *len);
 double JSON_getDouble(JSON json, const char *key);
 bool JSON_getBool(JSON json, const char *key);
 int JSON_getInt(JSON json, const char *key);
 JSON JSON_get(JSON json, const char *key);
-
-#include "kjson-inline.h"
 
 /* [Other API] */
 void JSONObject_set(JSON obj, JSON key, JSON value);
@@ -145,15 +142,14 @@ typedef struct JSONObject_iterator {
     JSONObject *obj;
 } JSONObject_iterator;
 
-int JSONObject_iterator_init(JSONObject_iterator *itr, JSON obj);
-JSON JSONObject_iterator_next(JSONObject_iterator *itr, JSON *val);
-
 #define JSON_OBJECT_EACH(O, ITR, KEY, VAL)\
     if (!JSON_TYPE_CHECK(Object, O)) {} else\
     if (!(JSONObject_iterator_init(&ITR, O))) {}\
     else\
     for (KEY = JSONObject_iterator_next(&ITR, &VAL); KEY.bits;\
             KEY = JSONObject_iterator_next(&ITR, &VAL))
+
+#include "kjson-inline.h"
 
 #ifdef __cplusplus
 }

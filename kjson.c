@@ -39,12 +39,11 @@ static JSON JSONString_new2(string_builder *builder)
 {
     size_t len;
     char *s = string_builder_tostring(builder, &len, 1);
-    JSONString *o = (JSONString *) KJSON_MALLOC(sizeof(*o) + len + 1);
-    o->str = (char *) (o+1);
-    memcpy(o->str, s, len);
+    JSONString *o = (JSONString *) KJSON_CALLOC(1, sizeof(*o) + len + 1);
+    o->str = (const char *) (o+1);
+    memcpy((char *) o->str, s, len);
     o->hashcode = 0;
     o->length = len - 1;
-    o->str[len] = 0;
     KJSON_FREE(s);
     return toJSON(ValueU(o));
 }
@@ -288,8 +287,7 @@ static JSON parseString(input_stream *ins, unsigned char c)
     c = skipBSorDoubleQuote(ins, NEXT(ins));
     state2 = _input_stream_save(ins);
     if (c == '"') {/* fast path */
-        return (JSON) JSONString_new((char *)state.str,
-                state2.str - state.str - 1);
+        return JSONString_new((char *)state.str, state2.str - state.str - 1);
     }
     string_builder sb; string_builder_init(&sb);
     if (state2.str - state.str - 1 > 0) {
@@ -312,7 +310,7 @@ static JSON parseString(input_stream *ins, unsigned char c)
         string_builder_add(&sb, c);
     }
     L_end:;
-    return (JSON)JSONString_new2(&sb);
+    return JSONString_new2(&sb);
 }
 
 static JSON parseObject(input_stream *ins, unsigned char c)
@@ -528,35 +526,6 @@ JSON *JSON_getArray(JSON json, const char *key, size_t *len)
     return a->list;
 }
 
-unsigned JSON_length(JSON json)
-{
-    assert((JSON_type(json) & 0x3) == 0x1);
-    JSONArray *a = toAry(json.val);
-    return a->length;
-}
-
-int JSONObject_iterator_init(JSONObject_iterator *itr, JSON json)
-{
-    if (!JSON_type(json) ==  JSON_Object)
-        return 0;
-    itr->obj = toObj(json.val);
-    itr->index = 0;
-    return 1;
-}
-
-JSON JSONObject_iterator_next(JSONObject_iterator *itr, JSON *val)
-{
-    JSONObject *o = itr->obj;
-    map_record_t *r;
-    while ((r = kmap_next(&o->child, (kmap_iterator*) itr)) != NULL) {
-        *val = toJSON(ValueP(r->v));
-        return toJSON(ValueS(r->k));
-    }
-    JSON obj; obj.bits = 0;
-    *val = obj;
-    return obj;
-}
-
 static void _JSONString_toString(string_builder *sb, JSONString *o)
 {
     string_builder_add(sb, '"');
@@ -622,7 +591,7 @@ static int utf8_check_size(unsigned char s)
     return 0;
 }
 
-static char *toUTF8(string_builder *sb, char *s, char *e)
+static const char *toUTF8(string_builder *sb, const char *s, const char *e)
 {
     uint32_t v = 0;
     int i, length = utf8_check_size((unsigned char) (*s));
@@ -644,8 +613,8 @@ static void JSONUString_toString(string_builder *sb, JSON json)
 {
     JSONString *o = toStr(json.val);
     string_builder_add(sb, '"');
-    char *s = o->str;
-    char *e = o->str + o->length;
+    const char *s = o->str;
+    const char *e = o->str + o->length;
     while (s < e) {
         unsigned char c;
         if (*s & 0x80) {

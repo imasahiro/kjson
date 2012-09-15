@@ -125,7 +125,7 @@ static void test_object_iterator(void)
 
     JSON_OBJECT_EACH(o, Itr, Key, Val) {
         char *k, *v;
-        char *str = JSONString_get(Key);
+        const char *str = JSONString_get(Key);
         assert(JSON_type(Key) == JSON_String);
         assert(JSON_type(Val) == JSON_type(JSON_get(o, str)));
         k = JSON_toString(Key);
