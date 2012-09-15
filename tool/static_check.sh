@@ -3,7 +3,6 @@
 SOURCE=
 SOURCE="${SOURCE} kjson.c"
 SOURCE="${SOURCE} map.c"
-SOURCE="${SOURCE} stream.c"
 
 CFLAGS="-I."
 cppcheck -q --force ${CFLAGS} --enable=all ${SOURCE}

@@ -46,9 +46,10 @@ extern "C" {
 static inline uint32_t djbhash(const char *p, uint32_t len)
 {
     uint32_t hash = 5381;
-    const char *const e = p + len;
-    while (p < e) {
-        hash = ((hash << 5) + hash) + *p++;
+    const unsigned char *      s = (const unsigned char *) p;
+    const unsigned char *const e = (const unsigned char *const) p + len;
+    while (s < e) {
+        hash = ((hash << 5) + hash) + *s++;
     }
     return (hash & 0x7fffffff);
 }
@@ -70,13 +71,6 @@ static int JSONString_equal(JSONString *k0, JSONString *k1)
     if (hash0 != hash1)
         return 0;
     return strncmp(k0->str, k1->str, k0->length) == 0;
-}
-
-static inline kmap_t *kmap_create(const kmap_api_t *api)
-{
-    kmap_t *m = (kmap_t *) KJSON_MALLOC(sizeof(*m));
-    m->h.base.api = api;
-    return m;
 }
 
 static void map_record_copy(map_record_t *dst, const map_record_t *src)

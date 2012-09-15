@@ -91,27 +91,38 @@ static void JSONInt64_free(JSON json)
     KJSON_FREE(o);
 }
 
+#define JSON_OP(OP)\
+    OP(/* 00 */JSONDouble)\
+    OP(/* 01 */JSONString)\
+    OP(/* 02 */JSONInt32)\
+    OP(/* 03 */JSONObject)\
+    OP(/* 04 */JSONBool)\
+    OP(/* 05 */JSONArray)\
+    OP(/* 06 */JSONNull)\
+    OP(/* 07 */JSONDouble)\
+    OP(/* 08 */JSONNOP)\
+    OP(/* 09 */JSONUString)\
+    OP(/* 10 */JSONNOP)\
+    OP(/* 11 */JSONInt64)\
+    OP(/* 12 */JSONNOP)\
+    OP(/* 13 */JSONNOP)\
+    OP(/* 14 */JSONNOP)\
+    OP(/* 15 */JSONNOP)
+
+#define JSONDouble_free  JSONNOP_free
+#define JSONInt32_free   JSONNOP_free
+#define JSONBool_free    JSONNOP_free
+#define JSONNull_free    JSONNOP_free
+#define JSONUString_free JSONString_free
 static void _JSON_free(JSON o)
 {
     kjson_type type = JSON_type(o);
     typedef void (*freeJSON)(JSON);
     static const freeJSON dispatch_free[] = {
-        /* 00 */JSONNOP_free,
-        /* 01 */JSONString_free,
-        /* 02 */JSONNOP_free,
-        /* 03 */JSONObject_free,
-        /* 04 */JSONNOP_free,
-        /* 05 */JSONArray_free,
-        /* 06 */JSONNOP_free,
-        /* 07 */JSONNOP_free,
-        /* 08 */JSONNOP_free,
-        /* 09 */JSONString_free,
-        /* 10 */JSONNOP_free,
-        /* 11 */JSONInt64_free,
-        /* 12 */JSONNOP_free,
-        /* 13 */JSONNOP_free,
-        /* 14 */JSONNOP_free,
-        /* 15 */JSONNOP_free};
+#define JSON_FREE(T) T##_free,
+        JSON_OP(JSON_FREE)
+#undef JSON_FREE
+    };
     dispatch_free[type](o);
 }
 
@@ -681,22 +692,10 @@ static void _JSON_toString(string_builder *sb, JSON json)
     kjson_type type = JSON_type(json);
     typedef void (*toString)(string_builder *sb, JSON);
     static const toString dispatch_toStr[] = {
-        /* 00 */JSONDouble_toString,
-        /* 01 */JSONString_toString,
-        /* 02 */JSONInt32_toString,
-        /* 03 */JSONObject_toString,
-        /* 04 */JSONBool_toString,
-        /* 05 */JSONArray_toString,
-        /* 06 */JSONNull_toString,
-        /* 07 */JSONDouble_toString,
-        /* 08 */JSONNOP_toString,
-        /* 09 */JSONUString_toString,
-        /* 10 */JSONNOP_toString,
-        /* 11 */JSONInt64_toString,
-        /* 12 */JSONNOP_toString,
-        /* 13 */JSONNOP_toString,
-        /* 14 */JSONNOP_toString,
-        /* 15 */JSONNOP_toString};
+#define TOSTRING(T) T##_toString,
+        JSON_OP(TOSTRING)
+#undef TOSTRING
+    };
     dispatch_toStr[type](sb, json);
 }
 
