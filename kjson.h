@@ -102,35 +102,7 @@ bool JSON_getBool(JSON json, const char *key);
 int JSON_getInt(JSON json, const char *key);
 JSON JSON_get(JSON json, const char *key);
 
-static inline char *JSONString_get(JSON json)
-{
-    JSONString *s = toStr(json.val);
-    return s->str;
-}
-
-static inline int32_t JSONInt_get(JSON json)
-{
-    return toInt32(json.val);
-}
-
-static inline double JSONDouble_get(JSON json)
-{
-    return toDouble(json.val);
-}
-
-static inline int JSONBool_get(JSON json)
-{
-    return toBool(json.val);
-}
-
-/* [New API] */
-JSON JSONNull_new(void);
-JSON JSONArray_new(void);
-JSON JSONObject_new(void);
-JSON JSONDouble_new(double val);
-JSON JSONString_new(char *s, size_t len);
-JSON JSONInt_new(int64_t val);
-JSON JSONBool_new(bool val);
+#include "kjson-inline.h"
 
 /* [Other API] */
 void JSONObject_set(JSON obj, JSON key, JSON value);

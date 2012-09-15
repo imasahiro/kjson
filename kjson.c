@@ -26,7 +26,6 @@
 #include "stream.h"
 #include "string_builder.h"
 #include "map.h"
-#include "internal.h"
 
 #include <stdlib.h>
 #include <assert.h>
@@ -48,59 +47,6 @@ static JSON JSONString_new2(string_builder *builder)
     o->str[len] = 0;
     KJSON_FREE(s);
     return toJSON(ValueU(o));
-}
-
-JSON JSONString_new(char *s, size_t len)
-{
-    JSONString *o = (JSONString *) KJSON_MALLOC(sizeof(*o)+len+1);
-    o->str = (char *) (o+1);
-    memcpy(o->str, s, len);
-    o->hashcode = 0;
-    o->length = len;
-    o->str[len] = 0;
-    return toJSON(ValueS(o));
-}
-
-JSON JSONNull_new()
-{
-    return toJSON(ValueN());
-}
-
-JSON JSONObject_new()
-{
-    JSONObject *o = (JSONObject *) KJSON_MALLOC(sizeof(*o));
-    kmap_init(&(o->child), 0);
-    return toJSON(ValueO(o));
-}
-
-JSON JSONArray_new()
-{
-    JSONArray *o = (JSONArray *) KJSON_MALLOC(sizeof(*o));
-    o->length   = 0;
-    o->capacity = 0;
-    o->list   = NULL;
-    return toJSON(ValueA(o));
-}
-
-JSON JSONDouble_new(double val)
-{
-    return toJSON(ValueF(val));
-}
-
-JSON JSONInt_new(int64_t val)
-{
-    if (val > (int64_t)INT32_MAX || val < (int64_t)INT32_MIN) {
-        JSONInt64 *i64 = (JSONInt64 *) KJSON_MALLOC(sizeof(JSONInt64));
-        i64->val = val;
-        return toJSON(ValueIO(i64));
-    } else {
-        return toJSON(ValueI(val));
-    }
-}
-
-JSON JSONBool_new(bool val)
-{
-    return toJSON(ValueB(val));
 }
 
 static void _JSON_free(JSON o);

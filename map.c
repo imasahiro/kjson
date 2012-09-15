@@ -24,7 +24,6 @@
 
 #include "kmemory.h"
 #include "kjson.h"
-#include "internal.h"
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -366,6 +365,8 @@ static map_record_t *dictmap_api_get(kmap_t *_m, JSONString *key)
     map_record_t *r = dictmap_get(m, hash, key);
     return r;
 }
+
+extern void _JSONString_free(JSONString *obj);
 
 static void dictmap_api_dispose(kmap_t *_m)
 {
