@@ -39,11 +39,12 @@ static JSON JSONString_new2(string_builder *builder)
 {
     size_t len;
     char *s = string_builder_tostring(builder, &len, 1);
-    JSONString *o = (JSONString *) KJSON_CALLOC(1, sizeof(*o) + len + 1);
+    len -= 1;
+    JSONString *o = (JSONString *) KJSON_CALLOC(1, sizeof(*o) + len);
     o->str = (const char *) (o+1);
     memcpy((char *) o->str, s, len);
     o->hashcode = 0;
-    o->length = len - 1;
+    o->length = len;
     KJSON_FREE(s);
     return toJSON(ValueU(o));
 }
@@ -616,38 +617,39 @@ static const char *toUTF8(string_builder *sb, const char *s, const char *e)
         }
         v = (v << 6) | (tmp & 0x3f);
     }
-    string_builder_add_hex(sb, v);
+    string_builder_add_hex_no_check(sb, v);
     return s;
 }
 
 static void JSONUString_toString(string_builder *sb, JSON json)
 {
     JSONString *o = toStr(json.val);
-    string_builder_add(sb, '"');
     const char *s = o->str;
     const char *e = o->str + o->length;
+    string_builder_ensure_size(sb, o->length+2/* = strlen("\"\") */);
+    string_builder_add(sb, '"');
     while (s < e) {
-        unsigned char c;
-        if (*s & 0x80) {
-            string_builder_add_string(sb, "\\u", 2);
+        unsigned char c = *s;
+        string_builder_ensure_size(sb, 8);
+        if (c & 0x80) {
+            string_builder_add_string_no_check(sb, "\\u", 2);
             s = toUTF8(sb, s, e);
             continue;
         }
         c = *s++;
         switch (c) {
-            case '"':  string_builder_add_string(sb, "\\\"", 2); break;
-            case '\\': string_builder_add_string(sb, "\\\\", 2); break;
-            case '/':  string_builder_add_string(sb, "\\/" , 2); break;
-            case '\b': string_builder_add_string(sb, "\\b", 2); break;
-            case '\f': string_builder_add_string(sb, "\\f", 2); break;
-            case '\n': string_builder_add_string(sb, "\\n", 2); break;
-            case '\r': string_builder_add_string(sb, "\\r", 2); break;
-            case '\t': string_builder_add_string(sb, "\\t", 2); break;
-            default:
-                string_builder_add(sb, c);
+            case '"':  string_builder_add_string_no_check(sb, "\\\"", 2); break;
+            case '\\': string_builder_add_string_no_check(sb, "\\\\", 2); break;
+            case '/':  string_builder_add_string_no_check(sb, "\\/" , 2); break;
+            case '\b': string_builder_add_string_no_check(sb, "\\b", 2); break;
+            case '\f': string_builder_add_string_no_check(sb, "\\f", 2); break;
+            case '\n': string_builder_add_string_no_check(sb, "\\n", 2); break;
+            case '\r': string_builder_add_string_no_check(sb, "\\r", 2); break;
+            case '\t': string_builder_add_string_no_check(sb, "\\t", 2); break;
+            default:   string_builder_add_no_check(sb, c);
         }
     }
-    string_builder_add(sb, '"');
+    string_builder_add_no_check(sb, '"');
 }
 
 static void JSONInt32_toString(string_builder *sb, JSON json)
