@@ -144,9 +144,15 @@ add_test(kjson_test_whitespace test_whitespace)
 target_link_libraries(test_whitespace kjson)
 
 install(TARGETS kjson LIBRARY DESTINATION lib)
+
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/karray.h DESTINATION include/kjson)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/kjson-inline.h DESTINATION include/kjson)
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/kjson.h DESTINATION include/kjson)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/kmap-inline.h DESTINATION include/kjson)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/kmap.h DESTINATION include/kjson)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/kstream.h DESTINATION include/kjson)
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/kstring_builder.h DESTINATION include/kjson)
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/numbox.h DESTINATION include/kjson)
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/map.h DESTINATION include/kjson)
 
 MESSAGE(STATUS)
 MESSAGE(STATUS "---------------------------------------------------------------------------" )
