@@ -133,6 +133,16 @@ static inline unsigned JSON_length(JSON json)
     return a->length;
 }
 
+static inline JSON JSONArray_get(JSON json, unsigned index)
+{
+    if (JSON_TYPE_CHECK(Array, json)) {
+        JSONArray *a = toAry(json.val);
+        return (a)->list[index];
+    } else {
+        return JSONNull_new();
+    }
+}
+
 static inline int JSONObject_iterator_init(JSONObject_iterator *itr, JSON json)
 {
     if (!JSON_type(json) ==  JSON_Object)
