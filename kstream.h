@@ -26,7 +26,6 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include "kmemory.h"
 
 #ifndef KJSON_STREAM_H
 #define KJSON_STREAM_H

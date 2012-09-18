@@ -25,7 +25,6 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <assert.h>
-#include "kmemory.h"
 
 #ifndef KJSON_ARRAY_H_
 #define KJSON_ARRAY_H_

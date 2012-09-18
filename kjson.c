@@ -23,8 +23,8 @@
  ***************************************************************************/
 
 #include "kjson.h"
-#include "stream.h"
-#include "string_builder.h"
+#include "kstream.h"
+#include "kstring_builder.h"
 
 #include <stdlib.h>
 #include <assert.h>

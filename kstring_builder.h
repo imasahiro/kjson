@@ -22,7 +22,8 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ***************************************************************************/
 
-#include "array.h"
+#include "karray.h"
+#include "kjson.h"
 #include <string.h>
 #include <stdint.h>
 

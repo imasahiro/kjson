@@ -1,4 +1,5 @@
-#include "stream.h"
+#include "kjson.h"
+#include "kstream.h"
 #include <unistd.h>
 #include <assert.h>
 

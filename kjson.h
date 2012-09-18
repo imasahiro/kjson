@@ -30,9 +30,18 @@
 #include "numbox.h"
 #include "kmap.h"
 
+#ifdef HAVE_JEMALLOC_H
+#include <jemalloc/jemalloc.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define KJSON_MALLOC(SIZE)        (malloc(SIZE))
+#define KJSON_REALLOC(PTR, SIZE)  (realloc(PTR, SIZE))
+#define KJSON_CALLOC(COUNT, SIZE) (calloc(COUNT, SIZE))
+#define KJSON_FREE(PTR)           (free(PTR))
 
 typedef enum kjson_type {
     /** ($type & 1 == 0) means $type extends Number */
