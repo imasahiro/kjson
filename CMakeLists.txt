@@ -83,20 +83,20 @@ endforeach()
 enable_testing()
 add_executable(test_kjson test/test_kjson.c)
 target_link_libraries(test_kjson kjson)
-add_test(test_kjson test_kjson ${JSON_TEST_CODE_LIST}
+add_test(kjson_test_kjson test_kjson ${JSON_TEST_CODE_LIST}
         ${JSON_BENCH_CODE_LIST})
 
 add_executable(test_stream test/test_stream.c)
 target_link_libraries(test_stream kjson)
-add_test(test_stream test_stream ${JSON_TEST_CODE_LIST}
+add_test(kjson_test_stream test_stream ${JSON_TEST_CODE_LIST}
         ${JSON_BENCH_CODE_LIST})
 
 add_executable(test_stringbuilder test/test_string_builder.c)
-add_test(test_stringbuilder test_stringbuilder)
+add_test(kjson_test_stringbuilder test_stringbuilder)
 
 add_executable(test_tostring test/test_tostring.c)
 target_link_libraries(test_tostring kjson)
-add_test(test_tostring test_tostring)
+add_test(kjson_test_tostring test_tostring)
 
 ## Benchmark
 find_library(HAVE_LIBJSON json)
@@ -133,14 +133,14 @@ add_executable(benchmark3 test/benchmark3.c)
 target_link_libraries(benchmark3 kjson)
 
 add_executable(parseString test/parseString.c)
-add_test(parseString parseString)
+add_test(kjson_parseString parseString)
 target_link_libraries(parseString kjson)
 
 add_executable(check_cpp test/check_cpp_build.cpp)
-add_test(check_cpp check_cpp)
+add_test(kjson_check_cpp check_cpp)
 
 add_executable(test_whitespace test/test_whitespace.c)
-add_test(test_whitespace test_whitespace)
+add_test(kjson_test_whitespace test_whitespace)
 target_link_libraries(test_whitespace kjson)
 
 install(TARGETS kjson LIBRARY DESTINATION lib)
