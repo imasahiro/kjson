@@ -62,7 +62,7 @@ static void JSONObject_free(JSON json)
     KJSON_FREE(o);
 }
 
-void _JSONString_free(JSONString *obj)
+static void _JSONString_free(JSONString *obj)
 {
     KJSON_FREE(obj);
 }
@@ -70,7 +70,7 @@ void _JSONString_free(JSONString *obj)
 static void JSONString_free(JSON json)
 {
     JSONString *o = toStr(json.val);
-    KJSON_FREE(o);
+    _JSONString_free(o);
 }
 
 static void JSONArray_free(JSON json)
@@ -1127,8 +1127,6 @@ static map_record_t *dictmap_api_get(kmap_t *_m, JSONString *key)
     map_record_t *r = dictmap_get(m, hash, key);
     return r;
 }
-
-extern void _JSONString_free(JSONString *obj);
 
 static void dictmap_api_dispose(kmap_t *_m)
 {
