@@ -20,7 +20,7 @@ if(${CMAKE_BUILD_TYPE} STREQUAL "Release")
 endif()
 
 
-set(JSON_SRC kjson.c map.c)
+set(JSON_SRC kjson.c)
 add_library(kjson SHARED ${JSON_SRC})
 
 # jemalloc

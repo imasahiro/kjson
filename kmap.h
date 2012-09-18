@@ -83,41 +83,10 @@ struct map_api {
     void (*_dispose)(kmap_t *m);
 };
 
-kmap_t *kmap_new(unsigned init);
-void kmap_init(kmap_t *m, unsigned init);
-void kmap_delete(kmap_t *m);
-
-static inline void kmap_dispose(kmap_t *m)
-{
-    m->h.base.api->_dispose(m);
-}
-
-static inline map_record_t *kmap_get(kmap_t *m, struct JSONString *key)
-{
-    return m->h.base.api->_get(m, key);
-}
-
-static inline map_status_t kmap_set(kmap_t *m, struct JSONString *key, uint64_t val)
-{
-    return m->h.base.api->_set(m, key, val);
-}
-
-static inline void kmap_remove(kmap_t *m, struct JSONString *key)
-{
-    return m->h.base.api->_remove(m, key);
-}
-
-static inline map_record_t *kmap_next(kmap_t *m, kmap_iterator *itr)
-{
-    return m->h.base.api->_next(m, itr);
-}
-
-static inline unsigned kmap_size(kmap_t *m)
-{
-    return m->h.used_size;
-}
-
 #ifdef __cplusplus
 }
 #endif
+
+#include "kmap-inline.h"
+
 #endif /* end of include guard */

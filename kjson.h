@@ -28,7 +28,7 @@
 #define KJSON_H_
 
 #include "numbox.h"
-#include "map.h"
+#include "kmap.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -36,17 +36,17 @@ extern "C" {
 
 typedef enum kjson_type {
     /** ($type & 1 == 0) means $type extends Number */
-    JSON_Double =  0, /* 0000 */
-    JSON_String =  1, /* 0001 */
-    JSON_Int32  =  2, /* 0010 */
-    JSON_Object =  3, /* 0011 */
-    JSON_Bool   =  4, /* 0100 */
-    JSON_Array  =  5, /* 0101 */
-    JSON_Null   =  6, /* 0110 */
-    JSON_UString = 9, /* 1001 */
-    JSON_Int64  = 11, /* 1011 */
-    JSON_Error  = 15, /* 1111 */
-    /* '7' is reserved by numbox*/
+    JSON_Double =  0, /* 0b0000 */
+    JSON_String =  1, /* 0b0001 */
+    JSON_Int32  =  2, /* 0b0010 */
+    JSON_Object =  3, /* 0b0011 */
+    JSON_Bool   =  4, /* 0b0100 */
+    JSON_Array  =  5, /* 0b0101 */
+    JSON_Null   =  6, /* 0b0110 */
+    JSON_UString = 9, /* 0b1001 */
+    JSON_Int64  = 11, /* 0b1011 */
+    JSON_Error  = 15, /* 0b1111 */
+    /* '7' is reserved by numbox */
     JSON_reserved  =  7 /* 0111 */
 } kjson_type;
 
@@ -103,7 +103,7 @@ JSON JSON_get(JSON json, const char *key);
 
 /* [Other API] */
 void JSONObject_set(JSON obj, JSON key, JSON value);
-void JSONArray_set(JSON ary, int id, JSON value);
+//void JSONArray_set(JSON ary, unsigned index, JSON value);
 void JSONArray_append(JSON ary, JSON o);
 void JSON_free(JSON o);
 
@@ -149,10 +149,10 @@ typedef struct JSONObject_iterator {
     for (KEY = JSONObject_iterator_next(&ITR, &VAL); KEY.bits;\
             KEY = JSONObject_iterator_next(&ITR, &VAL))
 
-#include "kjson-inline.h"
-
 #ifdef __cplusplus
 }
 #endif
+
+#include "kjson-inline.h"
 
 #endif /* end of include guard */
