@@ -51,6 +51,12 @@ static inline JSON toJSON(Value v) {
 #define INT32_MIN        (-INT32_MAX-1)
 #endif
 
+static inline JSON JSON_parse(const char *str)
+{
+    const char *end = str + strlen(str);
+    return parseJSON(str, end);
+}
+
 /* [Getter API] */
 static inline const char *JSONString_get(JSON json)
 {

@@ -136,6 +136,7 @@ static inline kjson_type JSON_type(JSON json) {
     return (IsDouble((v)))?
         JSON_Double : (kjson_type) ((tag >> TagBitShift) & 15);
 }
+
 #define JSON_TYPE_CHECK(T, O) (JSON_type(((JSON)O)) == JSON_##T)
 
 #define JSON_ARRAY_EACH(json, A, I, E) JSON_ARRAY_EACH_(json, A, I, E, 0)
