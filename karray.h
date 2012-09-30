@@ -47,71 +47,50 @@ struct ARRAY(T) {\
 struct ARRAY(T);\
 typedef struct ARRAY(T) ARRAY(T)
 
-#define DEF_ARRAY_OP(T)\
+#define DEF_ARRAY_OP__(T, ValueType)\
 static inline ARRAY(T) *ARRAY_init_##T (ARRAY(T) *a, size_t initsize) {\
     a->list = (T*) KJSON_MALLOC(sizeof(T)*initsize);\
     a->capacity  = initsize;\
     a->size  = 0;\
     return a;\
 }\
+static inline void ARRAY_##T##_ensureSize(ARRAY(T) *a, size_t size) {\
+    while (a->size + size >= a->capacity) {\
+        a->capacity *= 2;\
+    }\
+    a->list = (T*)realloc(a->list, sizeof(T) * a->capacity);\
+}\
+static inline void ARRAY_##T##_dispose(ARRAY(T) *a) {\
+    KJSON_FREE(a->list);\
+    a->size     = 0;\
+    a->capacity = 0;\
+    a->list     = NULL;\
+}\
+static inline void ARRAY_##T##_add(ARRAY(T) *a, ValueType v) {\
+    if (a->size + 1 >= a->capacity) {\
+        a->capacity *= 2;\
+        a->list = (T*)realloc(a->list, sizeof(T) * a->capacity);\
+    }\
+    ARRAY_##T##_set(a, a->size++, v);\
+}
+
+#define DEF_ARRAY_OP(T)\
 static inline T *ARRAY_##T##_get(ARRAY(T) *a, int idx) {\
     return a->list+idx;\
 }\
 static inline void ARRAY_##T##_set(ARRAY(T) *a, int idx, T *v) {\
     memcpy(a->list+idx, v, sizeof(T));\
 }\
-static inline void ARRAY_##T##_add(ARRAY(T) *a, T *v) {\
-    if (a->size + 1 >= a->capacity) {\
-        a->capacity *= 2;\
-        a->list = (T*)realloc(a->list, sizeof(T) * a->capacity);\
-    }\
-    ARRAY_##T##_set(a, a->size++, v);\
-}\
-static inline void ARRAY_##T##_ensureSize(ARRAY(T) *a, size_t size) {\
-    while (a->size + size >= a->capacity) {\
-        a->capacity *= 2;\
-    }\
-    a->list = (T*)realloc(a->list, sizeof(T) * a->capacity);\
-}\
-static inline void ARRAY_##T##_dispose(ARRAY(T) *a) {\
-    KJSON_FREE(a->list);\
-    a->size     = 0;\
-    a->capacity = 0;\
-    a->list     = NULL;\
-}
+DEF_ARRAY_OP__(T, T *)
 
 #define DEF_ARRAY_OP_NOPOINTER(T)\
-static inline ARRAY(T) *ARRAY_init_##T (ARRAY(T) *a, size_t initsize) {\
-    a->list = (T*) KJSON_MALLOC(sizeof(T)*initsize);\
-    a->capacity  = initsize;\
-    a->size  = 0;\
-    return a;\
-}\
 static inline T ARRAY_##T##_get(ARRAY(T) *a, int idx) {\
     return a->list[idx];\
 }\
 static inline void ARRAY_##T##_set(ARRAY(T) *a, int idx, T v) {\
     a->list[idx] = v;\
 }\
-static inline void ARRAY_##T##_add(ARRAY(T) *a, T v) {\
-    if (a->size + 1 >= a->capacity) {\
-        a->capacity *= 2;\
-        a->list = (T*)realloc(a->list, sizeof(T) * a->capacity);\
-    }\
-    ARRAY_##T##_set(a, a->size++, v);\
-}\
-static inline void ARRAY_##T##_ensureSize(ARRAY(T) *a, size_t size) {\
-    while (a->size + size >= a->capacity) {\
-        a->capacity *= 2;\
-    }\
-    a->list = (T*)realloc(a->list, sizeof(T) * a->capacity);\
-}\
-static inline void ARRAY_##T##_dispose(ARRAY(T) *a) {\
-    KJSON_FREE(a->list);\
-    a->size     = 0;\
-    a->capacity = 0;\
-    a->list     = NULL;\
-}
+DEF_ARRAY_OP__(T, T)
 
 #define DEF_ARRAY_T_OP(T) DEF_ARRAY_T(T);DEF_ARRAY_OP(T)
 
