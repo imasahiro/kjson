@@ -3,7 +3,7 @@
 
 int main(int argc, char const* argv[])
 {
-#define SIZE_OF(T) "%d\n", sizeof(T)
+#define SIZE_OF(T) "%s %d\n", #T, (int)sizeof(T)
     fprintf(stderr, SIZE_OF(JSON));
     fprintf(stderr, SIZE_OF(JSONInt));
     fprintf(stderr, SIZE_OF(JSONInt64));

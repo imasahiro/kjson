@@ -19,7 +19,6 @@ if(${CMAKE_BUILD_TYPE} STREQUAL "Release")
     add_definitions(-DNDEBUG)
 endif()
 
-
 set(JSON_SRC kjson.c)
 add_library(kjson SHARED ${JSON_SRC})
 
@@ -64,6 +63,11 @@ foreach(it ${JSON_BENCH})
 endforeach()
 
 enable_testing()
+
+add_executable(test_mempool test/test_mempool.c)
+target_link_libraries(test_mempool kjson)
+add_test(kjson_test_mempool test_mempool)
+
 add_executable(test_kjson test/test_kjson.c)
 target_link_libraries(test_kjson kjson)
 add_test(kjson_test_kjson test_kjson ${JSON_TEST_CODE_LIST}

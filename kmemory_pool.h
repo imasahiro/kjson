@@ -73,15 +73,14 @@ DEF_ARRAY_OP(BlockInfo);
 #undef KJSON_MALLOC
 #undef KJSON_FREE
 
-typedef struct memory_pool {
+typedef struct JSONMemoryPool {
     ARRAY(BlockInfo) current_block;
     ARRAY(PageData)  array;
-} memory_pool;
+} JSONMemoryPool;
 
-static memory_pool *memory_pool_new()
+static void JSONMemoryPool_Init(JSONMemoryPool *pool)
 {
     int i;
-    memory_pool *pool = (memory_pool *) malloc(sizeof(*pool));
     ARRAY_init(PageData,  &pool->array, MAX_ALIGN_LOG2 - MIN_ALIGN_LOG2);
     ARRAY_init(BlockInfo, &pool->current_block, MAX_ALIGN_LOG2 - MIN_ALIGN_LOG2);
     for (i = MIN_ALIGN_LOG2; i <= MAX_ALIGN_LOG2; ++i) {
@@ -94,10 +93,9 @@ static memory_pool *memory_pool_new()
         block.current = block.base;
         ARRAY_add(BlockInfo, &pool->current_block, &block);
     }
-    return pool;
 }
 
-static void *mpool_alloc(memory_pool *pool, size_t n, bool *malloced)
+static void *JSONMemoryPool_Alloc(JSONMemoryPool *pool, size_t n, bool *malloced)
 {
     assert(n > 0);
     if (unlikely(n > (1 << MAX_ALIGN_LOG2))) {
@@ -121,7 +119,7 @@ static void *mpool_alloc(memory_pool *pool, size_t n, bool *malloced)
     return newblock;
 }
 
-static void memory_pool_delete(memory_pool *pool)
+static void JSONMemoryPool_Delete(JSONMemoryPool *pool)
 {
     PageData *p, *end;
     FOR_EACH_ARRAY(pool->array, p, end) {
@@ -132,7 +130,6 @@ static void memory_pool_delete(memory_pool *pool)
     }
     ARRAY_dispose(PageData, &pool->array);
     ARRAY_dispose(BlockInfo,  &pool->current_block);
-    free(pool);
 }
 
 #define MPOOL_ALLOC(N)  malloc(N)
