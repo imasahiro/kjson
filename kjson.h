@@ -30,10 +30,6 @@
 #include "numbox.h"
 #include "kmap.h"
 
-#ifdef HAVE_JEMALLOC_H
-#include <jemalloc/jemalloc.h>
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif

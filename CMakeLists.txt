@@ -23,23 +23,6 @@ endif()
 set(JSON_SRC kjson.c)
 add_library(kjson SHARED ${JSON_SRC})
 
-# jemalloc
-SET(SEARCH_DIRS
-    /usr/local
-    /opt/local # DarwinPorts
-)
-
-find_path(JEMALLOC_INCLUDE_DIR NAMES jemalloc.h
-    HINTS ${SEARCH_DIRS} PATH_SUFFIXES include/jemalloc)
-
-find_library(JEMALLOC_LIBRARY NAMES jemalloc
-    HINTS ${SEARCH_DIRS} PATH_SUFFIXES lib64 lib)
-
-if(JEMALLOC_INCLUDE_DIR AND JEMALLOC_LIBRARY)
-    add_definitions(-DHAVE_JEMALLOC_H=1)
-    target_link_libraries(kjson ${JEMALLOC_LIBRARY})
-endif(JEMALLOC_INCLUDE_DIR AND JEMALLOC_LIBRARY)
-
 ## Test cases
 set(JSON_TEST
         "./test/test01.json"
