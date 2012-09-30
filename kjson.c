@@ -39,7 +39,7 @@ static JSON JSONString_new2(string_builder *builder)
     size_t len;
     char *s = string_builder_tostring(builder, &len, 1);
     len -= 1;
-    JSONString *o = (JSONString *) KJSON_CALLOC(1, sizeof(*o) + len);
+    JSONString *o = (JSONString *) KJSON_MALLOC(sizeof(*o) + len);
     o->str = (const char *) (o+1);
     memcpy((char *) o->str, s, len);
     o->hashcode = 0;

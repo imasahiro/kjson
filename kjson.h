@@ -30,29 +30,28 @@
 #include "numbox.h"
 #include "kmap.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #define KJSON_MALLOC(SIZE)        (malloc(SIZE))
 #define KJSON_REALLOC(PTR, SIZE)  (realloc(PTR, SIZE))
 #define KJSON_CALLOC(COUNT, SIZE) (calloc(COUNT, SIZE))
 #define KJSON_FREE(PTR)           (free(PTR))
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum kjson_type {
     /** ($type & 1 == 0) means $type extends Number */
-    JSON_Double =  0, /* 0b0000 */
-    JSON_String =  1, /* 0b0001 */
-    JSON_Int32  =  2, /* 0b0010 */
-    JSON_Object =  3, /* 0b0011 */
-    JSON_Bool   =  4, /* 0b0100 */
-    JSON_Array  =  5, /* 0b0101 */
-    JSON_Null   =  6, /* 0b0110 */
-    JSON_UString = 9, /* 0b1001 */
-    JSON_Int64  = 11, /* 0b1011 */
-    JSON_Error  = 15, /* 0b1111 */
-    /* '7' is reserved by numbox */
-    JSON_reserved  =  7 /* 0111 */
+    JSON_Double   =  0, /* 0b00000 */
+    JSON_String   =  1, /* 0b00001 */
+    JSON_Int32    =  2, /* 0b00010 */
+    JSON_Object   =  3, /* 0b00011 */
+    JSON_Bool     =  4, /* 0b00100 */
+    JSON_Array    =  5, /* 0b00101 */
+    JSON_Null     =  6, /* 0b00110 */
+    JSON_UString  =  9, /* 0b01001 */
+    JSON_Int64    = 11, /* 0b01011 */
+    JSON_Error    = 15, /* 0b01111 */
+    JSON_reserved =  7  /* 0b00111 '7' is reserved by numbox */
 } kjson_type;
 
 union JSONValue;
@@ -108,7 +107,6 @@ JSON JSON_get(JSON json, const char *key);
 
 /* [Other API] */
 void JSONObject_set(JSON obj, JSON key, JSON value);
-//void JSONArray_set(JSON ary, unsigned index, JSON value);
 void JSONArray_append(JSON ary, JSON o);
 void JSON_free(JSON o);
 
