@@ -37,7 +37,7 @@ extern "C" {
 struct input_stream;
 
 union io_data {
-    unsigned char *str;
+    const unsigned char *str;
     FILE *fp;
     uintptr_t u;
     void *ptr;
@@ -74,21 +74,12 @@ static inline bool string_input_stream_eos(input_stream *ins)
     for (CUR = string_input_stream_next(INS);\
             string_input_stream_eos(INS); CUR = string_input_stream_next(INS))
 
-static void string_input_stream_init(input_stream *ins, void **args)
+static input_stream *new_string_input_stream(input_stream *ins, const char *buf, size_t len)
 {
-    unsigned char *text;
-    size_t len;
-    text = (unsigned char *) args[0];
-    len  = (size_t) args[1];
+    const unsigned char *text = (const unsigned char *) buf;
     ins->d0.str = text;
     ins->d1.str = text + len + 1;
     ins->d2.u   = 0;
-}
-
-static inline input_stream *new_input_stream(void **args, long flags)
-{
-    input_stream *ins = (input_stream *) KJSON_MALLOC(sizeof(input_stream));
-    string_input_stream_init(ins, args);
     return ins;
 }
 
@@ -97,19 +88,10 @@ static void string_input_stream_deinit(input_stream *ins)
     ins->d0.str = ins->d1.str = NULL;
 }
 
-static input_stream *new_string_input_stream(const char *buf, size_t len, long flags)
-{
-    void *args[] = {
-        (void*)buf, (void*)len
-    };
-    input_stream *ins = new_input_stream(args, flags);
-    return ins;
-}
 
 static void input_stream_delete(input_stream *ins)
 {
     string_input_stream_deinit(ins);
-    KJSON_FREE(ins);
 }
 
 #ifdef __cplusplus

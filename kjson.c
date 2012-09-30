@@ -39,7 +39,7 @@ static JSON JSONString_new2(string_builder *builder)
     size_t len;
     char *s = string_builder_tostring(builder, &len, 1);
     len -= 1;
-    JSONString *o = (JSONString *) KJSON_MALLOC(sizeof(*o) + len);
+    JSONString *o = (JSONString *) MPOOL_ALLOC(sizeof(*o) + len);
     o->str = (const char *) (o+1);
     memcpy((char *) o->str, s, len);
     o->hashcode = 0;
@@ -59,12 +59,12 @@ static void JSONObject_free(JSON json)
 {
     JSONObject *o = toObj(json.val);
     kmap_dispose(&o->child);
-    KJSON_FREE(o);
+    MPOOL_FREE(o);
 }
 
 static void _JSONString_free(JSONString *obj)
 {
-    KJSON_FREE(obj);
+    MPOOL_FREE(obj);
 }
 
 static void JSONString_free(JSON json)
@@ -81,14 +81,14 @@ static void JSONArray_free(JSON json)
         _JSON_free(*s);
     }
 
-    KJSON_FREE(a->list);
-    KJSON_FREE(a);
+    free(a->list);
+    MPOOL_FREE(a);
 }
 
 static void JSONInt64_free(JSON json)
 {
     JSONInt64 *o = toInt64(json.val);
-    KJSON_FREE(o);
+    MPOOL_FREE(o);
 }
 
 #define JSON_OP(OP)\
@@ -130,7 +130,7 @@ static void _JSONArray_append(JSONArray *a, JSON o)
 {
     if (a->length + 1 >= a->capacity) {
         uint32_t newsize = 1 << LOG2(a->capacity * 2 + 1);
-        a->list = (JSON*) KJSON_REALLOC(a->list, newsize * sizeof(JSON));
+        a->list = (JSON*) realloc(a->list, newsize * sizeof(JSON));
         a->capacity = newsize;
     }
     a->list[a->length++] = o;
@@ -204,8 +204,8 @@ static unsigned char skip_space(input_stream *ins, unsigned char c)
 static unsigned char skipBSorDoubleQuote(input_stream *ins, unsigned char c)
 {
     register unsigned ch = c;
-    register unsigned char *      str = (unsigned char *) ins->d0.str;
-    register unsigned char *const end = (unsigned char *) ins->d1.str;
+    register unsigned char *str = (unsigned char *) ins->d0.str;
+    register unsigned char *end = (unsigned char *) ins->d1.str;
     for(; str != end; ch = *str++) {
         if (0x80 & string_table[ch]) {
             break;
@@ -479,7 +479,8 @@ static JSON parseJSON_stream(input_stream *ins)
 
 JSON parseJSON(const char *s, const char *e)
 {
-    input_stream *ins = new_string_input_stream(s, e - s, 0);
+    input_stream insbuf;
+    input_stream *ins = new_string_input_stream(&insbuf, s, e - s);
     JSON json = parseJSON_stream(ins);
     input_stream_delete(ins);
     return json;

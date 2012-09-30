@@ -12,7 +12,7 @@ static void test_string(void)
         buf[i] = i;
         ans += (char)i;
     }
-    input_stream *ins = new_string_input_stream((const char*)buf, 1024, 0);
+    input_stream insbuf, *ins = new_string_input_stream(&insbuf, (const char*)buf, 1024);
     int sum = 0;
     char cur;
     for_each_istream(ins, cur) {

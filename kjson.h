@@ -27,13 +27,9 @@
 #ifndef KJSON_H_
 #define KJSON_H_
 
+#include "kmemory_pool.h"
 #include "numbox.h"
 #include "kmap.h"
-
-#define KJSON_MALLOC(SIZE)        (malloc(SIZE))
-#define KJSON_REALLOC(PTR, SIZE)  (realloc(PTR, SIZE))
-#define KJSON_CALLOC(COUNT, SIZE) (calloc(COUNT, SIZE))
-#define KJSON_FREE(PTR)           (free(PTR))
 
 #ifdef __cplusplus
 extern "C" {

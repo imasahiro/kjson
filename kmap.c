@@ -86,7 +86,7 @@ static void hashmap_record_reset(hashmap_t *m, size_t newsize)
     unsigned alloc_size = sizeof(map_record_t) * newsize;
     m->used_size = 0;
     (m->record_size_mask) = newsize - 1;
-    m->base.records = (map_record_t *) KJSON_CALLOC(1, alloc_size);
+    m->base.records = (map_record_t *) calloc(1, alloc_size);
 }
 
 static map_status_t hashmap_set_no_resize(hashmap_t *m, map_record_t *rec)
@@ -125,7 +125,7 @@ static void hashmap_record_resize(hashmap_t *m)
                 continue;
         }
     } while (0);
-    KJSON_FREE(head/*, oldsize*sizeof(map_record_t)*/);
+    free(head/*, oldsize*sizeof(map_record_t)*/);
 }
 
 static map_status_t hashmap_set(hashmap_t *m, map_record_t *rec)
@@ -175,7 +175,7 @@ static void hashmap_api_dispose(kmap_t *_m)
             JSON_free(toJSON(ValueS(r->k)));
         }
     }
-    KJSON_FREE(m->base.records/*, (m->record_size_mask+1) * sizeof(map_record_t)*/);
+    free(m->base.records/*, (m->record_size_mask+1) * sizeof(map_record_t)*/);
 }
 
 static map_record_t *hashmap_api_get(kmap_t *_m, JSONString *key)
@@ -237,7 +237,7 @@ static kmap_t *dictmap_init(dictmap_t *m)
 {
     int i;
     const size_t allocSize = sizeof(map_record_t)*DICTMAP_THRESHOLD;
-    m->base.records = (map_record_t *) KJSON_MALLOC(allocSize);
+    m->base.records = (map_record_t *) malloc(allocSize);
     m->used_size = 0;
     for (i = 0; i < DICTMAP_THRESHOLD; ++i) {
         m->hash_list[i] = 0;
@@ -360,7 +360,7 @@ static void dictmap_api_dispose(kmap_t *_m)
             JSON_free(toJSON(ValueP(r->v)));
         }
     }
-    KJSON_FREE(m->base.records/*, m->used_size * sizeof(map_record_t)*/);
+    free(m->base.records/*, m->used_size * sizeof(map_record_t)*/);
 }
 
 const kmap_api_t DICT = {

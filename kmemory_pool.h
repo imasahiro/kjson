@@ -81,14 +81,14 @@ typedef struct memory_pool {
 static memory_pool *memory_pool_new()
 {
     int i;
-    memory_pool *pool = malloc(sizeof(*pool));
+    memory_pool *pool = (memory_pool *) malloc(sizeof(*pool));
     ARRAY_init(PageData,  &pool->array, MAX_ALIGN_LOG2 - MIN_ALIGN_LOG2);
     ARRAY_init(BlockInfo, &pool->current_block, MAX_ALIGN_LOG2 - MIN_ALIGN_LOG2);
     for (i = MIN_ALIGN_LOG2; i <= MAX_ALIGN_LOG2; ++i) {
         PageData page;
         BlockInfo block;
         ARRAY_init(CharPtr, &page.block, 4);
-        ARRAY_add(CharPtr, &page.block, malloc(MEMORYBLOCK_SIZE));
+        ARRAY_add(CharPtr, &page.block, (char *) malloc(MEMORYBLOCK_SIZE));
         ARRAY_add(PageData, &pool->array, &page);
         block.base = ARRAY_get(CharPtr, &page.block, 0);
         block.current = block.base;
@@ -134,6 +134,9 @@ static void memory_pool_delete(memory_pool *pool)
     ARRAY_dispose(BlockInfo,  &pool->current_block);
     free(pool);
 }
+
+#define MPOOL_ALLOC(N)  malloc(N)
+#define MPOOL_FREE(PTR) free(PTR)
 
 #ifdef __cplusplus
 } /* extern "C" */

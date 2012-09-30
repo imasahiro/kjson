@@ -82,11 +82,12 @@ static inline int JSONBool_get(JSON json)
 /* [New API] */
 static inline JSON JSONString_new(const char *s, size_t len)
 {
-    JSONString *o = (JSONString *) KJSON_MALLOC(sizeof(*o)+len+1);
+    JSONString *o = (JSONString *) MPOOL_ALLOC(sizeof(*o)+len+1);
     o->str = (const char *) (o+1);
-    memcpy((char *)o->str, s, len);
     o->hashcode = 0;
     o->length = len;
+    memcpy((char *)o->str, s, len);
+    ((char*)o->str)[len] = 0;
     return toJSON(ValueS(o));
 }
 
@@ -97,14 +98,14 @@ static inline JSON JSONNull_new()
 
 static inline JSON JSONObject_new()
 {
-    JSONObject *o = (JSONObject *) KJSON_MALLOC(sizeof(*o));
+    JSONObject *o = (JSONObject *) MPOOL_ALLOC(sizeof(*o));
     kmap_init(&(o->child), 0);
     return toJSON(ValueO(o));
 }
 
 static inline JSON JSONArray_new()
 {
-    JSONArray *o = (JSONArray *) KJSON_MALLOC(sizeof(*o));
+    JSONArray *o = (JSONArray *) MPOOL_ALLOC(sizeof(*o));
     o->length   = 0;
     o->capacity = 0;
     o->list   = NULL;
@@ -119,7 +120,7 @@ static inline JSON JSONDouble_new(double val)
 static inline JSON JSONInt_new(int64_t val)
 {
     if (val > INT32_MAX || val < INT32_MIN) {
-        JSONInt64 *i64 = (JSONInt64 *) KJSON_MALLOC(sizeof(JSONInt64));
+        JSONInt64 *i64 = (JSONInt64 *) MPOOL_ALLOC(sizeof(JSONInt64));
         i64->val = val;
         return toJSON(ValueIO(i64));
     } else {
