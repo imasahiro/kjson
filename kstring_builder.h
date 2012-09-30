@@ -22,10 +22,15 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ***************************************************************************/
 
-#include "karray.h"
-#include "kjson.h"
 #include <string.h>
 #include <stdint.h>
+
+#ifndef KJSON_MALLOC
+#define KJSON_MALLOC(N) malloc(N)
+#define KJSON_FREE(PTR) free(PTR)
+#endif
+
+#include "karray.h"
 
 #ifndef KJSON_STRING_BUILDER_H_
 #define KJSON_STRING_BUILDER_H_
@@ -42,12 +47,14 @@ static inline void string_builder_init(string_builder *sb)
 {
     ARRAY_init(char, &sb->buf, 4);
 }
+
 static inline void string_builder_add_no_check(string_builder *sb, char c)
 {
     char *p = sb->buf.list + ARRAY_size(sb->buf);
     *p = c;
     sb->buf.size += 1;
 }
+
 static inline void string_builder_add(string_builder *sb, char c)
 {
     ARRAY_add(char, &sb->buf, c);
@@ -97,6 +104,7 @@ static inline char *put_i(char *p, int64_t value)
     }
     return put_d(p, (uint64_t)value);
 }
+
 static inline void string_builder_add_hex_no_check(string_builder *sb, uint32_t i)
 {
     ARRAY_ensureSize(char, &sb->buf, 4/* = sizeof("abcd") */);
@@ -104,6 +112,7 @@ static inline void string_builder_add_hex_no_check(string_builder *sb, uint32_t 
     char *e = put_x(p, i);
     sb->buf.size += e - p;
 }
+
 static inline void string_builder_add_int(string_builder *sb, int32_t i)
 {
     ARRAY_ensureSize(char, &sb->buf, 12/* = sizeof("-2147483648") */);
@@ -111,6 +120,7 @@ static inline void string_builder_add_int(string_builder *sb, int32_t i)
     char *e = put_i(p, i);
     sb->buf.size += e - p;
 }
+
 static inline void string_builder_add_int64(string_builder *sb, int64_t i)
 {
     ARRAY_ensureSize(char, &sb->buf, 20/* = sizeof("-9223372036854775807") */);
@@ -118,10 +128,12 @@ static inline void string_builder_add_int64(string_builder *sb, int64_t i)
     char *e = put_i(p, i);
     sb->buf.size += e - p;
 }
+
 static inline void string_builder_ensure_size(string_builder *sb, size_t len)
 {
     ARRAY_ensureSize(char, &sb->buf, len);
 }
+
 static inline void string_builder_add_string_no_check(string_builder *sb, const char *s, size_t len)
 {
     char *p = sb->buf.list + ARRAY_size(sb->buf);
