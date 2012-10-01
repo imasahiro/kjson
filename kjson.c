@@ -43,7 +43,7 @@ static JSON JSONString_new2(JSONMemoryPool *jm, string_builder *builder)
     JSONString *o = (JSONString *) JSONMemoryPool_Alloc(jm, sizeof(*o) + len, &malloced);
     o->str = (const char *) (o+1);
     memcpy((char *) o->str, s, len);
-    o->hashcode = 0;
+    JSONString_InitHashCode(o);
     o->length = len;
     KJSON_FREE(s);
     return toJSON(ValueU(o));
@@ -490,7 +490,7 @@ static JSON _JSON_get(JSON json, const char *key)
     struct JSONString tmp;
     tmp.str = (char *)key;
     tmp.length = len;
-    tmp.hashcode = 0;
+    JSONString_InitHashCode(&tmp);
     map_record_t *r = kmap_get(&o->child, &tmp);
     return (r) ? toJSON(ValueP(r->v)) : JSON_default;
 }

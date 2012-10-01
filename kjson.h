@@ -203,16 +203,18 @@ static inline int JSONBool_get(JSON json)
     return toBool(json.val);
 }
 
+static void JSONString_InitHashCode(JSONString *key);
+
 /* [New API] */
 static inline JSON JSONString_new(JSONMemoryPool *jm, const char *s, size_t len)
 {
     bool malloced;
     JSONString *o = (JSONString *) JSONMemoryPool_Alloc(jm, sizeof(*o)+len+1, &malloced);
     o->str = (const char *) (o+1);
-    o->hashcode = 0;
     o->length = len;
     memcpy((char *)o->str, s, len);
     ((char*)o->str)[len] = 0;
+    JSONString_InitHashCode(o);
     return toJSON(ValueS(o));
 }
 
@@ -298,6 +300,22 @@ static inline JSON JSONObject_iterator_next(JSONObject_iterator *itr, JSON *val)
     JSON obj; obj.bits = 0;
     *val = obj;
     return obj;
+}
+
+static inline uint32_t djbhash(const char *p, uint32_t len)
+{
+    uint32_t hash = 5381;
+    const unsigned char *      s = (const unsigned char *) p;
+    const unsigned char *const e = (const unsigned char *const) p + len;
+    while (s < e) {
+        hash = ((hash << 5) + hash) + *s++;
+    }
+    return (hash & 0x7fffffff);
+}
+
+static void JSONString_InitHashCode(JSONString *key)
+{
+    key->hashcode = djbhash(key->str, key->length);
 }
 
 #endif /* end of include guard */
