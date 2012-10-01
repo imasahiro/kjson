@@ -127,6 +127,7 @@ static inline void JSONMemoryPool_Delete(JSONMemoryPool *pool)
         FOR_EACH_ARRAY(p->block, x, e) {
             free(*x);
         }
+        ARRAY_dispose(CharPtr, &p->block);
     }
     ARRAY_dispose(PageData, &pool->array);
     ARRAY_dispose(BlockInfo,  &pool->current_block);
