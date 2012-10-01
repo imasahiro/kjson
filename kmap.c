@@ -37,8 +37,22 @@ extern "C" {
 #define likely(x)     __builtin_expect(!!(x), 1)
 #endif
 
+static inline uint32_t djbhash(const char *p, uint32_t len)
+{
+    uint32_t hash = 5381;
+    const unsigned char *      s = (const unsigned char *) p;
+    const unsigned char *const e = (const unsigned char *const) p + len;
+    while (s < e) {
+        hash = ((hash << 5) + hash) + *s++;
+    }
+    return (hash & 0x7fffffff);
+}
+
 static unsigned JSONString_hashCode(JSONString *key)
 {
+
+    if (!key->hashcode)
+        key->hashcode = djbhash(key->str, key->length);
     return key->hashcode;
 }
 

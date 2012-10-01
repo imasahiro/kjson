@@ -40,9 +40,9 @@ static JSON JSONString_new2(JSONMemoryPool *jm, string_builder *builder)
     char *s = string_builder_tostring(builder, &len, 1);
     len -= 1;
     bool malloced;
-    JSONString *o = (JSONString *) JSONMemoryPool_Alloc(jm, sizeof(*o) + len, &malloced);
+    JSONString *o = (JSONString *) JSONMemoryPool_Alloc(jm, sizeof(*o), &malloced);
     o->length = len;
-    o->str = (const char *) (o+1);
+    o->str = (const char *) malloc(len);
     memcpy((char *) o->str, s, len);
     JSONString_InitHashCode(o);
     KJSON_FREE(s);
@@ -64,6 +64,7 @@ static void JSONObject_free(JSON json)
 
 static void _JSONString_free(JSONString *obj)
 {
+    free((char *)obj->str);
 }
 
 static void JSONString_free(JSON json)
@@ -81,10 +82,6 @@ static void JSONArray_free(JSON json)
     }
 
     free(a->list);
-}
-
-static void JSONInt64_free(JSON json)
-{
 }
 
 #define JSON_OP(OP)\
@@ -105,11 +102,13 @@ static void JSONInt64_free(JSON json)
     OP(/* 14 */JSONNOP)\
     OP(/* 15 */JSONNOP)
 
+#define JSONInt64_free   JSONNOP_free
 #define JSONDouble_free  JSONNOP_free
 #define JSONInt32_free   JSONNOP_free
 #define JSONBool_free    JSONNOP_free
 #define JSONNull_free    JSONNOP_free
 #define JSONUString_free JSONString_free
+
 static void _JSON_free(JSON o)
 {
     kjson_type type = JSON_type(o);
