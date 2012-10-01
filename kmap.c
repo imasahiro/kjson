@@ -40,8 +40,8 @@ extern "C" {
 static inline uint32_t djbhash(const char *p, uint32_t len)
 {
     uint32_t hash = 5381;
-    const unsigned char *      s = (const unsigned char *) p;
-    const unsigned char *const e = (const unsigned char *const) p + len;
+    const uint8_t *s = (const uint8_t *) p;
+    const uint8_t *e = (const uint8_t *) p + len;
     while (s < e) {
         hash = ((hash << 5) + hash) + *s++;
     }
@@ -64,6 +64,18 @@ static inline uint32_t one_at_a_time(const char *p, uint32_t len)
     return hash;
 }
 
+static inline uint32_t fnv1a(const char *p, uint32_t len)
+{
+    uint32_t hash = 0x811C9DC5;
+    const uint8_t *s = (const uint8_t *) p;
+    const uint8_t *e = (const uint8_t *) p + len;
+    while (s < e) {
+        hash = (*s++ ^ hash) * 0x01000193;
+    }
+    return hash;
+}
+
+
 static unsigned JSONString_hashCode(JSONString *key)
 {
 
@@ -72,8 +84,10 @@ static unsigned JSONString_hashCode(JSONString *key)
 #define USE_DJBHASH
 #ifdef USE_DJBHASH
             djbhash(key->str, key->length);
-#else
+#elif defined(USE_ONE_AT_A_TIME)
             one_at_a_time(key->str, key->length);
+#else
+            fnv1a(key->str, key->length);
 #endif
     return key->hashcode;
 }
