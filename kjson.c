@@ -41,10 +41,10 @@ static JSON JSONString_new2(JSONMemoryPool *jm, string_builder *builder)
     len -= 1;
     bool malloced;
     JSONString *o = (JSONString *) JSONMemoryPool_Alloc(jm, sizeof(*o) + len, &malloced);
+    o->length = len;
     o->str = (const char *) (o+1);
     memcpy((char *) o->str, s, len);
     JSONString_InitHashCode(o);
-    o->length = len;
     KJSON_FREE(s);
     return toJSON(ValueU(o));
 }
