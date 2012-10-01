@@ -482,10 +482,9 @@ JSON parseJSON(JSONMemoryPool *jm, const char *s, const char *e)
     return json;
 }
 
-static JSON _JSON_get(JSON json, const char *key)
+static JSON _JSON_get(JSON json, const char *key, size_t len)
 {
     JSONObject *o = toObj(json.val);
-    size_t len = strlen(key);
 
     struct JSONString tmp;
     tmp.str = (char *)key;
@@ -495,32 +494,32 @@ static JSON _JSON_get(JSON json, const char *key)
     return (r) ? toJSON(ValueP(r->v)) : JSON_default;
 }
 
-JSON JSON_get(JSON json, const char *key)
+JSON JSON_get(JSON json, const char *key, size_t len)
 {
-    return _JSON_get(json, key);
+    return _JSON_get(json, key, len);
 }
 
-int JSON_getInt(JSON json, const char *key)
+int JSON_getInt(JSON json, const char *key, size_t len)
 {
-    JSON v = _JSON_get(json, key);
+    JSON v = _JSON_get(json, key, len);
     return toInt32(v.val);
 }
 
-bool JSON_getBool(JSON json, const char *key)
+bool JSON_getBool(JSON json, const char *key, size_t len)
 {
-    JSON v = _JSON_get(json, key);
+    JSON v = _JSON_get(json, key, len);
     return toBool(v.val);
 }
 
-double JSON_getDouble(JSON json, const char *key)
+double JSON_getDouble(JSON json, const char *key, size_t len)
 {
-    JSON v = _JSON_get(json, key);
+    JSON v = _JSON_get(json, key, len);
     return toDouble(v.val);
 }
 
 const char *JSON_getString(JSON json, const char *key, size_t *len)
 {
-    JSON obj = _JSON_get(json, key);
+    JSON obj = _JSON_get(json, key, *len);
     JSONString *s = toStr(obj.val);
     *len = s->length;
     return s->str;
@@ -528,7 +527,7 @@ const char *JSON_getString(JSON json, const char *key, size_t *len)
 
 JSON *JSON_getArray(JSON json, const char *key, size_t *len)
 {
-    JSON obj = _JSON_get(json, key);
+    JSON obj = _JSON_get(json, key, *len);
     JSONArray *a = toAry(obj.val);
     *len = a->length;
     return a->list;

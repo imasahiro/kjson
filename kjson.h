@@ -96,10 +96,10 @@ typedef JSONNumber JSONNull;
 /* [Getter API] */
 JSON *JSON_getArray(JSON json, const char *key, size_t *len);
 const char *JSON_getString(JSON json, const char *key, size_t *len);
-double JSON_getDouble(JSON json, const char *key);
-bool JSON_getBool(JSON json, const char *key);
-int JSON_getInt(JSON json, const char *key);
-JSON JSON_get(JSON json, const char *key);
+double JSON_getDouble(JSON json, const char *key, size_t len);
+bool JSON_getBool(JSON json, const char *key, size_t len);
+int JSON_getInt(JSON json, const char *key, size_t len);
+JSON JSON_get(JSON json, const char *key, size_t len);
 
 /* [Other API] */
 void JSONObject_set(JSONMemoryPool *jm, JSON obj, JSON key, JSON value);
@@ -186,6 +186,12 @@ static inline const char *JSONString_get(JSON json)
 {
     JSONString *s = toStr(json.val);
     return s->str;
+}
+
+static inline unsigned JSONString_length(JSON json)
+{
+    JSONString *s = toStr(json.val);
+    return s->length;
 }
 
 static inline int32_t JSONInt_get(JSON json)

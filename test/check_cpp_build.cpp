@@ -28,7 +28,7 @@ int main(int argc, char const* argv[])
         fprintf(stderr, "Error\n");
         exit(EXIT_FAILURE);
     }
-    JSON a = JSON_get(o, "a");
+    JSON a = JSON_get(o, "a", 1);
     assert(a.bits != 0);
     JSON_free(o);
     JSONMemoryPool_Delete(&jm);

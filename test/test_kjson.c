@@ -84,7 +84,7 @@ static void test_string(void)
     JSONMemoryPool jm;
     JSONMemoryPool_Init(&jm);
     JSON json = parseJSON(&jm, data, data+sizeof(data));
-    JSON child = JSON_get(json, "app");
+    JSON child = JSON_get(json, "app", 3);
     assert(JSON_isValid(child));
     assert(JSON_type(child) == JSON_Array);
     assert(JSON_length(child) == 3);
@@ -93,14 +93,14 @@ static void test_string(void)
     int i = 0;
 
     JSON_ARRAY_EACH(child, a, I, E) {
-        assert(JSON_isValid(JSON_get(*I, "name")));
-        assert(JSON_isValid(JSON_get(*I, "line")));
-        assert(JSON_isValid(JSON_get(*I, "version")));
-        assert(JSON_isValid(JSON_get(*I, "flag")));
-        size_t len;
+        assert(JSON_isValid(JSON_get(*I, "name", 4)));
+        assert(JSON_isValid(JSON_get(*I, "line", 4)));
+        assert(JSON_isValid(JSON_get(*I, "version", 7)));
+        assert(JSON_isValid(JSON_get(*I, "flag", 4)));
+        size_t len = 4;
         const char *name = JSON_getString(*I, "name", &len);
-        int   line = JSON_getInt(*I, "line");
-        double ver  = JSON_getDouble(*I, "version");
+        int   line = JSON_getInt(*I, "line", 4);
+        double ver  = JSON_getDouble(*I, "version", 7);
         assert(len == strlen(names[i]) && strncmp(name, names[i], len) == 0);
         assert(line == lines[i]);
         assert(ver  == versions[i]);
@@ -135,7 +135,7 @@ static void test_object_iterator(void)
         char *k, *v;
         const char *str = JSONString_get(Key);
         assert(JSON_type(Key) == JSON_String);
-        assert(JSON_type(Val) == JSON_type(JSON_get(o, str)));
+        assert(JSON_type(Val) == JSON_type(JSON_get(o, str, JSONString_length(Key))));
         k = JSON_toString(Key);
         v = JSON_toString(Val);
         fprintf(stderr, "<'%s':'%s'>", k, v);
