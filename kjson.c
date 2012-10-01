@@ -34,12 +34,13 @@
 extern "C" {
 #endif
 
-static JSON JSONString_new2(string_builder *builder)
+static JSON JSONString_new2(JSONMemoryPool *jm, string_builder *builder)
 {
     size_t len;
     char *s = string_builder_tostring(builder, &len, 1);
     len -= 1;
-    JSONString *o = (JSONString *) MPOOL_ALLOC(sizeof(*o) + len);
+    bool malloced;
+    JSONString *o = (JSONString *) JSONMemoryPool_Alloc(jm, sizeof(*o) + len, &malloced);
     o->str = (const char *) (o+1);
     memcpy((char *) o->str, s, len);
     o->hashcode = 0;
@@ -59,12 +60,10 @@ static void JSONObject_free(JSON json)
 {
     JSONObject *o = toObj(json.val);
     kmap_dispose(&o->child);
-    MPOOL_FREE(o);
 }
 
 static void _JSONString_free(JSONString *obj)
 {
-    MPOOL_FREE(obj);
 }
 
 static void JSONString_free(JSON json)
@@ -82,13 +81,10 @@ static void JSONArray_free(JSON json)
     }
 
     free(a->list);
-    MPOOL_FREE(a);
 }
 
 static void JSONInt64_free(JSON json)
 {
-    JSONInt64 *o = toInt64(json.val);
-    MPOOL_FREE(o);
 }
 
 #define JSON_OP(OP)\
@@ -136,7 +132,7 @@ static void _JSONArray_append(JSONArray *a, JSON o)
     a->list[a->length++] = o;
 }
 
-void JSONArray_append(JSON json, JSON o)
+void JSONArray_append(JSONMemoryPool *jm, JSON json, JSON o)
 {
     JSONArray *a = toAry(json.val);
     _JSONArray_append(a, o);
@@ -148,7 +144,7 @@ static void _JSONObject_set(JSONObject *o, JSONString *key, JSON value)
     kmap_set(&o->child, key, value.bits);
 }
 
-void JSONObject_set(JSON json, JSON key, JSON value)
+void JSONObject_set(JSONMemoryPool *jm, JSON json, JSON key, JSON value)
 {
     assert(JSON_TYPE_CHECK(Object, json));
     assert(JSON_TYPE_CHECK(String, key));
@@ -159,12 +155,12 @@ void JSONObject_set(JSON json, JSON key, JSON value)
 /* Parser functions */
 #define NEXT(ins) string_input_stream_next(ins)
 #define EOS(ins)  string_input_stream_eos(ins)
-static JSON parseNull(input_stream *ins, unsigned char c);
-static JSON parseNumber(input_stream *ins, unsigned char c);
-static JSON parseBoolean(input_stream *ins, unsigned char c);
-static JSON parseObject(input_stream *ins, unsigned char c);
-static JSON parseArray(input_stream *ins, unsigned char c);
-static JSON parseString(input_stream *ins, unsigned char c);
+static JSON parseNull(JSONMemoryPool *jm, input_stream *ins, unsigned char c);
+static JSON parseNumber(JSONMemoryPool *jm, input_stream *ins, unsigned char c);
+static JSON parseBoolean(JSONMemoryPool *jm, input_stream *ins, unsigned char c);
+static JSON parseObject(JSONMemoryPool *jm, input_stream *ins, unsigned char c);
+static JSON parseArray(JSONMemoryPool *jm, input_stream *ins, unsigned char c);
+static JSON parseString(JSONMemoryPool *jm, input_stream *ins, unsigned char c);
 
 #define _N 0x40 |
 #define _M 0x80 |
@@ -215,16 +211,16 @@ static unsigned char skipBSorDoubleQuote(input_stream *ins, unsigned char c)
     return ch;
 }
 
-static JSON parseNOP(input_stream *ins, unsigned char c)
+static JSON parseNOP(JSONMemoryPool *jm, input_stream *ins, unsigned char c)
 {
     JSON o; o.bits = 0;
     return o;
 }
 
-static JSON parseChild(input_stream *ins, unsigned char c)
+static JSON parseChild(JSONMemoryPool *jm, input_stream *ins, unsigned char c)
 {
     c = skip_space(ins, c);
-    typedef JSON (*parseJSON)(input_stream *ins, unsigned char c);
+    typedef JSON (*parseJSON)(JSONMemoryPool *jm, input_stream *ins, unsigned char c);
     static const parseJSON dispatch_func[] = {
         parseNOP,
         parseObject,
@@ -233,7 +229,7 @@ static JSON parseChild(input_stream *ins, unsigned char c)
         parseNumber,
         parseBoolean,
         parseNull};
-    return dispatch_func[0x7 & string_table[(int)c]](ins, c);
+    return dispatch_func[0x7 & string_table[(int)c]](jm, ins, c);
 }
 
 static unsigned int toHex(unsigned char c)
@@ -290,7 +286,7 @@ static void parseEscape(input_stream *ins, string_builder *sb, unsigned char c)
     string_builder_add(sb, c);
 }
 
-static JSON parseString(input_stream *ins, unsigned char c)
+static JSON parseString(JSONMemoryPool *jm, input_stream *ins, unsigned char c)
 {
     union io_data state, state2;
     assert(c == '"' && "Missing open quote at start of JSONString");
@@ -298,7 +294,7 @@ static JSON parseString(input_stream *ins, unsigned char c)
     c = skipBSorDoubleQuote(ins, NEXT(ins));
     state2 = _input_stream_save(ins);
     if (c == '"') {/* fast path */
-        return JSONString_new((char *)state.str, state2.str - state.str - 1);
+        return JSONString_new(jm, (char *)state.str, state2.str - state.str - 1);
     }
     string_builder sb; string_builder_init(&sb);
     if (state2.str - state.str - 1 > 0) {
@@ -321,13 +317,13 @@ static JSON parseString(input_stream *ins, unsigned char c)
         string_builder_add(&sb, c);
     }
     L_end:;
-    return JSONString_new2(&sb);
+    return JSONString_new2(jm, &sb);
 }
 
-static JSON parseObject(input_stream *ins, unsigned char c)
+static JSON parseObject(JSONMemoryPool *jm, input_stream *ins, unsigned char c)
 {
     assert(c == '{' && "Missing open brace '{' at start of json object");
-    JSON json = JSONObject_new();
+    JSON json = JSONObject_new(jm);
     JSONObject *obj = toObj(json.val);
     for (c = skip_space(ins, 0); EOS(ins); c = skip_space(ins, 0)) {
         JSONString *key = NULL;
@@ -336,10 +332,10 @@ static JSON parseObject(input_stream *ins, unsigned char c)
             break;
         }
         assert(c == '"' && "Missing open quote for element key");
-        key = toStr(parseString(ins, c).val);
+        key = toStr(parseString(jm, ins, c).val);
         c = skip_space(ins, 0);
         assert(c == ':' && "Missing ':' after key in object");
-        val = parseChild(ins, 0);
+        val = parseChild(jm, ins, 0);
         _JSONObject_set(obj, key, val);
         c = skip_space(ins, 0);
         if (c == '}') {
@@ -350,9 +346,9 @@ static JSON parseObject(input_stream *ins, unsigned char c)
     return json;
 }
 
-static JSON parseArray(input_stream *ins, unsigned char c)
+static JSON parseArray(JSONMemoryPool *jm, input_stream *ins, unsigned char c)
 {
-    JSON json = JSONArray_new();
+    JSON json = JSONArray_new(jm);
     JSONArray *a = toAry(json.val);
     assert(c == '[' && "Missing open brace '[' at start of json array");
     c = skip_space(ins, 0);
@@ -361,7 +357,7 @@ static JSON parseArray(input_stream *ins, unsigned char c)
         return json;
     }
     for (; EOS(ins); c = skip_space(ins, 0)) {
-        JSON val = parseChild(ins, c);
+        JSON val = parseChild(jm, ins, c);
         _JSONArray_append(a, val);
         c = skip_space(ins, 0);
         if (c == ']') {
@@ -372,7 +368,7 @@ static JSON parseArray(input_stream *ins, unsigned char c)
     return json;
 }
 
-static JSON parseBoolean(input_stream *ins, unsigned char c)
+static JSON parseBoolean(JSONMemoryPool *jm, input_stream *ins, unsigned char c)
 {
     int val = 0;
     if (c == 't') {
@@ -391,7 +387,7 @@ static JSON parseBoolean(input_stream *ins, unsigned char c)
     return JSONBool_new(val);
 }
 
-static JSON parseNumber(input_stream *ins, unsigned char c)
+static JSON parseNumber(JSONMemoryPool *jm, input_stream *ins, unsigned char c)
 {
     assert((c == '-' || ('0' <= c && c <= '9')) && "It do not seem as Number");
     kjson_type type = JSON_Int32;
@@ -429,7 +425,7 @@ static JSON parseNumber(input_stream *ins, unsigned char c)
     _input_stream_resume(ins, state2);
     if (type != JSON_Double) {
         val = (negative)? -val : val;
-        n = JSONInt_new(val);
+        n = JSONInt_new(jm, val);
     } else {
         char *s = (char *)state.str-1;
         char *e = (char *)state2.str;
@@ -439,7 +435,7 @@ static JSON parseNumber(input_stream *ins, unsigned char c)
     return n;
 }
 
-static JSON parseNull(input_stream *ins, unsigned char c)
+static JSON parseNull(JSONMemoryPool *jm, input_stream *ins, unsigned char c)
 {
     if (c == 'n') {
         if (NEXT(ins) == 'u' && NEXT(ins) == 'l' && NEXT(ins) == 'l') {
@@ -451,7 +447,7 @@ static JSON parseNull(input_stream *ins, unsigned char c)
     return o;
 }
 
-static JSON parse(input_stream *ins)
+static JSON parse(JSONMemoryPool *jm, input_stream *ins)
 {
     unsigned char c = 0;
     for_each_istream(ins, c) {
@@ -459,7 +455,7 @@ static JSON parse(input_stream *ins)
         if ((c = skip_space(ins, c)) == 0) {
             break;
         }
-        json = parseChild(ins, c);
+        json = parseChild(jm, ins, c);
         if (json.obj != NULL)
             return json;
     }
@@ -472,16 +468,16 @@ static JSON parse(input_stream *ins)
 
 static const JSON JSON_default = {{0}};
 
-static JSON parseJSON_stream(input_stream *ins)
+static JSON parseJSON_stream(JSONMemoryPool *jm, input_stream *ins)
 {
-    return parse(ins);
+    return parse(jm, ins);
 }
 
-JSON parseJSON(const char *s, const char *e)
+JSON parseJSON(JSONMemoryPool *jm, const char *s, const char *e)
 {
     input_stream insbuf;
     input_stream *ins = new_string_input_stream(&insbuf, s, e - s);
-    JSON json = parseJSON_stream(ins);
+    JSON json = parseJSON_stream(jm, ins);
     input_stream_delete(ins);
     return json;
 }

@@ -33,12 +33,15 @@ static void test1()
     char buf[SIZE], *str;
     FILE *fp = fopen(JSON_FILE, "r");
     reset_timer();
+    JSONMemoryPool jm;
+    JSONMemoryPool_Init(&jm);
     while ((str = loadLine(fp, buf)) != NULL) {
         len = strlen(str);
-        JSON json = parseJSON(str, str+len);
+        JSON json = parseJSON(&jm, str, str+len);
         assert(JSON_type(json) == JSON_Object);
         JSON_free(json);
     }
+    JSONMemoryPool_Delete(&jm);
     _show_timer("parse", filesize);
     fclose(fp);
 }
@@ -49,15 +52,18 @@ static void test2()
     char buf[SIZE], *str;
     FILE *fp = fopen(JSON_FILE, "r");
     reset_timer();
+    JSONMemoryPool jm;
+    JSONMemoryPool_Init(&jm);
     while ((str = loadLine(fp, buf)) != NULL) {
         len = strlen(str);
-        JSON json = parseJSON(str, str+len);
+        JSON json = parseJSON(&jm, str, str+len);
         char *p = JSON_toStringWithLength(json, &len);
         assert(JSON_type(json) == JSON_Object);
         assert(p);
         JSON_free(json);
         free(p);
     }
+    JSONMemoryPool_Delete(&jm);
     _show_timer("pack/unpack", filesize);
     fclose(fp);
 }

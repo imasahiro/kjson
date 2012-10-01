@@ -181,13 +181,16 @@ void bench_kjson(void)
     JSON o;
     char *buf;
     size_t len;
+
+    JSONMemoryPool jm;
+    JSONMemoryPool_Init(&jm);
     reset_timer();
     {
         unsigned int i;
-        o = JSONArray_new();
+        o = JSONArray_new(&jm);
         for(i=0; i < TASK_INT_NUM; ++i) {
-            JSON v = JSONInt_new(i);
-            JSONArray_append(o, v);
+            JSON v = JSONInt_new(&jm, i);
+            JSONArray_append(&jm, o, v);
         }
     }
     show_timer("generate integer");
@@ -197,7 +200,7 @@ void bench_kjson(void)
 
     reset_timer();
     {
-        o = parseJSON(buf, buf + len);
+        o = parseJSON(&jm, buf, buf + len);
         if (o.bits == 0) {
             fprintf(stderr, "Error\n");
         }
@@ -210,10 +213,10 @@ void bench_kjson(void)
     reset_timer();
     {
         unsigned int i;
-        o = JSONArray_new();
+        o = JSONArray_new(&jm);
         for(i=0; i < TASK_STR_LEN; ++i) {
-            JSON v = JSONString_new((char*)TASK_STR_PTR, i);
-            JSONArray_append(o, v);
+            JSON v = JSONString_new(&jm, (char*)TASK_STR_PTR, i);
+            JSONArray_append(&jm, o, v);
         }
     }
     show_timer("generate string");
@@ -222,13 +225,14 @@ void bench_kjson(void)
 
     reset_timer();
     {
-        o = parseJSON(buf, buf + len);
+        o = parseJSON(&jm, buf, buf + len);
         if (o.bits == 0) {
             fprintf(stderr, "Errro\n");
         }
     }
     show_timer("parse string");
     JSON_free(o);
+    JSONMemoryPool_Delete(&jm);
     free(buf);
 }
 

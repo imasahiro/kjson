@@ -31,10 +31,13 @@
 #include "benchmark.h"
 
 static void kjson(char *buf, size_t len) {
-    JSON json = parseJSON(buf, buf+len);
+    JSONMemoryPool jm;
+    JSONMemoryPool_Init(&jm);
+    JSON json = parseJSON(&jm, buf, buf+len);
     char *str = JSON_toString(json);
     JSON_free(json);
     free(str);
+    JSONMemoryPool_Delete(&jm);
 }
 
 #ifdef USE_JSON_C

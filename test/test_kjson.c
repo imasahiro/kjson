@@ -34,13 +34,16 @@ static void test_file(const char *file)
     fprintf(stderr, "--- {{ test %s --- \n", file);
     size_t len;
     char *str = loadFile(file, &len);
-    JSON json = parseJSON(str, str+len);
+    JSONMemoryPool jm;
+    JSONMemoryPool_Init(&jm);
+    JSON json = parseJSON(&jm, str, str+len);
     size_t json_len;
     char *json_s = JSON_toStringWithLength(json, &json_len);
     fprintf(stderr, "'%s'\n", json_s);
     fprintf(stderr, "\n--- }} test %s --- \n", file);
     free(json_s);
     JSON_free(json);
+    JSONMemoryPool_Delete(&jm);
     free(str);
 }
 
@@ -78,7 +81,9 @@ static char data[] =
 
 static void test_string(void)
 {
-    JSON json = parseJSON(data, data+sizeof(data));
+    JSONMemoryPool jm;
+    JSONMemoryPool_Init(&jm);
+    JSON json = parseJSON(&jm, data, data+sizeof(data));
     JSON child = JSON_get(json, "app");
     assert(JSON_isValid(child));
     assert(JSON_type(child) == JSON_Array);
@@ -103,6 +108,7 @@ static void test_string(void)
         i++;
     }
     JSON_free(json);
+    JSONMemoryPool_Delete(&jm);
 }
 
 static char data2[] = 
@@ -115,7 +121,9 @@ static char data2[] =
 
 static void test_object_iterator(void)
 {
-    JSON o = parseJSON(data2, data2+sizeof(data2));
+    JSONMemoryPool jm;
+    JSONMemoryPool_Init(&jm);
+    JSON o = parseJSON(&jm, data2, data2+sizeof(data2));
     assert(JSON_type(o) == JSON_Object);
     //assert(JSON_length((JSON)child) == 3);
 
@@ -134,6 +142,7 @@ static void test_object_iterator(void)
         free(k); free(v);
     }
     JSON_free((JSON)o);
+    JSONMemoryPool_Delete(&jm);
 }
 
 int main(int argc, char const* argv[])

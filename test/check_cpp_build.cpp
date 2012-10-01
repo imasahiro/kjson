@@ -20,7 +20,9 @@ int main(int argc, char const* argv[])
     assert(len == readed);
     fclose(fp);
 
-    JSON o = parseJSON(json, json + len);
+    JSONMemoryPool jm;
+    JSONMemoryPool_Init(&jm);
+    JSON o = parseJSON(&jm, json, json + len);
     assert(o.bits != 0);
     if (!JSON_isValid(o)) {
         fprintf(stderr, "Error\n");
@@ -29,6 +31,7 @@ int main(int argc, char const* argv[])
     JSON a = JSON_get(o, "a");
     assert(a.bits != 0);
     JSON_free(o);
+    JSONMemoryPool_Delete(&jm);
     free(json);
     return 0;
 }

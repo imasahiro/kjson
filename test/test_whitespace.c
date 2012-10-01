@@ -5,10 +5,13 @@
 
 static void test_whitespace(char *data, size_t length)
 {
-    JSON json = parseJSON(data, data+length);
+    JSONMemoryPool jm;
+    JSONMemoryPool_Init(&jm);
+    JSON json = parseJSON(&jm, data, data+length);
     assert(JSON_type(json) == JSON_Array);
     assert(JSON_length(json) == 1);
     JSON_free(json);
+    JSONMemoryPool_Delete(&jm);
 }
 
 int main(int argc, char const* argv[])

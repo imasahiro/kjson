@@ -102,11 +102,11 @@ int JSON_getInt(JSON json, const char *key);
 JSON JSON_get(JSON json, const char *key);
 
 /* [Other API] */
-void JSONObject_set(JSON obj, JSON key, JSON value);
-void JSONArray_append(JSON ary, JSON o);
+void JSONObject_set(JSONMemoryPool *jm, JSON obj, JSON key, JSON value);
+void JSONArray_append(JSONMemoryPool *jm, JSON ary, JSON o);
 void JSON_free(JSON o);
 
-JSON parseJSON(const char *s, const char *e);
+JSON parseJSON(JSONMemoryPool *jm, const char *s, const char *e);
 char *JSON_toStringWithLength(JSON json, size_t *len);
 static inline char *JSON_toString(JSON json)
 {
@@ -175,10 +175,10 @@ static inline JSON toJSON(Value v) {
 #define INT32_MIN        (-INT32_MAX-1)
 #endif
 
-static inline JSON JSON_parse(const char *str)
+static inline JSON JSON_parse(JSONMemoryPool *jm, const char *str)
 {
     const char *end = str + strlen(str);
-    return parseJSON(str, end);
+    return parseJSON(jm, str, end);
 }
 
 /* [Getter API] */
@@ -204,9 +204,10 @@ static inline int JSONBool_get(JSON json)
 }
 
 /* [New API] */
-static inline JSON JSONString_new(const char *s, size_t len)
+static inline JSON JSONString_new(JSONMemoryPool *jm, const char *s, size_t len)
 {
-    JSONString *o = (JSONString *) MPOOL_ALLOC(sizeof(*o)+len+1);
+    bool malloced;
+    JSONString *o = (JSONString *) JSONMemoryPool_Alloc(jm, sizeof(*o)+len+1, &malloced);
     o->str = (const char *) (o+1);
     o->hashcode = 0;
     o->length = len;
@@ -220,16 +221,18 @@ static inline JSON JSONNull_new()
     return toJSON(ValueN());
 }
 
-static inline JSON JSONObject_new()
+static inline JSON JSONObject_new(JSONMemoryPool *jm)
 {
-    JSONObject *o = (JSONObject *) MPOOL_ALLOC(sizeof(*o));
+    bool malloced;
+    JSONObject *o = (JSONObject *) JSONMemoryPool_Alloc(jm, sizeof(*o), &malloced);
     kmap_init(&(o->child), 0);
     return toJSON(ValueO(o));
 }
 
-static inline JSON JSONArray_new()
+static inline JSON JSONArray_new(JSONMemoryPool *jm)
 {
-    JSONArray *o = (JSONArray *) MPOOL_ALLOC(sizeof(*o));
+    bool malloced;
+    JSONArray *o = (JSONArray *) JSONMemoryPool_Alloc(jm, sizeof(*o), &malloced);
     o->length   = 0;
     o->capacity = 0;
     o->list   = NULL;
@@ -241,10 +244,11 @@ static inline JSON JSONDouble_new(double val)
     return toJSON(ValueF(val));
 }
 
-static inline JSON JSONInt_new(int64_t val)
+static inline JSON JSONInt_new(JSONMemoryPool *jm, int64_t val)
 {
     if (val > INT32_MAX || val < INT32_MIN) {
-        JSONInt64 *i64 = (JSONInt64 *) MPOOL_ALLOC(sizeof(JSONInt64));
+        bool malloced;
+        JSONInt64 *i64 = (JSONInt64 *) JSONMemoryPool_Alloc(jm, sizeof(JSONInt64), &malloced);
         i64->val = val;
         return toJSON(ValueIO(i64));
     } else {

@@ -78,7 +78,7 @@ typedef struct JSONMemoryPool {
     ARRAY(PageData)  array;
 } JSONMemoryPool;
 
-static void JSONMemoryPool_Init(JSONMemoryPool *pool)
+static inline void JSONMemoryPool_Init(JSONMemoryPool *pool)
 {
     int i;
     ARRAY_init(PageData,  &pool->array, MAX_ALIGN_LOG2 - MIN_ALIGN_LOG2);
@@ -119,7 +119,7 @@ static void *JSONMemoryPool_Alloc(JSONMemoryPool *pool, size_t n, bool *malloced
     return newblock;
 }
 
-static void JSONMemoryPool_Delete(JSONMemoryPool *pool)
+static inline void JSONMemoryPool_Delete(JSONMemoryPool *pool)
 {
     PageData *p, *end;
     FOR_EACH_ARRAY(pool->array, p, end) {
@@ -131,9 +131,6 @@ static void JSONMemoryPool_Delete(JSONMemoryPool *pool)
     ARRAY_dispose(PageData, &pool->array);
     ARRAY_dispose(BlockInfo,  &pool->current_block);
 }
-
-#define MPOOL_ALLOC(N)  malloc(N)
-#define MPOOL_FREE(PTR) free(PTR)
 
 #ifdef __cplusplus
 } /* extern "C" */
