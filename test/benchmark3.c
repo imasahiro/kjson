@@ -11,7 +11,7 @@ static char *loadLine(FILE *fp, char *buf)
     bzero(buf, SIZE);
     return fgets(buf, SIZE, fp);
 }
-#define JSON_FILE "./test/twitter.json"
+#define JSON_FILE "./test/twitter_public.json"
 static int filesize = 0;
 static void test0()
 {

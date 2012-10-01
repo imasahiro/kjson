@@ -45,27 +45,46 @@ static inline uint32_t djbhash(const char *p, uint32_t len)
     while (s < e) {
         hash = ((hash << 5) + hash) + *s++;
     }
-    return (hash & 0x7fffffff);
+    return hash;
+}
+
+static inline uint32_t one_at_a_time(const char *p, uint32_t len)
+{
+    uint32_t i, hash = 0;
+
+    for (i = 0; i < len; ++i) {
+        hash += p[i];
+        hash += (hash << 10);
+        hash ^= (hash >> 6);
+    }
+
+    hash += (hash << 3);
+    hash ^= (hash >> 11);
+    hash += (hash << 15);
+    return hash;
 }
 
 static unsigned JSONString_hashCode(JSONString *key)
 {
 
     if (!key->hashcode)
-        key->hashcode = djbhash(key->str, key->length);
+        key->hashcode =
+#define USE_DJBHASH
+#ifdef USE_DJBHASH
+            djbhash(key->str, key->length);
+#else
+            one_at_a_time(key->str, key->length);
+#endif
     return key->hashcode;
 }
 
 static int JSONString_equal(JSONString *k0, JSONString *k1)
 {
-    unsigned hash0, hash1;
     if (k0->length != k1->length)
         return 0;
-    if (k0->str[0] != k1->str[0])
+    if (JSONString_hashCode(k0) != JSONString_hashCode(k1))
         return 0;
-    hash0 = JSONString_hashCode(k0);
-    hash1 = JSONString_hashCode(k1);
-    if (hash0 != hash1)
+    if (k0->str[0] != k1->str[0])
         return 0;
     return strncmp(k0->str, k1->str, k0->length) == 0;
 }
