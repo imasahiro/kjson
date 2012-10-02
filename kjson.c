@@ -367,25 +367,6 @@ static JSON parseArray(JSONMemoryPool *jm, input_stream *ins, unsigned char c)
     return json;
 }
 
-static JSON parseBoolean(JSONMemoryPool *jm, input_stream *ins, unsigned char c)
-{
-    int val = 0;
-    if (c == 't') {
-        if (NEXT(ins) == 'r' && NEXT(ins) == 'u' && NEXT(ins) == 'e') {
-            val = 1;
-        }
-    }
-    else if (c == 'f') {
-        if (NEXT(ins) == 'a' && NEXT(ins) == 'l' &&
-                NEXT(ins) == 's' && NEXT(ins) == 'e') {
-        }
-    }
-    else {
-        assert(0 && "Cannot parse JSON bool variable");
-    }
-    return JSONBool_new(val);
-}
-
 static JSON parseNumber(JSONMemoryPool *jm, input_stream *ins, unsigned char c)
 {
     assert((c == '-' || ('0' <= c && c <= '9')) && "It do not seem as Number");
@@ -434,10 +415,58 @@ static JSON parseNumber(JSONMemoryPool *jm, input_stream *ins, unsigned char c)
     return n;
 }
 
+static inline uint32_t encode4(uint8_t a, uint8_t b, uint8_t c, uint8_t d)
+{
+    return d << 24 | c << 16 | b << 8 | a;
+}
+
+static inline int check3(input_stream *ins, uint8_t a, uint8_t b, uint8_t c)
+{
+    uint32_t d = *(uint32_t *) (ins->d0.str);
+    return (((1 << 24)-1) & d) == encode4(a, b, c, 0);
+}
+
+static int checkNull(input_stream *ins)
+{
+    return check3(ins, 'u', 'l', 'l');
+}
+
+static int checkTrue(input_stream *ins)
+{
+    return check3(ins, 'r', 'u', 'e');
+}
+
+int checkFalse(input_stream *ins)
+{
+    uint32_t d = *(uint32_t *) (ins->d0.str);
+    return d == encode4('a', 'l', 's', 'e');
+}
+
+static JSON parseBoolean(JSONMemoryPool *jm, input_stream *ins, unsigned char c)
+{
+    int val = 0;
+    if (c == 't') {
+        if (ins->d1.str - ins->d0.str >= 3 && checkTrue(ins)) {
+            val = 1;
+            ins->d0.str += 3;
+        }
+    }
+    else if (c == 'f') {
+        if (ins->d1.str - ins->d0.str >= 4 && checkFalse(ins)) {
+            ins->d0.str += 4;
+        }
+    }
+    else {
+        assert(0 && "Cannot parse JSON bool variable");
+    }
+    return JSONBool_new(val);
+}
+
 static JSON parseNull(JSONMemoryPool *jm, input_stream *ins, unsigned char c)
 {
     if (c == 'n') {
-        if (NEXT(ins) == 'u' && NEXT(ins) == 'l' && NEXT(ins) == 'l') {
+        if (ins->d1.str - ins->d0.str >= 3 && checkNull(ins)) {
+            ins->d0.str += 3;
             return JSONNull_new();
         }
     }
