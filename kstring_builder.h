@@ -137,10 +137,14 @@ static inline void string_builder_ensure_size(string_builder *sb, size_t len)
 static inline void string_builder_add_string_no_check(string_builder *sb, const char *s, size_t len)
 {
     char *p = sb->buf.list + ARRAY_size(sb->buf);
+#ifdef USE_MEMCPY
+    memcpy(p, s, len);
+#else
     const char *const e = s + len;
     while (s < e) {
         *p++ = *s++;
     }
+#endif
     sb->buf.size += len;
 }
 

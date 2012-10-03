@@ -445,16 +445,12 @@ static int checkFalse(input_stream *ins)
 static JSON parseBoolean(JSONMemoryPool *jm, input_stream *ins, unsigned char c)
 {
     int val = 0;
-    if (c == 't') {
-        if (ins->d1.str - ins->d0.str >= 3 && checkTrue(ins)) {
-            val = 1;
-            ins->d0.str += 3;
-        }
+    if (ins->d1.str - ins->d0.str >= 3 && checkTrue(ins)) {
+        val = 1;
+        ins->d0.str += 3;
     }
-    else if (c == 'f') {
-        if (ins->d1.str - ins->d0.str >= 4 && checkFalse(ins)) {
-            ins->d0.str += 4;
-        }
+    else if (ins->d1.str - ins->d0.str >= 4 && checkFalse(ins)) {
+        ins->d0.str += 4;
     }
     else {
         assert(0 && "Cannot parse JSON bool variable");
@@ -464,11 +460,9 @@ static JSON parseBoolean(JSONMemoryPool *jm, input_stream *ins, unsigned char c)
 
 static JSON parseNull(JSONMemoryPool *jm, input_stream *ins, unsigned char c)
 {
-    if (c == 'n') {
-        if (ins->d1.str - ins->d0.str >= 3 && checkNull(ins)) {
-            ins->d0.str += 3;
-            return JSONNull_new();
-        }
+    if (ins->d1.str - ins->d0.str >= 3 && checkNull(ins)) {
+        ins->d0.str += 3;
+        return JSONNull_new();
     }
     assert(0 && "Cannot parse JSON null variable");
     JSON o; o.bits = 0;

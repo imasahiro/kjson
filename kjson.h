@@ -246,8 +246,8 @@ static inline JSON JSONArray_new(JSONMemoryPool *jm)
     bool malloced;
     JSONArray *o = (JSONArray *) JSONMemoryPool_Alloc(jm, sizeof(*o), &malloced);
     o->length   = 0;
-    o->capacity = 0;
-    o->list   = NULL;
+    o->capacity = 4;
+    o->list   = (JSON *) malloc(sizeof(JSON)*4);
     return toJSON(ValueA(o));
 }
 
