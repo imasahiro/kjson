@@ -35,6 +35,12 @@
 extern "C" {
 #endif
 
+#ifdef KJSON_HEADER_ONLY
+#define KJSON_API static
+#else
+#define KJSON_API
+#endif
+
 typedef enum kjson_type {
     /** ($type & 1 == 0) means $type extends Number */
     JSON_Double   =  0, /* 0b00000 */
@@ -94,20 +100,20 @@ union JSONValue {
 typedef JSONNumber JSONNull;
 
 /* [Getter API] */
-JSON *JSON_getArray(JSON json, const char *key, size_t *len);
-const char *JSON_getString(JSON json, const char *key, size_t *len);
-double JSON_getDouble(JSON json, const char *key, size_t len);
-bool JSON_getBool(JSON json, const char *key, size_t len);
-int JSON_getInt(JSON json, const char *key, size_t len);
-JSON JSON_get(JSON json, const char *key, size_t len);
+KJSON_API JSON *JSON_getArray(JSON json, const char *key, size_t *len);
+KJSON_API const char *JSON_getString(JSON json, const char *key, size_t *len);
+KJSON_API double JSON_getDouble(JSON json, const char *key, size_t len);
+KJSON_API bool JSON_getBool(JSON json, const char *key, size_t len);
+KJSON_API int JSON_getInt(JSON json, const char *key, size_t len);
+KJSON_API JSON JSON_get(JSON json, const char *key, size_t len);
 
 /* [Other API] */
-void JSONObject_set(JSONMemoryPool *jm, JSON obj, JSON key, JSON value);
-void JSONArray_append(JSONMemoryPool *jm, JSON ary, JSON o);
-void JSON_free(JSON o);
+KJSON_API void JSONObject_set(JSONMemoryPool *jm, JSON obj, JSON key, JSON value);
+KJSON_API void JSONArray_append(JSONMemoryPool *jm, JSON ary, JSON o);
+KJSON_API void JSON_free(JSON o);
 
-JSON parseJSON(JSONMemoryPool *jm, const char *s, const char *e);
-char *JSON_toStringWithLength(JSON json, size_t *len);
+KJSON_API JSON parseJSON(JSONMemoryPool *jm, const char *s, const char *e);
+KJSON_API char *JSON_toStringWithLength(JSON json, size_t *len);
 static inline char *JSON_toString(JSON json)
 {
     size_t len;

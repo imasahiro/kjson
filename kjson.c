@@ -51,7 +51,7 @@ static JSON JSONString_new2(JSONMemoryPool *jm, string_builder *builder)
 
 static void _JSON_free(JSON o);
 static void JSONNOP_free(JSON o) {}
-void JSON_free(JSON o)
+KJSON_API void JSON_free(JSON o)
 {
     _JSON_free(o);
 }
@@ -131,7 +131,7 @@ static void _JSONArray_append(JSONArray *a, JSON o)
     a->list[a->length++] = o;
 }
 
-void JSONArray_append(JSONMemoryPool *jm, JSON json, JSON o)
+KJSON_API void JSONArray_append(JSONMemoryPool *jm, JSON json, JSON o)
 {
     JSONArray *a = toAry(json.val);
     _JSONArray_append(a, o);
@@ -143,7 +143,7 @@ static void _JSONObject_set(JSONObject *o, JSONString *key, JSON value)
     kmap_set(&o->child, key, value.bits);
 }
 
-void JSONObject_set(JSONMemoryPool *jm, JSON json, JSON key, JSON value)
+KJSON_API void JSONObject_set(JSONMemoryPool *jm, JSON json, JSON key, JSON value)
 {
     assert(JSON_TYPE_CHECK(Object, json));
     assert(JSON_TYPE_CHECK(String, key));
@@ -436,7 +436,7 @@ static int checkTrue(input_stream *ins)
     return check3(ins, 'r', 'u', 'e');
 }
 
-int checkFalse(input_stream *ins)
+static int checkFalse(input_stream *ins)
 {
     uint32_t d = *(uint32_t *) (ins->d0.str);
     return d == encode4('a', 'l', 's', 'e');
@@ -501,7 +501,7 @@ static JSON parseJSON_stream(JSONMemoryPool *jm, input_stream *ins)
     return parse(jm, ins);
 }
 
-JSON parseJSON(JSONMemoryPool *jm, const char *s, const char *e)
+KJSON_API JSON parseJSON(JSONMemoryPool *jm, const char *s, const char *e)
 {
     input_stream insbuf;
     input_stream *ins = new_string_input_stream(&insbuf, s, e - s);
@@ -522,30 +522,30 @@ static JSON _JSON_get(JSON json, const char *key, size_t len)
     return (r) ? toJSON(ValueP(r->v)) : JSON_default;
 }
 
-JSON JSON_get(JSON json, const char *key, size_t len)
+KJSON_API JSON JSON_get(JSON json, const char *key, size_t len)
 {
     return _JSON_get(json, key, len);
 }
 
-int JSON_getInt(JSON json, const char *key, size_t len)
+KJSON_API int JSON_getInt(JSON json, const char *key, size_t len)
 {
     JSON v = _JSON_get(json, key, len);
     return toInt32(v.val);
 }
 
-bool JSON_getBool(JSON json, const char *key, size_t len)
+KJSON_API bool JSON_getBool(JSON json, const char *key, size_t len)
 {
     JSON v = _JSON_get(json, key, len);
     return toBool(v.val);
 }
 
-double JSON_getDouble(JSON json, const char *key, size_t len)
+KJSON_API double JSON_getDouble(JSON json, const char *key, size_t len)
 {
     JSON v = _JSON_get(json, key, len);
     return toDouble(v.val);
 }
 
-const char *JSON_getString(JSON json, const char *key, size_t *len)
+KJSON_API const char *JSON_getString(JSON json, const char *key, size_t *len)
 {
     JSON obj = _JSON_get(json, key, *len);
     JSONString *s = toStr(obj.val);
@@ -553,7 +553,7 @@ const char *JSON_getString(JSON json, const char *key, size_t *len)
     return s->str;
 }
 
-JSON *JSON_getArray(JSON json, const char *key, size_t *len)
+KJSON_API JSON *JSON_getArray(JSON json, const char *key, size_t *len)
 {
     JSON obj = _JSON_get(json, key, *len);
     JSONArray *a = toAry(obj.val);
@@ -724,7 +724,7 @@ static void _JSON_toString(string_builder *sb, JSON json)
     dispatch_toStr[type](sb, json);
 }
 
-char *JSON_toStringWithLength(JSON json, size_t *len)
+KJSON_API char *JSON_toStringWithLength(JSON json, size_t *len)
 {
     char *str;
     size_t length;
