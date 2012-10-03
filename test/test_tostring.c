@@ -1,4 +1,5 @@
 #include "kjson.h"
+#include <stdio.h>
 #include <assert.h>
 #include <stdint.h>
 #include <math.h>

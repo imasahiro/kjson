@@ -1,4 +1,5 @@
 #include <sys/time.h>
+#include <stdio.h>
 
 #ifndef BENCHMARK_H_
 #define BENCHMARK_H_

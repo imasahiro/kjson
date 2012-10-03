@@ -22,8 +22,6 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ***************************************************************************/
 
-#include <stdio.h>
-
 #ifndef KJSON_H_
 #define KJSON_H_
 
