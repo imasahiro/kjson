@@ -185,7 +185,7 @@ int main(int argc, char const* argv[])
     } else {
         files = files_default;
     }
-    int i;
+    size_t i;
     for (i = 0; i < size; i++) {
         test_file(files[i]);
     }
