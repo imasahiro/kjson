@@ -30,6 +30,10 @@
 #include <assert.h>
 #include <inttypes.h>
 
+#ifdef __SSE2__
+#include <emmintrin.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -161,6 +165,12 @@ static JSON parseObject(JSONMemoryPool *jm, input_stream *ins, unsigned char c);
 static JSON parseArray(JSONMemoryPool *jm, input_stream *ins, unsigned char c);
 static JSON parseString(JSONMemoryPool *jm, input_stream *ins, unsigned char c);
 
+static JSON parseNOP(JSONMemoryPool *jm, input_stream *ins, unsigned char c)
+{
+    JSON o; o.bits = 0;
+    return o;
+}
+
 #define _N 0x40 |
 #define _M 0x80 |
 static const unsigned string_table[] = {
@@ -198,6 +208,51 @@ static unsigned char skip_space(input_stream *ins, unsigned char c)
 
 static unsigned char skipBSorDoubleQuote(input_stream *ins, unsigned char c)
 {
+#ifdef __SSE2__
+#define bsf(x) __builtin_ctzl(x)
+    unsigned char *str = (unsigned char *) ins->d0.str;
+    const __m128i m0x00 = _mm_set1_epi8(0);
+    const __m128i m0x5c = _mm_set1_epi8('\\');
+    const __m128i m0x22 = _mm_set1_epi8('"');
+    size_t ip = (size_t) str;
+    size_t n = ip & 15;
+    if (n > 0) {
+        __m128i mask;
+        ip &= ~15;
+        __m128i x = *(__m128i*)ip;
+        __m128i result1 = _mm_cmpeq_epi8(x, m0x5c);
+        __m128i result2 = _mm_cmpeq_epi8(x, m0x22);
+        __m128i result3 = _mm_cmpeq_epi8(x, m0x00);
+        mask = _mm_or_si128(result1, result2);
+        mask = _mm_or_si128(result3, mask);
+        unsigned long mask2 = _mm_movemask_epi8(mask);
+        mask2 &= 0xffffffffUL << n;
+        if (mask2) {
+            unsigned char *tmp = str + bsf(mask2) - n;
+            ins->d0.str = tmp + 1;
+            return *tmp;
+        }
+        str += 16 - n;
+    }
+    while (1) {
+        __m128i mask;
+        __m128i x = *(__m128i*)&(str[0]);
+        __m128i result1 = _mm_cmpeq_epi8(x, m0x5c);
+        __m128i result2 = _mm_cmpeq_epi8(x, m0x22);
+        __m128i result3 = _mm_cmpeq_epi8(x, m0x00);
+        mask = _mm_or_si128(result1, result2);
+        mask = _mm_or_si128(result3, mask);
+        unsigned long mask2 = _mm_movemask_epi8(mask);
+        if (mask2) {
+            unsigned char *tmp = str + bsf(mask2);
+            ins->d0.str = tmp + 1;
+            return *tmp;
+        }
+        str += 16;
+    }
+    ins->d0.str = ins->d1.str;
+    return -1;
+#else
     register unsigned ch = c;
     register unsigned char *str = (unsigned char *) ins->d0.str;
     register unsigned char *end = (unsigned char *) ins->d1.str;
@@ -208,27 +263,7 @@ static unsigned char skipBSorDoubleQuote(input_stream *ins, unsigned char c)
     }
     ins->d0.str = str;
     return ch;
-}
-
-static JSON parseNOP(JSONMemoryPool *jm, input_stream *ins, unsigned char c)
-{
-    JSON o; o.bits = 0;
-    return o;
-}
-
-static JSON parseChild(JSONMemoryPool *jm, input_stream *ins, unsigned char c)
-{
-    c = skip_space(ins, c);
-    typedef JSON (*parseJSON)(JSONMemoryPool *jm, input_stream *ins, unsigned char c);
-    static const parseJSON dispatch_func[] = {
-        parseNOP,
-        parseObject,
-        parseString,
-        parseArray,
-        parseNumber,
-        parseBoolean,
-        parseNull};
-    return dispatch_func[0x7 & string_table[(int)c]](jm, ins, c);
+#endif
 }
 
 static unsigned int toHex(unsigned char c)
@@ -317,6 +352,21 @@ static JSON parseString(JSONMemoryPool *jm, input_stream *ins, unsigned char c)
     }
     L_end:;
     return JSONString_new2(jm, &sb);
+}
+
+static JSON parseChild(JSONMemoryPool *jm, input_stream *ins, unsigned char c)
+{
+    c = skip_space(ins, c);
+    typedef JSON (*parseJSON)(JSONMemoryPool *jm, input_stream *ins, unsigned char c);
+    static const parseJSON dispatch_func[] = {
+        parseNOP,
+        parseObject,
+        parseString,
+        parseArray,
+        parseNumber,
+        parseBoolean,
+        parseNull};
+    return dispatch_func[0x7 & string_table[(int)c]](jm, ins, c);
 }
 
 static JSON parseObject(JSONMemoryPool *jm, input_stream *ins, unsigned char c)
