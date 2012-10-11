@@ -27,7 +27,7 @@ extern "C" {
 #endif
 
 #define KMAP_INITSIZE DICTMAP_THRESHOLD
-#define DELTA 8
+#define DELTA 16
 
 #ifndef unlikely
 #define unlikely(x)   __builtin_expect(!!(x), 0)
@@ -105,7 +105,9 @@ static int JSONString_equal(JSONString *k0, JSONString *k1)
 
 static void map_record_copy(map_record_t *dst, const map_record_t *src)
 {
-    memcpy(dst, src, sizeof(map_record_t));
+    *dst = *src;
+    // which one is faster??
+    //memcpy(dst, src, sizeof(map_record_t));
 }
 
 /* [HASHMAP] */
@@ -143,10 +145,9 @@ static map_status_t hashmap_set_no_resize(hashmap_t *m, map_record_t *rec)
     return KMAP_FAILED;
 }
 
-static void hashmap_record_resize(hashmap_t *m)
+static void hashmap_record_resize(hashmap_t *m, unsigned newsize)
 {
     unsigned oldsize = (m->record_size_mask+1);
-    unsigned newsize = oldsize;
     map_record_t *head = m->base.records;
 
     do {
@@ -168,7 +169,7 @@ static map_status_t hashmap_set(hashmap_t *m, map_record_t *rec)
     do {
         if ((res = hashmap_set_no_resize(m, rec)) != KMAP_FAILED)
             return res;
-        hashmap_record_resize(m);
+        hashmap_record_resize(m, (m->record_size_mask+1)*2);
     } while (1);
     /* unreachable */
     return KMAP_FAILED;
@@ -411,7 +412,7 @@ static void dictmap_convert2hashmap(dictmap_t *_m)
     hashmap_t *m = (hashmap_t *) _m;
     m->base.api = &HASH;
     m->record_size_mask = DICTMAP_THRESHOLD-1;
-    hashmap_record_resize(m);
+    hashmap_record_resize(m, DELTA);
 }
 
 #ifdef __cplusplus
