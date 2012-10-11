@@ -206,7 +206,7 @@ static unsigned char skip_space(input_stream *ins, unsigned char c)
     return 0;
 }
 
-static unsigned char skipBSorDoubleQuote(input_stream *ins, unsigned char c)
+static unsigned char skipBSorDoubleQuote(input_stream *ins)
 {
 #ifdef __SSE2__
 #define bsf(x) __builtin_ctzl(x)
@@ -253,9 +253,11 @@ static unsigned char skipBSorDoubleQuote(input_stream *ins, unsigned char c)
     ins->d0.str = ins->d1.str;
     return -1;
 #else
-    register unsigned ch = c;
-    register unsigned char *str = (unsigned char *) ins->d0.str;
-    register unsigned char *end = (unsigned char *) ins->d1.str;
+    register unsigned ch = NEXT(ins);
+    register unsigned char *str;
+    register unsigned char *end;
+    str = (unsigned char *) ins->d0.str;
+    end = (unsigned char *) ins->d1.str;
     for(; str != end; ch = *str++) {
         if (0x80 & string_table[ch]) {
             break;
@@ -325,7 +327,7 @@ static JSON parseString(JSONMemoryPool *jm, input_stream *ins, unsigned char c)
     union io_data state, state2;
     assert(c == '"' && "Missing open quote at start of JSONString");
     state = _input_stream_save(ins);
-    c = skipBSorDoubleQuote(ins, NEXT(ins));
+    c = skipBSorDoubleQuote(ins);
     state2 = _input_stream_save(ins);
     if (c == '"') {/* fast path */
         return JSONString_new(jm, (char *)state.str, state2.str - state.str - 1);
