@@ -196,6 +196,49 @@ static const unsigned string_table[] = {
 
 static unsigned char skip_space(input_stream *ins, unsigned char c)
 {
+#ifdef __SSE2__
+#define ffs(x) __builtin_ffsl(x)
+    unsigned char *str = (unsigned char *) (ins->d0.str - 1);
+    const __m128i m0x00 = _mm_set1_epi8(0);
+    const __m128i m0x09 = _mm_set1_epi8('\t');
+    const __m128i m0x0a = _mm_set1_epi8('\n');
+    const __m128i m0x0d = _mm_set1_epi8('\r');
+    const __m128i m0x20 = _mm_set1_epi8(' ');
+    size_t ip = (size_t) str;
+    size_t n = ip & 15;
+    assert(c != 0 && c == *str);
+    if (n > 0) {
+        ip &= ~15;
+        __m128i x = *(__m128i*)ip;
+        __m128i mask1 = _mm_or_si128(_mm_cmpeq_epi8(x, m0x09), _mm_cmpeq_epi8(x, m0x0a));
+        __m128i mask2 = _mm_or_si128(_mm_cmpeq_epi8(x, m0x0d), _mm_cmpeq_epi8(x, m0x20));
+        __m128i mask  = _mm_or_si128(_mm_cmpeq_epi8(x, m0x00), _mm_or_si128(mask1, mask2));
+        unsigned short mask3 = _mm_movemask_epi8(mask);
+        mask3 |= ((1UL << n)-1);
+        mask3 = ~mask3;
+        if (mask3) {
+            unsigned char *tmp = (unsigned char *)ip + ffs(mask3) - 1;
+            ins->d0.str = tmp + 1;
+            return *(tmp);
+        }
+        str += 16 - n;
+    }
+    while (1) {
+        __m128i x = *(__m128i*)&(str[0]);
+        __m128i mask1 = _mm_or_si128(_mm_cmpeq_epi8(x, m0x09), _mm_cmpeq_epi8(x, m0x0a));
+        __m128i mask2 = _mm_or_si128(_mm_cmpeq_epi8(x, m0x0d), _mm_cmpeq_epi8(x, m0x20));
+        __m128i mask  = _mm_or_si128(_mm_cmpeq_epi8(x, m0x00), _mm_or_si128(mask1, mask2));
+        unsigned short mask3 = ~(_mm_movemask_epi8(mask));
+        if (mask3) {
+            unsigned char *tmp = str + ffs(mask3) - 1;
+            ins->d0.str = tmp + 1;
+            return *(tmp);
+        }
+        str += 16;
+    }
+    ins->d0.str = ins->d1.str;
+    return 0;
+#else
     int ch = c;
     for (ch = !ch?NEXT(ins):ch; EOS(ins); ch = NEXT(ins)) {
         assert(ch >= 0);
@@ -204,6 +247,7 @@ static unsigned char skip_space(input_stream *ins, unsigned char c)
         }
     }
     return 0;
+#endif
 }
 
 static unsigned char skipBSorDoubleQuote(input_stream *ins)
@@ -376,7 +420,7 @@ static JSON parseObject(JSONMemoryPool *jm, input_stream *ins, unsigned char c)
     assert(c == '{' && "Missing open brace '{' at start of json object");
     JSON json = JSONObject_new(jm);
     JSONObject *obj = toObj(json.val);
-    for (c = skip_space(ins, 0); EOS(ins); c = skip_space(ins, 0)) {
+    for (c = skip_space(ins, NEXT(ins)); EOS(ins); c = skip_space(ins, NEXT(ins))) {
         JSONString *key = NULL;
         JSON val;
         if (c == '}') {
@@ -384,11 +428,11 @@ static JSON parseObject(JSONMemoryPool *jm, input_stream *ins, unsigned char c)
         }
         assert(c == '"' && "Missing open quote for element key");
         key = toStr(parseString(jm, ins, c).val);
-        c = skip_space(ins, 0);
+        c = skip_space(ins, NEXT(ins));
         assert(c == ':' && "Missing ':' after key in object");
-        val = parseChild(jm, ins, 0);
+        val = parseChild(jm, ins, NEXT(ins));
         _JSONObject_set(obj, key, val);
-        c = skip_space(ins, 0);
+        c = skip_space(ins, NEXT(ins));
         if (c == '}') {
             break;
         }
@@ -402,15 +446,15 @@ static JSON parseArray(JSONMemoryPool *jm, input_stream *ins, unsigned char c)
     JSON json = JSONArray_new(jm);
     JSONArray *a = toAry(json.val);
     assert(c == '[' && "Missing open brace '[' at start of json array");
-    c = skip_space(ins, 0);
+    c = skip_space(ins, NEXT(ins));
     if (c == ']') {
         /* array with no elements "[]" */
         return json;
     }
-    for (; EOS(ins); c = skip_space(ins, 0)) {
+    for (; EOS(ins); c = skip_space(ins, NEXT(ins))) {
         JSON val = parseChild(jm, ins, c);
         _JSONArray_append(a, val);
-        c = skip_space(ins, 0);
+        c = skip_space(ins, NEXT(ins));
         if (c == ']') {
             break;
         }
