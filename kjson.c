@@ -196,51 +196,51 @@ static const unsigned string_table[] = {
 
 static unsigned char skip_space(input_stream *ins, unsigned char c)
 {
-#ifdef __SSE2__
-#define ffs(x) __builtin_ffsl(x)
-    unsigned char *str = (unsigned char *) (ins->d0.str - 1);
-    const __m128i m0x00 = _mm_set1_epi8(0);
-    const __m128i m0x09 = _mm_set1_epi8('\t');
-    const __m128i m0x0a = _mm_set1_epi8('\n');
-    const __m128i m0x0d = _mm_set1_epi8('\r');
-    const __m128i m0x20 = _mm_set1_epi8(' ');
-    size_t ip = (size_t) str;
-    size_t n = ip & 15;
-    assert(c != 0 && c == *str);
-    if (n > 0) {
-        ip &= ~15;
-        __m128i x = *(__m128i*)ip;
-        __m128i mask1 = _mm_or_si128(_mm_cmpeq_epi8(x, m0x09), _mm_cmpeq_epi8(x, m0x0a));
-        __m128i mask2 = _mm_or_si128(_mm_cmpeq_epi8(x, m0x0d), _mm_cmpeq_epi8(x, m0x20));
-        __m128i mask  = _mm_or_si128(_mm_cmpeq_epi8(x, m0x00), _mm_or_si128(mask1, mask2));
-        unsigned short mask3 = _mm_movemask_epi8(mask);
-        mask3 |= ((1UL << n)-1);
-        mask3 = ~mask3;
-        if (mask3) {
-            unsigned char *tmp = (unsigned char *)ip + ffs(mask3) - 1;
-            ins->d0.str = tmp + 1;
-            return *(tmp);
-        }
-        str += 16 - n;
-    }
-    while (1) {
-        __m128i x = *(__m128i*)&(str[0]);
-        __m128i mask1 = _mm_or_si128(_mm_cmpeq_epi8(x, m0x09), _mm_cmpeq_epi8(x, m0x0a));
-        __m128i mask2 = _mm_or_si128(_mm_cmpeq_epi8(x, m0x0d), _mm_cmpeq_epi8(x, m0x20));
-        __m128i mask  = _mm_or_si128(_mm_cmpeq_epi8(x, m0x00), _mm_or_si128(mask1, mask2));
-        unsigned short mask3 = ~(_mm_movemask_epi8(mask));
-        if (mask3) {
-            unsigned char *tmp = str + ffs(mask3) - 1;
-            ins->d0.str = tmp + 1;
-            return *(tmp);
-        }
-        str += 16;
-    }
-    ins->d0.str = ins->d1.str;
-    return 0;
+#if 0
+//#ifdef __SSE2__
+//#define ffs(x) __builtin_ffsl(x)
+//    register unsigned char *str = (unsigned char *) (ins->d0.str - 1);
+//    const __m128i m0x00 = _mm_set1_epi8(0);
+//    const __m128i m0x09 = _mm_set1_epi8('\t');
+//    const __m128i m0x0a = _mm_set1_epi8('\n');
+//    const __m128i m0x0d = _mm_set1_epi8('\r');
+//    const __m128i m0x20 = _mm_set1_epi8(' ');
+//    size_t ip = (size_t) str;
+//    size_t n = ip & 15;
+//    assert(c != 0 && c == *str);
+//    if (n > 0) {
+//        ip &= ~15;
+//        __m128i x = _mm_loadu_si128((const __m128i*)ip);
+//        __m128i mask1 = _mm_or_si128(_mm_cmpeq_epi8(x, m0x09), _mm_cmpeq_epi8(x, m0x0a));
+//        __m128i mask2 = _mm_or_si128(_mm_cmpeq_epi8(x, m0x0d), _mm_cmpeq_epi8(x, m0x20));
+//        __m128i mask  = _mm_or_si128(_mm_cmpeq_epi8(x, m0x00), _mm_or_si128(mask1, mask2));
+//        unsigned short mask3 = _mm_movemask_epi8(mask);
+//        mask3 = ~(mask3 | ((1UL << n)-1));
+//        if (mask3) {
+//            unsigned char *tmp = (unsigned char *)ip + ffs(mask3) - 1;
+//            ins->d0.str = tmp + 1;
+//            return *(tmp);
+//        }
+//        str += 16 - n;
+//    }
+//    while (1) {
+//        __m128i x = _mm_loadu_si128((const __m128i*)(str));
+//        __m128i mask1 = _mm_or_si128(_mm_cmpeq_epi8(x, m0x09), _mm_cmpeq_epi8(x, m0x0a));
+//        __m128i mask2 = _mm_or_si128(_mm_cmpeq_epi8(x, m0x0d), _mm_cmpeq_epi8(x, m0x20));
+//        __m128i mask  = _mm_or_si128(_mm_cmpeq_epi8(x, m0x00), _mm_or_si128(mask1, mask2));
+//        unsigned short mask3 = ~(_mm_movemask_epi8(mask));
+//        if (mask3) {
+//            unsigned char *tmp = str + ffs(mask3) - 1;
+//            ins->d0.str = tmp + 1;
+//            return *(tmp);
+//        }
+//        str += 16;
+//    }
+//    ins->d0.str = ins->d1.str;
+//    return 0;
 #else
-    int ch = c;
-    for (ch = !ch?NEXT(ins):ch; EOS(ins); ch = NEXT(ins)) {
+    int ch;
+    for (ch = c; EOS(ins); ch = NEXT(ins)) {
         assert(ch >= 0);
         if (!(0x40 & string_table[ch])) {
             return (unsigned char) ch;
@@ -262,8 +262,7 @@ static unsigned char skipBSorDoubleQuote(input_stream *ins)
     size_t n = ip & 15;
     if (n > 0) {
         __m128i mask;
-        ip &= ~15;
-        __m128i x = *(__m128i*)ip;
+        __m128i x = _mm_loadu_si128((const __m128i*)(ip & ~15));
         __m128i result1 = _mm_cmpeq_epi8(x, m0x5c);
         __m128i result2 = _mm_cmpeq_epi8(x, m0x22);
         __m128i result3 = _mm_cmpeq_epi8(x, m0x00);
@@ -279,13 +278,11 @@ static unsigned char skipBSorDoubleQuote(input_stream *ins)
         str += 16 - n;
     }
     while (1) {
-        __m128i mask;
-        __m128i x = *(__m128i*)&(str[0]);
+        __m128i x = _mm_loadu_si128((const __m128i*)str);
         __m128i result1 = _mm_cmpeq_epi8(x, m0x5c);
         __m128i result2 = _mm_cmpeq_epi8(x, m0x22);
         __m128i result3 = _mm_cmpeq_epi8(x, m0x00);
-        mask = _mm_or_si128(result1, result2);
-        mask = _mm_or_si128(result3, mask);
+        __m128i mask    = _mm_or_si128(result3, _mm_or_si128(result1, result2));
         unsigned long mask2 = _mm_movemask_epi8(mask);
         if (mask2) {
             unsigned char *tmp = str + bsf(mask2);
