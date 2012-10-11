@@ -75,13 +75,12 @@ static inline uint32_t fnv1a(const char *p, uint32_t len)
     return hash;
 }
 
-
 static unsigned JSONString_hashCode(JSONString *key)
 {
 
     if (!key->hashcode)
         key->hashcode =
-#define USE_DJBHASH
+#define USE_FNV1A
 #ifdef USE_DJBHASH
             djbhash(key->str, key->length);
 #elif defined(USE_ONE_AT_A_TIME)
