@@ -233,21 +233,21 @@ static inline JSON JSONNull_new()
     return toJSON(ValueN());
 }
 
-static inline JSON JSONObject_new(JSONMemoryPool *jm)
+static inline JSON JSONObject_new(JSONMemoryPool *jm, unsigned map_size)
 {
     bool malloced;
     JSONObject *o = (JSONObject *) JSONMemoryPool_Alloc(jm, sizeof(*o), &malloced);
-    kmap_init(&(o->child), 0);
+    kmap_init(&(o->child), map_size);
     return toJSON(ValueO(o));
 }
 
-static inline JSON JSONArray_new(JSONMemoryPool *jm)
+static inline JSON JSONArray_new(JSONMemoryPool *jm, unsigned elm_size)
 {
     bool malloced;
     JSONArray *o = (JSONArray *) JSONMemoryPool_Alloc(jm, sizeof(*o), &malloced);
     o->length   = 0;
-    o->capacity = 4;
-    o->list   = (JSON *) malloc(sizeof(JSON)*4);
+    o->capacity = elm_size;
+    o->list   = (JSON *) malloc(sizeof(JSON)*elm_size);
     return toJSON(ValueA(o));
 }
 

@@ -83,6 +83,9 @@ add_test(kjson_test_stream test_stream ${JSON_TEST_CODE_LIST}
 add_executable(test_stringbuilder test/test_string_builder.c)
 add_test(kjson_test_stringbuilder test_stringbuilder)
 
+add_executable(test_stack test/test_kstack.c)
+add_test(kjson_test_stack test_stack)
+
 add_executable(test_tostring test/test_tostring.c)
 target_link_libraries(test_tostring kjson)
 add_test(kjson_test_tostring test_tostring)
@@ -123,6 +126,9 @@ target_link_libraries(benchmark3 kjson)
 
 add_executable(benchmark4 test/benchmark4.c)
 target_link_libraries(benchmark4 kjson)
+
+add_executable(benchmark5 test/benchmark5.c)
+target_link_libraries(benchmark5 kjson)
 
 add_executable(parseString test/parseString.c)
 add_test(kjson_parseString parseString)

@@ -443,48 +443,66 @@ static JSON parseChild(JSONMemoryPool *jm, input_stream *ins, unsigned char c)
 static JSON parseObject(JSONMemoryPool *jm, input_stream *ins, unsigned char c)
 {
     assert(c == '{' && "Missing open brace '{' at start of json object");
-    JSON json = JSONObject_new(jm);
-    JSONObject *obj = toObj(json.val);
+    unsigned stack_top = kstack_size(&ins->stack);
     for (c = skip_space(ins, NEXT(ins)); EOS(ins); c = skip_space(ins, NEXT(ins))) {
-        JSONString *key = NULL;
-        JSON val;
         if (c == '}') {
             break;
         }
         assert(c == '"' && "Missing open quote for element key");
-        key = toStr(parseString(jm, ins, c).val);
+
+        JSON key = parseString(jm, ins, c);
+        kstack_push(&ins->stack, key);
         c = skip_space(ins, NEXT(ins));
         assert(c == ':' && "Missing ':' after key in object");
-        val = parseChild(jm, ins, NEXT(ins));
-        _JSONObject_set(obj, key, val);
+
+        JSON val = parseChild(jm, ins, NEXT(ins));
+        kstack_push(&ins->stack, val);
         c = skip_space(ins, NEXT(ins));
         if (c == '}') {
             break;
         }
         assert(c == ',' && "Missing comma or end of JSON Object '}'");
     }
+    unsigned field_size = (kstack_size(&ins->stack) - stack_top) / 2;
+    JSON json = JSONObject_new(jm, field_size);
+    JSONObject *obj = toObj(json.val);
+    while(field_size-- > 0) {
+        JSONString *key;
+        JSON val;
+        val = kstack_pop(&ins->stack);
+        key = toStr(kstack_pop(&ins->stack).val);
+        assert(val.bits != 0 && key);
+        _JSONObject_set(obj, key, val);
+    }
+    assert(kstack_size(&ins->stack) == stack_top);
     return json;
 }
 
 static JSON parseArray(JSONMemoryPool *jm, input_stream *ins, unsigned char c)
 {
-    JSON json = JSONArray_new(jm);
-    JSONArray *a = toAry(json.val);
     assert(c == '[' && "Missing open brace '[' at start of json array");
+    unsigned stack_top = kstack_size(&ins->stack);
     c = skip_space(ins, NEXT(ins));
     if (c == ']') {
         /* array with no elements "[]" */
-        return json;
+        return JSONArray_new(jm, 0);
     }
     for (; EOS(ins); c = skip_space(ins, NEXT(ins))) {
         JSON val = parseChild(jm, ins, c);
-        _JSONArray_append(a, val);
+        kstack_push(&ins->stack, val);
         c = skip_space(ins, NEXT(ins));
         if (c == ']') {
             break;
         }
         assert(c == ',' && "Missing comma or end of JSON Array ']'");
     }
+
+    unsigned element_size = kstack_size(&ins->stack) - stack_top;
+    JSON json = JSONArray_new(jm, element_size);
+    JSONArray *a = toAry(json.val);
+    kstack_move(&ins->stack, a->list, stack_top, element_size);
+    assert(kstack_size(&ins->stack) == stack_top);
+    a->length += element_size;
     return json;
 }
 

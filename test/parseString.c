@@ -39,7 +39,7 @@ void bench_kjson(void)
     reset_timer();
     {
         unsigned int i;
-        o = JSONArray_new(&jm);
+        o = JSONArray_new(&jm, 0);
         for(i=0; i < TASK_STR_LEN; ++i) {
             JSON v = JSONString_new(&jm, (char*)TASK_STR_PTR, i);
             JSONArray_append(&jm, o, v);

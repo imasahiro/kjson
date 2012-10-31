@@ -10,7 +10,7 @@ static void test_obj()
 {
     JSONMemoryPool jm;
     JSONMemoryPool_Init(&jm);
-    JSON o = JSONObject_new(&jm);
+    JSON o = JSONObject_new(&jm, 0);
     JSONObject_set(&jm, o, JSONString_new(&jm, "a", 1), JSONBool_new(1));
     JSONObject_set(&jm, o, JSONString_new(&jm, "b", 1), JSONInt_new(&jm, 100));
     JSONObject_set(&jm, o, JSONString_new(&jm, "c", 1), JSONDouble_new(3.14));
@@ -26,7 +26,7 @@ static void test_array()
 {
     JSONMemoryPool jm;
     JSONMemoryPool_Init(&jm);
-    JSON a = JSONArray_new(&jm);
+    JSON a = JSONArray_new(&jm, 0);
     JSONArray_append(&jm, a, (JSON) JSONString_new(&jm, "a", 1));
     JSONArray_append(&jm, a, (JSON) JSONString_new(&jm, "b", 1));
     JSONArray_append(&jm, a, (JSON) JSONString_new(&jm, "c", 1));

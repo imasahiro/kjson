@@ -27,6 +27,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include "kstack.h"
+
 #ifndef KJSON_STREAM_H
 #define KJSON_STREAM_H
 
@@ -34,20 +36,14 @@
 extern "C" {
 #endif
 
-struct input_stream;
-
 union io_data {
     const unsigned char *str;
-    FILE *fp;
-    uintptr_t u;
-    void *ptr;
 };
 
 typedef struct input_stream {
     union io_data d0;
     union io_data d1;
-    union io_data d2;
-    long flags;
+    kstack_t stack;
 } input_stream;
 
 static inline union io_data _input_stream_save(input_stream *ins)
@@ -79,15 +75,15 @@ static input_stream *new_string_input_stream(input_stream *ins, const char *buf,
     const unsigned char *text = (const unsigned char *) buf;
     ins->d0.str = text;
     ins->d1.str = text + len + 1;
-    ins->d2.u   = 0;
+    kstack_init(&ins->stack);
     return ins;
 }
 
 static void string_input_stream_deinit(input_stream *ins)
 {
     ins->d0.str = ins->d1.str = NULL;
+    kstack_deinit(&ins->stack);
 }
-
 
 static void input_stream_delete(input_stream *ins)
 {

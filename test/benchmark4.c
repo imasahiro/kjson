@@ -41,6 +41,7 @@ void f(void)
         if (o.bits == 0) {
             fprintf(stderr, "Errro\n");
         }
+        assert(JSON_length(o) == 8);
         JSON_free(o);
     }
     show_timer("parse true");
@@ -49,6 +50,7 @@ void f(void)
         if (o.bits == 0) {
             fprintf(stderr, "Errro\n");
         }
+        assert(JSON_length(o) == 8);
         JSON_free(o);
     }
     show_timer("parse false");
@@ -57,6 +59,7 @@ void f(void)
         if (o.bits == 0) {
             fprintf(stderr, "Errro\n");
         }
+        assert(JSON_length(o) == 8);
         JSON_free(o);
     }
     show_timer("parse null");
