@@ -65,7 +65,7 @@ typedef union kmap_t {
 } kmap_t;
 
 typedef struct map_iterator {
-    long index;
+    uintptr_t index;
 } kmap_iterator;
 
 typedef enum map_status_t {

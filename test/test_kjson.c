@@ -110,6 +110,7 @@ static void test_string(void)
     }
     JSON_free(json);
     JSONMemoryPool_Delete(&jm);
+    (void)names;
 }
 
 static char data2[] = 
@@ -141,6 +142,7 @@ static void test_object_iterator(void)
         v = JSON_toString(Val);
         fprintf(stderr, "<'%s':'%s'>", k, v);
         free(k); free(v);
+        (void)str;
     }
     JSON_free((JSON)o);
     JSONMemoryPool_Delete(&jm);
