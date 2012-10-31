@@ -37,34 +37,7 @@ extern "C" {
 #define likely(x)     __builtin_expect(!!(x), 1)
 #endif
 
-static inline uint32_t djbhash(const char *p, uint32_t len)
-{
-    uint32_t hash = 5381;
-    const uint8_t *s = (const uint8_t *) p;
-    const uint8_t *e = (const uint8_t *) p + len;
-    while (s < e) {
-        hash = ((hash << 5) + hash) + *s++;
-    }
-    return hash;
-}
-
-static inline uint32_t one_at_a_time(const char *p, uint32_t len)
-{
-    uint32_t i, hash = 0;
-
-    for (i = 0; i < len; ++i) {
-        hash += p[i];
-        hash += (hash << 10);
-        hash ^= (hash >> 6);
-    }
-
-    hash += (hash << 3);
-    hash ^= (hash >> 11);
-    hash += (hash << 15);
-    return hash;
-}
-
-static inline uint32_t fnv1a(const char *p, uint32_t len)
+static uint32_t fnv1a(const char *p, uint32_t len)
 {
     uint32_t hash = 0x811C9DC5;
     const uint8_t *s = (const uint8_t *) p;
@@ -77,17 +50,8 @@ static inline uint32_t fnv1a(const char *p, uint32_t len)
 
 static unsigned JSONString_hashCode(JSONString *key)
 {
-
     if (!key->hashcode)
-        key->hashcode =
-#define USE_FNV1A
-#ifdef USE_DJBHASH
-            djbhash(key->str, key->length);
-#elif defined(USE_ONE_AT_A_TIME)
-            one_at_a_time(key->str, key->length);
-#else
-            fnv1a(key->str, key->length);
-#endif
+        key->hashcode = fnv1a(key->str, key->length);
     return key->hashcode;
 }
 
@@ -284,9 +248,12 @@ static void dictmap_api_init(kmap_t *_m, unsigned init)
     dictmap_init((dictmap_t *) _m);
 }
 
-static void dictmap_record_copy(map_record_t *dst, const map_record_t *src)
+static void dictmap_convert2hashmap(dictmap_t *_m)
 {
-    memcpy(dst, src, sizeof(map_record_t));
+    hashmap_t *m = (hashmap_t *) _m;
+    m->base.api = &HASH;
+    m->record_size_mask = DICTMAP_THRESHOLD-1;
+    hashmap_record_resize(m, DELTA);
 }
 
 static inline map_record_t *dictmap_at(dictmap_t *m, unsigned idx)
@@ -298,12 +265,10 @@ static map_status_t dictmap_set_new(dictmap_t *m, map_record_t *rec, int i)
 {
     map_record_t *r = dictmap_at(m, i);
     m->hash_list[i] = rec->hash;
-    dictmap_record_copy(r, rec);
+    map_record_copy(r, rec);
     ++m->used_size;
     return KMAP_ADDED;
 }
-
-static void dictmap_convert2hashmap(dictmap_t *_m);
 
 static map_status_t dictmap_set(dictmap_t *m, map_record_t *rec)
 {
@@ -319,7 +284,7 @@ static map_status_t dictmap_set(dictmap_t *m, map_record_t *rec)
                 continue;
             }
             JSON_free(toJSON(ValueP(r->v)));
-            dictmap_record_copy(r, rec);
+            map_record_copy(r, rec);
             return KMAP_UPDATE;
         }
     }
@@ -405,14 +370,6 @@ const kmap_api_t DICT = {
     dictmap_api_init,
     dictmap_api_dispose
 };
-
-static void dictmap_convert2hashmap(dictmap_t *_m)
-{
-    hashmap_t *m = (hashmap_t *) _m;
-    m->base.api = &HASH;
-    m->record_size_mask = DICTMAP_THRESHOLD-1;
-    hashmap_record_resize(m, DELTA);
-}
 
 #ifdef __cplusplus
 } /* extern "C" */

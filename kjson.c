@@ -650,9 +650,10 @@ KJSON_API JSON *JSON_getArray(JSON json, const char *key, size_t *len)
 
 static void _JSONString_toString(string_builder *sb, JSONString *o)
 {
-    string_builder_add(sb, '"');
-    string_builder_add_string(sb, o->str, o->length);
-    string_builder_add(sb, '"');
+    string_builder_ensure_size(sb, o->length+2);
+    string_builder_add_no_check(sb, '"');
+    string_builder_add_string_no_check(sb, o->str, o->length);
+    string_builder_add_no_check(sb, '"');
 }
 
 static void _JSON_toString(string_builder *sb, JSON json);
@@ -783,10 +784,12 @@ static void JSONDouble_toString(string_builder *sb, JSON json)
 
 static void JSONBool_toString(string_builder *sb, JSON json)
 {
-    int b = toBool(json.val);
-    const char *str  = (b) ? "true" : "false";
-    size_t len = (b) ? 4/*strlen("ture")*/ : 5/*strlen("false")*/;
-    string_builder_add_string(sb, str, len);
+    string_builder_ensure_size(sb, 5);
+    if(toBool(json.val)) {
+        string_builder_add_string_no_check(sb, "true", 4);
+    } else {
+        string_builder_add_string_no_check(sb, "false", 5);
+    }
 }
 
 static void JSONNull_toString(string_builder *sb, JSON json)
