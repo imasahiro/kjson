@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include "benchmark.h"
 
-#define SIZE 1024*16
+#define SIZE 1024*128
 static char *loadLine(FILE *fp, char *buf)
 {
     bzero(buf, SIZE);
@@ -38,11 +38,11 @@ static void test1()
     while ((str = loadLine(fp, buf)) != NULL) {
         len = strlen(str);
         JSON json = parseJSON(&jm, str, str+len);
-        assert(JSON_type(json) == JSON_Object);
+        assert(JSON_type(json) == JSON_Array);
         JSON_free(json);
     }
     JSONMemoryPool_Delete(&jm);
-    _show_timer("parse", filesize);
+    show_timer("parse");
     fclose(fp);
 }
 
@@ -58,24 +58,27 @@ static void test2()
         len = strlen(str);
         JSON json = parseJSON(&jm, str, str+len);
         char *p = JSON_toStringWithLength(json, &len);
-        assert(JSON_type(json) == JSON_Object);
+        assert(JSON_type(json) == JSON_Array);
         assert(p);
         JSON_free(json);
         free(p);
     }
     JSONMemoryPool_Delete(&jm);
-    _show_timer("pack/unpack", filesize);
+    show_timer("pack/unpack");
     fclose(fp);
 }
 
 int main(int argc, char const* argv[])
 {
-    int i, size = 1;
+    int i, size = 8;
     fprintf(stderr, "benchmark3\n");
+    test0();
     for (i = 0; i < size; i++) {
-        test0();
         test1();
+    }
+    for (i = 0; i < size; i++) {
         test2();
     }
+
     return 0;
 }
