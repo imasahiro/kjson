@@ -704,6 +704,13 @@ static void _JSONString_toString(string_builder *sb, JSONString *o)
 
 static void _JSON_toString(string_builder *sb, JSON json);
 
+static void JSONObjectElement_toString(string_builder *sb, map_record_t *r)
+{
+    _JSONString_toString(sb, r->k);
+    string_builder_add(sb, ':');
+    _JSON_toString(sb, toJSON(ValueP(r->v)));
+}
+
 static void JSONObject_toString(string_builder *sb, JSON json)
 {
     map_record_t *r;
@@ -711,13 +718,10 @@ static void JSONObject_toString(string_builder *sb, JSON json)
     string_builder_add(sb, '{');
     JSONObject *o = toObj(json.val);
     if ((r = kmap_next(&o->child, &itr)) != NULL) {
-        goto L_internal;
+        JSONObjectElement_toString(sb, r);
         while ((r = kmap_next(&o->child, &itr)) != NULL) {
             string_builder_add(sb, ',');
-            L_internal:
-            _JSONString_toString(sb, r->k);
-            string_builder_add(sb, ':');
-            _JSON_toString(sb, toJSON(ValueP(r->v)));
+            JSONObjectElement_toString(sb, r);
         }
     }
     string_builder_add(sb, '}');
@@ -730,12 +734,12 @@ static void JSONArray_toString(string_builder *sb, JSON json)
     string_builder_add(sb, '[');
     s = (a)->list;
     e = (a)->list+(a)->length;
-    if (s < e)
-        goto L_internal;
-    for (; s < e; ++s) {
-        string_builder_add(sb, ',');
-        L_internal:
-        _JSON_toString(sb, *s);
+    if (s < e) {
+        _JSON_toString(sb, *s++);
+        for (; s < e; ++s) {
+            string_builder_add(sb, ',');
+            _JSON_toString(sb, *s);
+        }
     }
     string_builder_add(sb, ']');
 }

@@ -6,6 +6,17 @@
 #include <stdlib.h>
 #include <string.h>
 
+static void test_parser(JSONMemoryPool *jm, const char *s, size_t len)
+{
+    JSON json = parseJSON(jm, s, s + len);
+    size_t length;
+    const char *text = JSON_toStringWithLength(json, &length);
+    assert(len == length);
+    free((char*)text);
+    JSON_free(json);
+}
+
+
 static void test_obj()
 {
     JSONMemoryPool jm;
@@ -19,6 +30,7 @@ static void test_obj()
     assert(strncmp(s, "{\"a\":true,\"b\":100,\"c\":3.14}", len) == 0);
     JSON_free(o);
     fprintf(stderr, "'%s'\n", s);
+    test_parser(&jm, s, len);
     free((char*)s);
     JSONMemoryPool_Delete(&jm);
 }
@@ -35,6 +47,7 @@ static void test_array()
     assert(strncmp(s, "[\"a\",\"b\",\"c\"]", len) == 0);
     JSON_free(a);
     fprintf(stderr, "'%s'\n", s);
+    test_parser(&jm, s, len);
     free(s);
     JSONMemoryPool_Delete(&jm);
 

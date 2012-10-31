@@ -50,7 +50,7 @@ static inline JSON kstack_pop(kstack_t *stack)
 
 static inline void kstack_move(kstack_t *stack, JSON *list, unsigned beginIdx, unsigned length)
 {
-    memcpy(list, stack->list+beginIdx, length);
+    memcpy(list, stack->list+beginIdx, length*sizeof(JSON));
     stack->size -= length;
 }
 
