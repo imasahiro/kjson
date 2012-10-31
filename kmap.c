@@ -37,40 +37,9 @@ extern "C" {
 #define likely(x)     __builtin_expect(!!(x), 1)
 #endif
 
-static uint32_t fnv1a(const char *p, uint32_t len)
-{
-    uint32_t hash = 0x811C9DC5;
-    const uint8_t *s = (const uint8_t *) p;
-    const uint8_t *e = (const uint8_t *) p + len;
-    while (s < e) {
-        hash = (*s++ ^ hash) * 0x01000193;
-    }
-    return hash;
-}
-
-static unsigned JSONString_hashCode(JSONString *key)
-{
-    if (!key->hashcode)
-        key->hashcode = fnv1a(key->str, key->length);
-    return key->hashcode;
-}
-
-static int JSONString_equal(JSONString *k0, JSONString *k1)
-{
-    if (k0->length != k1->length)
-        return 0;
-    if (JSONString_hashCode(k0) != JSONString_hashCode(k1))
-        return 0;
-    if (k0->str[0] != k1->str[0])
-        return 0;
-    return strncmp(k0->str, k1->str, k0->length) == 0;
-}
-
 static void map_record_copy(map_record_t *dst, const map_record_t *src)
 {
     *dst = *src;
-    // which one is faster??
-    //memcpy(dst, src, sizeof(map_record_t));
 }
 
 /* [HASHMAP] */
@@ -110,19 +79,17 @@ static map_status_t hashmap_set_no_resize(hashmap_t *m, map_record_t *rec)
 
 static void hashmap_record_resize(hashmap_t *m, unsigned newsize)
 {
+    unsigned i;
     unsigned oldsize = (m->record_size_mask+1);
     map_record_t *head = m->base.records;
 
-    do {
-        unsigned i;
-        newsize *= 2;
-        hashmap_record_reset(m, newsize);
-        for (i = 0; i < oldsize; ++i) {
-            map_record_t *r = head + i;
-            if (r->hash && hashmap_set_no_resize(m, r) == KMAP_FAILED)
-                continue;
-        }
-    } while (0);
+    newsize *= 2;
+    hashmap_record_reset(m, newsize);
+    for (i = 0; i < oldsize; ++i) {
+        map_record_t *r = head + i;
+        if (r->hash && hashmap_set_no_resize(m, r) == KMAP_FAILED)
+            continue;
+    }
     free(head/*, oldsize*sizeof(map_record_t)*/);
 }
 

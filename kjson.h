@@ -58,9 +58,9 @@ union JSONValue;
 typedef union JSONValue JSON;
 
 typedef struct JSONString {
+    const char *str;
     unsigned length;
     unsigned hashcode;
-    const char *str;
 } JSONString;
 typedef JSONString JSONUString;
 
