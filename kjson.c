@@ -38,7 +38,7 @@
 extern "C" {
 #endif
 
-static JSON JSONString_new2(JSONMemoryPool *jm, string_builder *builder)
+static JSON JSONUString_new(JSONMemoryPool *jm, string_builder *builder)
 {
     size_t len;
     bool malloced;
@@ -418,7 +418,7 @@ static JSON parseString(JSONMemoryPool *jm, input_stream *ins, unsigned char c)
         string_builder_add(&sb, c);
     }
     L_end:;
-    return JSONString_new2(jm, &sb);
+    return JSONUString_new(jm, &sb);
 }
 
 static JSON parseChild(JSONMemoryPool *jm, input_stream *ins, unsigned char c)
