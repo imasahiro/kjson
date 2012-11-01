@@ -10,7 +10,7 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release")
 endif()
 
-SET(CFLAGS "-Wfloat-equal -Wsign-compare -Wmissing-field-initializers -Wdisabled-optimization")
+SET(CFLAGS "-Wsign-compare -Wmissing-field-initializers -Wdisabled-optimization")
 SET(CFLAGS "${CFLAGS} -Wall -Wcomment -Wformat -Wunused-macros")
 SET(CMAKE_C_FLAGS         "-Wall -Wno-variadic-macros ${CFLAGS}")
 SET(CMAKE_C_FLAGS_RELEASE "-O3 -g")
