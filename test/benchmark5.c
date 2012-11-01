@@ -110,7 +110,7 @@ static char *loadFile(const char *file, size_t *length)
     char pathbuf[1024];
     snprintf(pathbuf, 1024, "%s", file);
     FILE *fp = fopen(pathbuf, "rb");
-    if (!fp) {
+    if(!fp) {
         snprintf(pathbuf, 1024, "../%s", file);
         fp = fopen(pathbuf, "rb");
     }
@@ -119,7 +119,7 @@ static char *loadFile(const char *file, size_t *length)
     size_t len = (size_t)ftell(fp);
     fseek(fp, 0, SEEK_SET);
     char *json = (char*)calloc(1, len + 1);
-    if (len != fread(json, 1, len, fp)) {
+    if(len != fread(json, 1, len, fp)) {
         exit(EXIT_FAILURE);
     }
     json[len] = '\0';

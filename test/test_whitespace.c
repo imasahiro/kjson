@@ -20,7 +20,7 @@ int main(int argc, char const* argv[])
     size_t i, length = 1024 * 1024;
     char *data = (char *)malloc(length  + 4);
     char *p = data;
-    for (i = 0; i < length; i += 4) {
+    for(i = 0; i < length; i += 4) {
         *p++ = ' ';
         *p++ = '\n';
         *p++ = '\r';
@@ -32,7 +32,7 @@ int main(int argc, char const* argv[])
     *p++ = '\0';
 
     reset_timer();
-    for (i = 0; i < 128; i++) {
+    for(i = 0; i < 128; i++) {
         test_whitespace(data, length+4);
     }
     show_timer("parse array with whitespace");

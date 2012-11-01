@@ -19,7 +19,7 @@ static void test0()
     char buf[SIZE], *str;
     FILE *fp = fopen(JSON_FILE, "r");
     reset_timer();
-    while ((str = loadLine(fp, buf)) != NULL) {
+    while((str = loadLine(fp, buf)) != NULL) {
         len = strlen(str);
         filesize += len;
     }
@@ -35,7 +35,7 @@ static void test1()
     reset_timer();
     JSONMemoryPool jm;
     JSONMemoryPool_Init(&jm);
-    while ((str = loadLine(fp, buf)) != NULL) {
+    while((str = loadLine(fp, buf)) != NULL) {
         len = strlen(str);
         JSON json = parseJSON(&jm, str, str+len);
         assert(JSON_type(json) == JSON_Array);
@@ -54,7 +54,7 @@ static void test2()
     reset_timer();
     JSONMemoryPool jm;
     JSONMemoryPool_Init(&jm);
-    while ((str = loadLine(fp, buf)) != NULL) {
+    while((str = loadLine(fp, buf)) != NULL) {
         len = strlen(str);
         JSON json = parseJSON(&jm, str, str+len);
         char *p = JSON_toStringWithLength(json, &len);
@@ -73,10 +73,10 @@ int main(int argc, char const* argv[])
     int i, size = 8;
     fprintf(stderr, "benchmark3\n");
     test0();
-    for (i = 0; i < size; i++) {
+    for(i = 0; i < size; i++) {
         test1();
     }
-    for (i = 0; i < size; i++) {
+    for(i = 0; i < size; i++) {
         test2();
     }
 

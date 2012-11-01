@@ -50,7 +50,7 @@ void bench_json(void)
             NULL,
 #endif
             NULL);
-    const unsigned char * buf;
+    const uint8_t * buf;
     size_t len;
     reset_timer();
     {
@@ -68,8 +68,8 @@ void bench_json(void)
     reset_timer();
     {
         yajl_status stat = yajl_parse(h, buf, len);
-        if (stat != yajl_status_ok) {
-            unsigned char * str = yajl_get_error(h, 1, buf, len);
+        if(stat != yajl_status_ok) {
+            uint8_t * str = yajl_get_error(h, 1, buf, len);
             fprintf(stderr, "%s\n", (const char *) str);
         }
     }
@@ -91,7 +91,7 @@ void bench_json(void)
         unsigned int i;
         yajl_gen_array_open(g);
         for(i=0; i < TASK_STR_LEN; ++i) {
-            yajl_gen_string(g, (const unsigned char*)TASK_STR_PTR, i);
+            yajl_gen_string(g, (const uint8_t*)TASK_STR_PTR, i);
         }
         yajl_gen_array_close(g);
     }
@@ -102,8 +102,8 @@ void bench_json(void)
     reset_timer();
     {
         yajl_status stat = yajl_parse(h, buf, len);
-        if (stat != yajl_status_ok) {
-            unsigned char * str = yajl_get_error(h, 1, buf, len);
+        if(stat != yajl_status_ok) {
+            uint8_t * str = yajl_get_error(h, 1, buf, len);
             fprintf(stderr, "%s", (const char *) str);
         }
     }
@@ -138,9 +138,9 @@ void bench_msgpack(void)
     {
         size_t off = 0;
         bool ret = msgpack_unpack_next(&msg, sbuf->data, sbuf->size, &off);
-        if (ret < 0) {
+        if(ret < 0) {
             fprintf(stderr, "Parse error.\n");
-        } else if (ret == 0) {
+        } else if(ret == 0) {
             fprintf(stderr, "Not finished.\n");
         }
     }
@@ -164,9 +164,9 @@ void bench_msgpack(void)
     {
         size_t off = 0;
         bool ret = msgpack_unpack_next(&msg, sbuf->data, sbuf->size, &off);
-        if (ret < 0) {
+        if(ret < 0) {
             fprintf(stderr, "Parse error.\n");
-        } else if (ret == 0) {
+        } else if(ret == 0) {
             fprintf(stderr, "Not finished.\n");
         }
     }
@@ -201,7 +201,7 @@ void bench_kjson(void)
     reset_timer();
     {
         o = parseJSON(&jm, buf, buf + len);
-        if (o.bits == 0) {
+        if(o.bits == 0) {
             fprintf(stderr, "Error\n");
         }
     }
@@ -226,7 +226,7 @@ void bench_kjson(void)
     reset_timer();
     {
         o = parseJSON(&jm, buf, buf + len);
-        if (o.bits == 0) {
+        if(o.bits == 0) {
             fprintf(stderr, "Errro\n");
         }
     }
@@ -241,7 +241,7 @@ int main(int argc, char* argv[])
     char* str = malloc(TASK_STR_LEN);
     memset(str, 'a', TASK_STR_LEN);
     TASK_STR_PTR = str;
-    if (argc > 1 && strcmp(argv[1], "-t") == 0) {
+    if(argc > 1 && strcmp(argv[1], "-t") == 0) {
     } else {
         bench_msgpack();
         bench_json();

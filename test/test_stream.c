@@ -8,7 +8,7 @@ static void test_string(void)
     char buf[1024] = {0};
     int i;
     int ans = 0;
-    for (i = 0; i < 1024; i++) {
+    for(i = 0; i < 1024; i++) {
         buf[i] = i;
         ans += (char)i;
     }
@@ -55,14 +55,14 @@ static void test_string(void)
 //        size = ARRAY_SIZE(files);
 //    }
 //    int i;
-//    for (i = 0; i < size; i++) {
+//    for(i = 0; i < size; i++) {
 //        FILE *fp;
 //        if ((fp = fopen(files[i], "r")) != NULL) {
 //            char buf[1024];
 //            size_t len;
-//            while ((len = fread(buf, 1, sizeof(buf), fp)) > 0) {
+//            while((len = fread(buf, 1, sizeof(buf), fp)) > 0) {
 //                int j;
-//                for (j = 0; j < len; j++) {
+//                for(j = 0; j < len; j++) {
 //                    ans += (char)buf[j];
 //                }
 //            }

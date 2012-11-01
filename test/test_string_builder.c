@@ -5,7 +5,7 @@ int main(int argc, char const* argv[])
     string_builder builder;
     int i;
     string_builder_init(&builder);
-    for (i = 0; i < 10; ++i) {
+    for(i = 0; i < 10; ++i) {
         string_builder_add(&builder, i+'a');
     }
     size_t len;

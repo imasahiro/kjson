@@ -165,10 +165,10 @@ static inline kjson_type JSON_type(JSON json) {
 
 #define JSON_ARRAY_EACH(json, A, I, E) JSON_ARRAY_EACH_(json, A, I, E, 0)
 #define JSON_ARRAY_EACH_(json, A, I, E, N)\
-    if (!JSON_type((json)) == JSON_Array) {} else\
-        if (!(A = toAry((json).val)) != 0) {}\
+    if(!JSON_type((json)) == JSON_Array) {} else\
+        if(!(A = toAry((json).val)) != 0) {}\
         else\
-        for (I = (A)->list + N,\
+        for(I = (A)->list + N,\
                 E = (A)->list+(A)->length; I != E; ++I)
 
 typedef struct JSONObject_iterator {
@@ -177,10 +177,10 @@ typedef struct JSONObject_iterator {
 } JSONObject_iterator;
 
 #define JSON_OBJECT_EACH(O, ITR, KEY, VAL)\
-    if (!JSON_TYPE_CHECK(Object, O)) {} else\
-    if (!(JSONObject_iterator_init(&ITR, O))) {}\
+    if(!JSON_TYPE_CHECK(Object, O)) {} else\
+    if(!(JSONObject_iterator_init(&ITR, O))) {}\
     else\
-    for (KEY = JSONObject_iterator_next(&ITR, &VAL); KEY.bits;\
+    for(KEY = JSONObject_iterator_next(&ITR, &VAL); KEY.bits;\
             KEY = JSONObject_iterator_next(&ITR, &VAL))
 
 #ifdef __cplusplus
@@ -291,7 +291,7 @@ static inline JSON JSONDouble_new(double val)
 
 static inline JSON JSONInt_new(JSONMemoryPool *jm, int64_t val)
 {
-    if (val > INT32_MAX || val < INT32_MIN) {
+    if(val > INT32_MAX || val < INT32_MIN) {
         bool malloced;
         JSONInt64 *i64 = (JSONInt64 *) JSONMemoryPool_Alloc(jm, sizeof(JSONInt64), &malloced);
         i64->val = val;
@@ -315,7 +315,7 @@ static inline unsigned JSON_length(JSON json)
 
 static inline JSON JSONArray_get(JSON json, unsigned index)
 {
-    if (JSON_TYPE_CHECK(Array, json)) {
+    if(JSON_TYPE_CHECK(Array, json)) {
         JSONArray *a = toAry(json.val);
         return (a)->list[index];
     } else {
@@ -325,7 +325,7 @@ static inline JSON JSONArray_get(JSON json, unsigned index)
 
 static inline int JSONObject_iterator_init(JSONObject_iterator *itr, JSON json)
 {
-    if (!JSON_type(json) ==  JSON_Object)
+    if(!JSON_type(json) ==  JSON_Object)
         return 0;
     itr->obj = toObj(json.val);
     itr->index = 0;
@@ -336,7 +336,7 @@ static inline JSON JSONObject_iterator_next(JSONObject_iterator *itr, JSON *val)
 {
     JSONObject *o = itr->obj;
     map_record_t *r;
-    while ((r = kmap_next(&o->child, (kmap_iterator*) itr)) != NULL) {
+    while((r = kmap_next(&o->child, (kmap_iterator*) itr)) != NULL) {
         *val = toJSON(ValueP(r->v));
         return toJSON(ValueS(r->k));
     }

@@ -51,7 +51,7 @@ static void json_c(char *buf, size_t len) {
 
 #ifdef USE_YAJL
 static void yajl(char *buf, size_t len) {
-    const unsigned char *t;
+    const uint8_t *t;
     yajl_gen g = yajl_gen_alloc(NULL
 #if YAJL_MAJOR < 2
             , NULL
@@ -62,7 +62,7 @@ static void yajl(char *buf, size_t len) {
             , NULL
 #endif
             , NULL);
-    yajl_status stat = yajl_parse(h, (unsigned char*)buf, len);
+    yajl_status stat = yajl_parse(h, (uint8_t*)buf, len);
 #if YAJL_MAJOR < 2
     stat = yajl_parse_complete(h);
 #else
@@ -153,11 +153,11 @@ static void test(const char *file)
     assert(len == strlen(str));
     int i, j, k;
     fprintf(stderr, "  bench:%s, %d\n", file, (int)len);
-    for (k = 0; k < loop_count; k++) {
+    for(k = 0; k < loop_count; k++) {
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
-        for (j = 0; j < ARRAY_SIZE(data); j++) {
+        for(j = 0; j < ARRAY_SIZE(data); j++) {
             reset_timer();
-            for (i = 0; i < 1024; ++i) {
+            for(i = 0; i < 1024; ++i) {
                 data[j].func(str, len);
             }
             show_timer(data[j].name);

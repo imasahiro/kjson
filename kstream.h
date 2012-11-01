@@ -36,52 +36,48 @@
 extern "C" {
 #endif
 
-union io_data {
-    const unsigned char *str;
-};
-
 typedef struct input_stream {
-    union io_data d0;
-    union io_data d1;
+    const uint8_t *pos;
+    const uint8_t *end;
     kstack_t stack;
 } input_stream;
 
-static inline union io_data _input_stream_save(input_stream *ins)
+static inline const uint8_t *_input_stream_save(input_stream *ins)
 {
-    return ins->d0;
+    return ins->pos;
 }
 
-static inline void _input_stream_resume(input_stream *ins, union io_data data)
+static inline void _input_stream_resume(input_stream *ins, const uint8_t *pos)
 {
-    ins->d0 = data;
+    ins->pos = pos;
 }
 
-static inline char string_input_stream_next(input_stream *ins)
+static inline uint8_t string_input_stream_next(input_stream *ins)
 {
-    return *(ins->d0.str)++;
+    return *(ins->pos)++;
 }
 
 static inline bool string_input_stream_eos(input_stream *ins)
 {
-    return ins->d0.str != ins->d1.str;
+    return ins->pos != ins->end;
 }
 
 #define for_each_istream(INS, CUR)\
-    for (CUR = string_input_stream_next(INS);\
+    for(CUR = string_input_stream_next(INS);\
             string_input_stream_eos(INS); CUR = string_input_stream_next(INS))
 
 static input_stream *new_string_input_stream(input_stream *ins, const char *buf, size_t len)
 {
-    const unsigned char *text = (const unsigned char *) buf;
-    ins->d0.str = text;
-    ins->d1.str = text + len + 1;
+    const uint8_t *text = (const uint8_t *) buf;
+    ins->pos = text;
+    ins->end = text + len + 1;
     kstack_init(&ins->stack);
     return ins;
 }
 
 static void string_input_stream_deinit(input_stream *ins)
 {
-    ins->d0.str = ins->d1.str = NULL;
+    ins->pos = ins->end = NULL;
     kstack_deinit(&ins->stack);
 }
 

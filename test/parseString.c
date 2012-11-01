@@ -50,11 +50,11 @@ void bench_kjson(void)
     JSON_free(o);
 
     int i;
-    for (i=0; i<loop_count; i++) {
+    for(i=0; i<loop_count; i++) {
         reset_timer();
         {
             o = parseJSON(&jm, buf, buf + len);
-            if (o.bits == 0) {
+            if(o.bits == 0) {
                 fprintf(stderr, "Errro\n");
             }
         }
@@ -70,7 +70,7 @@ int main(int argc, char* argv[])
     char* str = malloc(TASK_STR_LEN);
     memset(str, 'a', TASK_STR_LEN);
     TASK_STR_PTR = str;
-    if (argc > 1 && strncmp(argv[1], "-t", 2) == 0) {
+    if(argc > 1 && strncmp(argv[1], "-t", 2) == 0) {
         loop_count = atoi(argv[1]+2);
     }
     bench_kjson();
