@@ -48,15 +48,26 @@ static JSON JSONUString_new(JSONMemoryPool *jm, string_builder *builder)
     return toJSON(ValueU(o));
 }
 
-static uint32_t fnv1a(const char *p, uint32_t len)
+static uint32_t fnv1a_string(const uint8_t *s, uint32_t len, uint32_t hash)
 {
-    uint32_t hash = 0x811c9dc5;
-    const uint8_t *s = (const uint8_t *) p;
-    const uint8_t *e = (const uint8_t *) p + len;
+    const uint8_t *e = s + len;
     while (s < e) {
         hash = (*s++ ^ hash) * 0x01000193;
     }
     return hash;
+}
+
+static uint32_t fnv1a(const char *p, uint32_t len)
+{
+    const uint8_t *str = (const uint8_t *) p;
+    uint32_t hash = 0x811c9dc5;
+#define UNROLL 4
+    while (len >= UNROLL) {
+      hash = fnv1a_string(str, UNROLL, hash);
+      str += UNROLL;
+      len -= UNROLL;
+    }
+    return fnv1a_string(str, len, hash);
 }
 
 static unsigned JSONString_hashCode(JSONString *key)
