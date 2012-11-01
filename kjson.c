@@ -41,15 +41,12 @@ extern "C" {
 static JSON JSONString_new2(JSONMemoryPool *jm, string_builder *builder)
 {
     size_t len;
-    char *s = string_builder_tostring(builder, &len, 1);
-    len -= 1;
     bool malloced;
+    char *s = string_builder_tostring(builder, &len, 1);
     JSONString *o = (JSONString *) JSONMemoryPool_Alloc(jm, sizeof(*o), &malloced);
-    o->length = len;
-    o->str = (const char *) malloc(len);
-    memcpy((char *) o->str, s, len);
+    o->length = len-1;
+    o->str = s;
     JSONString_InitHashCode(o);
-    KJSON_FREE(s);
     return toJSON(ValueU(o));
 }
 
@@ -407,11 +404,10 @@ static JSON parseString(JSONMemoryPool *jm, input_stream *ins, unsigned char c)
                 state2.str - state.str - 1);
     }
     assert(c == '\\');
-    goto L_escape;
+    parseEscape(ins, &sb, NEXT(ins));
     for(; EOS(ins); c = NEXT(ins)) {
         switch (c) {
             case '\\':
-            L_escape:;
                 parseEscape(ins, &sb, NEXT(ins));
                 continue;
             case '"':
