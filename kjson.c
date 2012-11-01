@@ -406,18 +406,18 @@ static void parseEscape(input_stream *ins, string_builder *sb, uint8_t c)
 
 static JSON parseString(JSONMemoryPool *jm, input_stream *ins, uint8_t c)
 {
-    const uint8_t *state, *state2;
+    const uint8_t *state1, *state2;
     assert(c == '"' && "Missing open quote at start of JSONString");
-    state = _input_stream_save(ins);
+    state1 = _input_stream_save(ins);
     c = skipBSorDoubleQuote(ins);
     state2 = _input_stream_save(ins);
+    unsigned length = state2 - state1 - 1;
     if(c == '"') {/* fast path */
-        return JSONString_new(jm, (char *)state, state2 - state - 1);
+        return JSONString_new(jm, (char *)state1, length);
     }
     string_builder sb; string_builder_init(&sb);
-    if(state2 - state - 1 > 0) {
-        string_builder_add_string(&sb, (const char *) state,
-                state2 - state - 1);
+    if(length > 0) {
+        string_builder_add_string(&sb, (const char *) state1, length);
     }
     assert(c == '\\');
     parseEscape(ins, &sb, NEXT(ins));
@@ -449,7 +449,8 @@ static JSON parseChild(JSONMemoryPool *jm, input_stream *ins, uint8_t c)
         parseArray,
         parseNumber,
         parseBoolean,
-        parseNull};
+        parseNull
+    };
     return dispatch_func[0x7 & string_table[(int)c]](jm, ins, c);
 }
 
@@ -523,8 +524,8 @@ static JSON parseNumber(JSONMemoryPool *jm, input_stream *ins, uint8_t c)
 {
     assert((c == '-' || ('0' <= c && c <= '9')) && "It do not seem as Number");
     kjson_type type = JSON_Int32;
-    const uint8_t *state, *state2;
-    state = _input_stream_save(ins);
+    const uint8_t *state1, *state2;
+    state1 = _input_stream_save(ins);
     bool negative = false;
     int64_t val = 0;
     JSON n;
@@ -558,7 +559,7 @@ static JSON parseNumber(JSONMemoryPool *jm, input_stream *ins, uint8_t c)
         val = (negative)? -val : val;
         n = JSONInt_new(jm, val);
     } else {
-        char *s = (char *)state-1;
+        char *s = (char *)state1-1;
         char *e = (char *)state2;
         double d = strtod(s, &e);
         n = JSONDouble_new(d);

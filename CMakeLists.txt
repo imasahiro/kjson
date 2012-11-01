@@ -64,6 +64,9 @@ add_executable(test_tostring test/test_tostring.c)
 target_link_libraries(test_tostring kjson)
 add_test(kjson_test_tostring test_tostring)
 
+#add_executable(test_float test/test_float.c)
+#add_test(kjson_test_float test_float)
+
 ## Benchmark
 find_library(HAVE_LIBJSON json)
 find_library(HAVE_LIBJANSSON jansson)

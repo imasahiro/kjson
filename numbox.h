@@ -106,26 +106,26 @@ static inline double toDouble(Value v) {
 static inline int32_t toInt32(Value v) {
     return (int32_t) Val(v);
 }
-static inline long toLong(Value v) {
-    return (long) Val(v);
+static inline intptr_t toPtr(Value v) {
+    return (intptr_t) Val(v);
 }
 static inline bool toBool(Value v) {
     return (bool) Val(v);
 }
 static inline struct JSONObject *toObj(Value v) {
-    return (struct JSONObject *) toLong(v);
+    return (struct JSONObject *) toPtr(v);
 }
 static inline struct JSONString *toStr(Value v) {
-    return (struct JSONString *) toLong(v);
+    return (struct JSONString *) toPtr(v);
 }
 static inline struct JSONString *toUStr(Value v) {
-    return (struct JSONString *) toLong(v);
+    return (struct JSONString *) toPtr(v);
 }
 static inline struct JSONArray *toAry(Value v) {
-    return (struct JSONArray *) toLong(v);
+    return (struct JSONArray *) toPtr(v);
 }
 static inline struct JSONInt64 *toInt64(Value v) {
-    return (struct JSONInt64 *) toLong(v);
+    return (struct JSONInt64 *) toPtr(v);
 }
 static inline bool IsDouble(Value v) {
     return Tag(v) <= TagDouble;
