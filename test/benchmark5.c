@@ -59,7 +59,7 @@ static void kjson_bench_set(void *context, my_json_object_t root, const char *ke
     JSONMemoryPool *jm = (JSONMemoryPool *) context;
     JSON json = (JSON) root;
     JSON ary = JSONArray_get(json, 0);
-    JSONObject_set(jm, ary, JSONString_new(jm, key, keyLength), JSONNull_new());
+    JSONObject_set(jm, ary, key, keyLength, JSONNull_new());
 }
 
 static my_json_object_t kjson_bench_parse(void *context, const char *text, size_t length)

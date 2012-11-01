@@ -44,9 +44,7 @@ static JSON JSONUString_new(JSONMemoryPool *jm, string_builder *builder)
     bool malloced;
     char *s = string_builder_tostring(builder, &len, 1);
     JSONString *o = (JSONString *) JSONMemoryPool_Alloc(jm, sizeof(*o), &malloced);
-    o->length = len-1;
-    o->str = s;
-    o->hashcode = 0;
+    JSONString_init(o, s, len-1);
     return toJSON(ValueU(o));
 }
 
@@ -173,12 +171,18 @@ static void _JSONObject_set(JSONObject *o, JSONString *key, JSON value)
     kmap_set(&o->child, key, value.bits);
 }
 
-KJSON_API void JSONObject_set(JSONMemoryPool *jm, JSON json, JSON key, JSON value)
+KJSON_API void JSONObject_setObject(JSONMemoryPool *jm, JSON json, JSON key, JSON value)
 {
     assert(JSON_TYPE_CHECK(Object, json));
     assert(JSON_TYPE_CHECK(String, key));
     JSONObject *o = toObj(json.val);
     _JSONObject_set(o, toStr(key.val), value);
+}
+
+KJSON_API void JSONObject_set(JSONMemoryPool *jm, JSON json, const char *keyword, size_t keylen, JSON value)
+{
+    JSONString *key = toStr(JSONString_new(jm, keyword, keylen).val);
+    _JSONObject_set(toObj(json.val), key, value);
 }
 
 /* Parser functions */
@@ -639,7 +643,7 @@ KJSON_API JSON parseJSON(JSONMemoryPool *jm, const char *s, const char *e)
     return json;
 }
 
-static JSON _JSON_get(JSON json, const char *key, size_t len)
+KJSON_API JSON JSON_get(JSON json, const char *key, size_t len)
 {
     JSONObject *o = toObj(json.val);
 
@@ -649,45 +653,6 @@ static JSON _JSON_get(JSON json, const char *key, size_t len)
     tmp.hashcode = 0;
     map_record_t *r = kmap_get(&o->child, &tmp);
     return (r) ? toJSON(ValueP(r->v)) : JSON_default;
-}
-
-KJSON_API JSON JSON_get(JSON json, const char *key, size_t len)
-{
-    return _JSON_get(json, key, len);
-}
-
-KJSON_API int JSON_getInt(JSON json, const char *key, size_t len)
-{
-    JSON v = _JSON_get(json, key, len);
-    return toInt32(v.val);
-}
-
-KJSON_API bool JSON_getBool(JSON json, const char *key, size_t len)
-{
-    JSON v = _JSON_get(json, key, len);
-    return toBool(v.val);
-}
-
-KJSON_API double JSON_getDouble(JSON json, const char *key, size_t len)
-{
-    JSON v = _JSON_get(json, key, len);
-    return toDouble(v.val);
-}
-
-KJSON_API const char *JSON_getString(JSON json, const char *key, size_t *len)
-{
-    JSON obj = _JSON_get(json, key, *len);
-    JSONString *s = toStr(obj.val);
-    *len = s->length;
-    return s->str;
-}
-
-KJSON_API JSON *JSON_getArray(JSON json, const char *key, size_t *len)
-{
-    JSON obj = _JSON_get(json, key, *len);
-    JSONArray *a = toAry(obj.val);
-    *len = a->length;
-    return a->list;
 }
 
 static void _JSONString_toString(string_builder *sb, JSONString *o)

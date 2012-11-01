@@ -98,15 +98,45 @@ union JSONValue {
 typedef JSONNumber JSONNull;
 
 /* [Getter API] */
-KJSON_API JSON *JSON_getArray(JSON json, const char *key, size_t *len);
-KJSON_API const char *JSON_getString(JSON json, const char *key, size_t *len);
-KJSON_API double JSON_getDouble(JSON json, const char *key, size_t len);
-KJSON_API bool JSON_getBool(JSON json, const char *key, size_t len);
-KJSON_API int JSON_getInt(JSON json, const char *key, size_t len);
 KJSON_API JSON JSON_get(JSON json, const char *key, size_t len);
+static inline int JSON_getInt(JSON json, const char *key, size_t len)
+{
+    JSON v = JSON_get(json, key, len);
+    return toInt32(v.val);
+}
+
+static inline bool JSON_getBool(JSON json, const char *key, size_t len)
+{
+    JSON v = JSON_get(json, key, len);
+    return toBool(v.val);
+}
+
+static inline double JSON_getDouble(JSON json, const char *key, size_t len)
+{
+    JSON v = JSON_get(json, key, len);
+    return toDouble(v.val);
+}
+
+static inline const char *JSON_getString(JSON json, const char *key, size_t *len)
+{
+    JSON obj = JSON_get(json, key, *len);
+    JSONString *s = toStr(obj.val);
+    *len = s->length;
+    return s->str;
+}
+
+static inline JSON *JSON_getArray(JSON json, const char *key, size_t *len)
+{
+    JSON obj = JSON_get(json, key, *len);
+    JSONArray *a = toAry(obj.val);
+    *len = a->length;
+    return a->list;
+}
+
 
 /* [Other API] */
-KJSON_API void JSONObject_set(JSONMemoryPool *jm, JSON obj, JSON key, JSON value);
+KJSON_API void JSONObject_setObject(JSONMemoryPool *jm, JSON obj, JSON key, JSON value);
+KJSON_API void JSONObject_set(JSONMemoryPool *jm, JSON obj, const char *key, size_t len, JSON value);
 KJSON_API void JSONArray_append(JSONMemoryPool *jm, JSON ary, JSON o);
 KJSON_API void JSON_free(JSON o);
 
@@ -213,15 +243,21 @@ static inline int JSONBool_get(JSON json)
     return toBool(json.val);
 }
 
+static inline JSONString *JSONString_init(JSONString *buffer, const char *str, size_t length)
+{
+    buffer->str      = str;
+    buffer->length   = length;
+    buffer->hashcode = 0;
+    return buffer;
+}
+
 /* [New API] */
 static inline JSON JSONString_new(JSONMemoryPool *jm, const char *s, size_t len)
 {
     bool malloced;
     JSONString *o = (JSONString *) JSONMemoryPool_Alloc(jm, sizeof(*o), &malloced);
-    o->str = (const char *) malloc(len);
-    o->length = len;
+    JSONString_init(o, (const char *) malloc(len), len);
     memcpy((char *)o->str, s, len);
-    o->hashcode = 0;
     return toJSON(ValueS(o));
 }
 

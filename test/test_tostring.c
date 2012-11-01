@@ -22,9 +22,9 @@ static void test_obj()
     JSONMemoryPool jm;
     JSONMemoryPool_Init(&jm);
     JSON o = JSONObject_new(&jm, 0);
-    JSONObject_set(&jm, o, JSONString_new(&jm, "a", 1), JSONBool_new(1));
-    JSONObject_set(&jm, o, JSONString_new(&jm, "b", 1), JSONInt_new(&jm, 100));
-    JSONObject_set(&jm, o, JSONString_new(&jm, "c", 1), JSONDouble_new(3.14));
+    JSONObject_set(&jm, o, "a", 1, JSONBool_new(1));
+    JSONObject_set(&jm, o, "b", 1, JSONInt_new(&jm, 100));
+    JSONObject_set(&jm, o, "c", 1, JSONDouble_new(3.14));
     size_t len;
     char *s = JSON_toStringWithLength(o, &len);
     assert(strncmp(s, "{\"a\":true,\"b\":100,\"c\":3.14}", len) == 0);
