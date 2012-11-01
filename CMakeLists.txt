@@ -25,43 +25,17 @@ set(JSON_SRC kjson.c)
 add_library(kjson SHARED ${JSON_SRC})
 
 ## Test cases
-set(JSON_TEST
-        "./test/test01.json"
-        "./test/test02.json"
-        "./test/test03.json"
-        "./test/test04.json"
-        "./test/test05.json"
-        "./test/test06.json"
-        "./test/test07.json"
-        "./test/test08.json"
-        "./test/test09.json"
-        "./test/test10.json"
-        "./test/test11.json"
-        "./test/test12.json"
-        "./test/test13.json"
-        "./test/test14.json"
-        "./test/test15.json")
-
-set(JSON_BENCHMARK
-        "./test/benchmark1.json"
-        "./test/benchmark2.json"
-        "./test/benchmark3.json"
-        "./test/benchmark4.json"
-        "./test/benchmark5.json"
-        "./test/benchmark6.json"
-        "./test/benchmark7.json")
-
+file(GLOB JSON_TEST ${CMAKE_CURRENT_SOURCE_DIR}/test/test*.json)
+file(GLOB JSON_TEST ${CMAKE_CURRENT_SOURCE_DIR}/test/benchmark*.json)
 
 set(JSON_TEST_CODE_LIST)
 set(JSON_BENCH_CODE_LIST)
 foreach(it ${JSON_TEST})
-    set(JSON_TEST_CODE_LIST ${JSON_TEST_CODE_LIST}
-            ${CMAKE_CURRENT_SOURCE_DIR}/${it})
+    set(JSON_TEST_CODE_LIST ${JSON_TEST_CODE_LIST} ${it})
 endforeach()
 
 foreach(it ${JSON_BENCH})
-    set(JSON_BENCH_CODE_LIST ${JSON_BENCH_CODE_LIST}
-            ${CMAKE_CURRENT_SOURCE_DIR}/${it})
+    set(JSON_BENCH_CODE_LIST ${JSON_BENCH_CODE_LIST} ${it})
 endforeach()
 
 enable_testing()
@@ -144,7 +118,7 @@ target_link_libraries(test_whitespace kjson)
 install(TARGETS kjson LIBRARY DESTINATION lib)
 
 file(GLOB headers ${CMAKE_CURRENT_SOURCE_DIR}/*.h)
-message(STATUS ${headers})
+#message(STATUS ${headers})
 foreach(it ${headers})
 	install(FILES ${it} DESTINATION include/kjson)
 endforeach(it ${headers})

@@ -788,7 +788,7 @@ static void JSONUString_toString(string_builder *sb, JSON json)
     const char *s = o->str;
     const char *e = o->str + o->length;
     string_builder_ensure_size(sb, o->length+2/* = strlen("\"\") */);
-    string_builder_add(sb, '"');
+    string_builder_add_no_check(sb, '"');
     while (s < e) {
         unsigned char c = *s;
         string_builder_ensure_size(sb, 8);
