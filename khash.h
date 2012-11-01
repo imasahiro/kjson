@@ -8,8 +8,11 @@ extern "C" {
 
 #define USE_SUPERFASTHASH
 //#define USE_FNV1A
-
-#ifdef USE_FNV1A
+//#define USE_DJBHASH
+//#define USE_ONE_AT_A_TIME
+//
+#if !defined(HASH) && defined(USE_FNV1A)
+#define HASH(STR, LEN) fnv1a(STR, LEN)
 static uint32_t fnv1a_string(const uint8_t *s, uint32_t len, uint32_t hash)
 {
     const uint8_t *e = s + len;
@@ -31,17 +34,15 @@ static uint32_t fnv1a(const char *p, uint32_t len)
     }
     return fnv1a_string(str, len, hash);
 }
-#define HASH fnv1a
 #endif
 
-#ifdef USE_SUPERFASTHASH
-/* By Paul Hsieh (C) 2004, 2005.  Covered under the Paul Hsieh derivative 
-   license. See: 
-   http://www.azillionmonkeys.com/qed/weblicense.html for license details.
+#if !defined(HASH) && defined(USE_SUPERFASTHASH)
+/* By Paul Hsieh (C) 2004, 2005.  Covered under the Paul Hsieh derivative
+ * license. See:
+ * http://www.azillionmonkeys.com/qed/weblicense.html for license details.
+ * http://www.azillionmonkeys.com/qed/hash.html */
 
-   http://www.azillionmonkeys.com/qed/hash.html */
-
-#define HASH SuperFastHash
+#define HASH(STR, LEN) SuperFastHash(STR, LEN)
 #undef get16bits
 #if (defined(__GNUC__) && defined(__i386__)) || defined(__WATCOMC__) \
   || defined(_MSC_VER) || defined (__BORLANDC__) || defined (__TURBOC__)
@@ -96,6 +97,39 @@ static uint32_t SuperFastHash(const char * data, int len)
     hash ^= hash << 25;
     hash += hash >> 6;
 
+    return hash;
+}
+#endif
+
+#if !defined(HASH) && defined(USE_DJBHASH)
+#define HASH(STR, LEN) djbhash(STR, LEN)
+static uint32_t djbhash(const char *p, uint32_t len)
+{
+    uint32_t hash = 5381;
+    const uint8_t *s = (const uint8_t *) p;
+    const uint8_t *e = (const uint8_t *) p + len;
+    while (s < e) {
+        hash = ((hash << 5) + hash) + *s++;
+    }
+    return hash;
+}
+#endif
+
+#if !defined(HASH) && defined(USE_ONE_AT_A_TIME)
+#define HASH(STR, LEN) one_at_a_time(STR, LEN)
+static uint32_t one_at_a_time(const char *p, uint32_t len)
+{
+    uint32_t i, hash = 0;
+
+    for (i = 0; i < len; ++i) {
+        hash += p[i];
+        hash += (hash << 10);
+        hash ^= (hash >> 6);
+    }
+
+    hash += (hash << 3);
+    hash ^= (hash >> 11);
+    hash += (hash << 15);
     return hash;
 }
 #endif
