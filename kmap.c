@@ -188,7 +188,7 @@ static map_record_t *hashmap_api_next(kmap_t *_m, kmap_iterator *itr)
     return NULL;
 }
 
-const kmap_api_t HASH = {
+const kmap_api_t HASH_API = {
     hashmap_api_get,
     hashmap_api_set,
     hashmap_api_next,
@@ -218,7 +218,7 @@ static void dictmap_api_init(kmap_t *_m, unsigned init)
 static void dictmap_convert2hashmap(dictmap_t *_m)
 {
     hashmap_t *m = (hashmap_t *) _m;
-    m->base.api = &HASH;
+    m->base.api = &HASH_API;
     m->record_size_mask = DICTMAP_THRESHOLD-1;
     hashmap_record_resize(m, DELTA);
 }
@@ -329,7 +329,7 @@ static void dictmap_api_dispose(kmap_t *_m)
     free(m->base.records/*, m->used_size * sizeof(map_record_t)*/);
 }
 
-const kmap_api_t DICT = {
+const kmap_api_t DICT_API = {
     dictmap_api_get,
     dictmap_api_set,
     dictmap_api_next,
