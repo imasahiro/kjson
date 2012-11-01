@@ -409,6 +409,7 @@ static JSON parseString(JSONMemoryPool *jm, input_stream *ins, unsigned char c)
     }
     assert(c == '\\');
     parseEscape(ins, &sb, NEXT(ins));
+    c = NEXT(ins);
     for(; EOS(ins); c = NEXT(ins)) {
         switch (c) {
             case '\\':
