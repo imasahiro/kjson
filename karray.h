@@ -55,7 +55,10 @@ static inline ARRAY(T) *ARRAY_init_##T (ARRAY(T) *a, size_t initsize) {\
     return a;\
 }\
 static inline void ARRAY_##T##_ensureSize(ARRAY(T) *a, size_t size) {\
-    while (a->size + size >= a->capacity) {\
+    if (a->size + size <= a->capacity) {\
+        return;\
+    }\
+    while (a->size + size > a->capacity) {\
         a->capacity *= 2;\
     }\
     a->list = (T*)realloc(a->list, sizeof(T) * a->capacity);\
