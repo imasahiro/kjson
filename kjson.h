@@ -213,18 +213,15 @@ static inline int JSONBool_get(JSON json)
     return toBool(json.val);
 }
 
-static void JSONString_InitHashCode(JSONString *key) { key->hashcode = 0; }
-
 /* [New API] */
 static inline JSON JSONString_new(JSONMemoryPool *jm, const char *s, size_t len)
 {
     bool malloced;
     JSONString *o = (JSONString *) JSONMemoryPool_Alloc(jm, sizeof(*o), &malloced);
-    o->str = (const char *) malloc(len+1);
+    o->str = (const char *) malloc(len);
     o->length = len;
     memcpy((char *)o->str, s, len);
-    ((char*)o->str)[len] = 0;
-    JSONString_InitHashCode(o);
+    o->hashcode = 0;
     return toJSON(ValueS(o));
 }
 
