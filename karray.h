@@ -33,6 +33,10 @@
 extern "C" {
 #endif
 
+#ifndef LOG2
+#define LOG2(N) ((unsigned)((sizeof(void*) * 8) - __builtin_clzl(N - 1)))
+#endif
+
 /* ARRAY */
 #define ARRAY(T) ARRAY_##T##_t
 #define DEF_ARRAY_STRUCT0(T, SizeTy)\
@@ -71,7 +75,7 @@ static inline void ARRAY_##T##_dispose(ARRAY(T) *a) {\
 }\
 static inline void ARRAY_##T##_add(ARRAY(T) *a, ValueType v) {\
     if(a->size + 1 >= a->capacity) {\
-        a->capacity *= 2;\
+        a->capacity = 1 << LOG2(a->capacity * 2 + 1);\
         a->list = (T*)realloc(a->list, sizeof(T) * a->capacity);\
     }\
     ARRAY_##T##_set(a, a->size++, v);\
