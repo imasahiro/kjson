@@ -115,13 +115,14 @@ static void JSONString_free(JSON json)
 
 static void JSONArray_free(JSON json)
 {
-    JSONArray *a;
+    JSONArray *a = toAry(json.val);
     JSON *s, *e;
-    JSON_ARRAY_EACH_(json, a, s, e, 0) {
+
+    FOR_EACH_ARRAY(a->array, s, e) {
         _JSON_free(*s);
     }
 
-    free(a->list);
+    ARRAY_dispose(JSON, &a->array);
 }
 
 #define JSON_OP(OP)\
@@ -163,12 +164,7 @@ static void _JSON_free(JSON o)
 
 static void _JSONArray_append(JSONArray *a, JSON o)
 {
-    if(a->length + 1 >= a->capacity) {
-        uint32_t newsize = 1 << LOG2(a->capacity * 2 + 1);
-        a->list = (JSON*) realloc(a->list, newsize * sizeof(JSON));
-        a->capacity = newsize;
-    }
-    a->list[a->length++] = o;
+    ARRAY_add(JSON, &a->array, o);
 }
 
 KJSON_API void JSONArray_append(JSONMemoryPool *jm, JSON json, JSON o)
@@ -514,9 +510,9 @@ static JSON parseArray(JSONMemoryPool *jm, input_stream *ins, uint8_t c)
     unsigned element_size = kstack_size(&ins->stack) - stack_top;
     JSON json = JSONArray_new(jm, element_size);
     JSONArray *a = toAry(json.val);
-    kstack_move(&ins->stack, a->list, stack_top, element_size);
+    kstack_move(&ins->stack, a->array.list, stack_top, element_size);
     assert(kstack_size(&ins->stack) == stack_top);
-    a->length += element_size;
+    a->array.size += element_size;
     return json;
 }
 
@@ -704,11 +700,11 @@ static void JSONArray_toString(string_builder *sb, JSON json)
     JSON *s, *e;
     JSONArray *a = toAry(json.val);
     string_builder_add(sb, '[');
-    s = (a)->list;
-    e = (a)->list+(a)->length;
+    s = ARRAY_BEGIN(a->array);
+    e = ARRAY_END(a->array);
     if(s < e) {
         _JSON_toString(sb, *s++);
-        for(; s < e; ++s) {
+        for(; s != e; ++s) {
             string_builder_add(sb, ',');
             _JSON_toString(sb, *s);
         }

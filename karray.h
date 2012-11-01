@@ -114,8 +114,12 @@ DEF_ARRAY_OP__(T, T)
 #define FOR_EACH_ARRAY_(a, x, i)\
     for(i=0, x = ARRAY_n(a, i); i < ARRAY_size(a); x = ARRAY_n(a,(++i)))
 
+#define ARRAY_BEGIN(A) ARRAY_n(A, 0)
+#define ARRAY_END(A)   ARRAY_n(A,ARRAY_size(A))
+
 #define FOR_EACH_ARRAY(a, x, e)\
-    for(x = ARRAY_n(a, 0), e = ARRAY_n(a,ARRAY_size(a)); x != e; ++x)
+    for(x = ARRAY_BEGIN(a), e = ARRAY_END(a); x != e; ++x)
+
 
 #ifdef __cplusplus
 }

@@ -64,10 +64,11 @@ typedef struct JSONString {
 } JSONString;
 typedef JSONString JSONUString;
 
+DEF_ARRAY_STRUCT0(JSON, unsigned);
+DEF_ARRAY_T(JSON);
+
 typedef struct JSONArray {
-    int  length;
-    int  capacity;
-    JSON *list;
+    ARRAY(JSON) array;
 } JSONArray;
 
 typedef Value JSONNumber;
@@ -94,6 +95,14 @@ union JSONValue {
     JSONObject *obj;
     uint64_t bits;
 };
+
+#ifndef KJSON_MALLOC
+#define KJSON_MALLOC(N) malloc(N)
+#define KJSON_FREE(PTR) free(PTR)
+#endif
+DEF_ARRAY_OP_NOPOINTER(JSON);
+#undef KJSON_MALLOC
+#undef KJSON_FREE
 
 typedef JSONNumber JSONNull;
 
@@ -129,8 +138,8 @@ static inline JSON *JSON_getArray(JSON json, const char *key, size_t *len)
 {
     JSON obj = JSON_get(json, key, *len);
     JSONArray *a = toAry(obj.val);
-    *len = a->length;
-    return a->list;
+    *len = a->array.size;
+    return a->array.list;
 }
 
 
@@ -163,13 +172,10 @@ static inline kjson_type JSON_type(JSON json) {
 
 #define JSON_TYPE_CHECK(T, O) (JSON_type(((JSON)O)) == JSON_##T)
 
-#define JSON_ARRAY_EACH(json, A, I, E) JSON_ARRAY_EACH_(json, A, I, E, 0)
-#define JSON_ARRAY_EACH_(json, A, I, E, N)\
+#define JSON_ARRAY_EACH(json, A, I, E)\
     if(!JSON_type((json)) == JSON_Array) {} else\
         if(!(A = toAry((json).val)) != 0) {}\
-        else\
-        for(I = (A)->list + N,\
-                E = (A)->list+(A)->length; I != E; ++I)
+        else FOR_EACH_ARRAY(A->array, I, E)
 
 typedef struct JSONObject_iterator {
     long index;
@@ -278,9 +284,7 @@ static inline JSON JSONArray_new(JSONMemoryPool *jm, unsigned elm_size)
 {
     bool malloced;
     JSONArray *o = (JSONArray *) JSONMemoryPool_Alloc(jm, sizeof(*o), &malloced);
-    o->length   = 0;
-    o->capacity = elm_size;
-    o->list   = (JSON *) malloc(sizeof(JSON)*elm_size);
+    ARRAY_init(JSON, &o->array, elm_size);
     return toJSON(ValueA(o));
 }
 
@@ -310,14 +314,14 @@ static inline unsigned JSON_length(JSON json)
 {
     assert((JSON_type(json) & 0x3) == 0x1);
     JSONArray *a = toAry(json.val);
-    return a->length;
+    return ARRAY_size(a->array);
 }
 
 static inline JSON JSONArray_get(JSON json, unsigned index)
 {
     if(JSON_TYPE_CHECK(Array, json)) {
         JSONArray *a = toAry(json.val);
-        return (a)->list[index];
+        return ARRAY_get(JSON, &a->array, index);
     } else {
         return JSONNull_new();
     }

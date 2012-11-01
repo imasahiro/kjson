@@ -14,10 +14,6 @@ extern "C" {
 #define KJSON_FREE(PTR) free(PTR)
 #endif
 
-DEF_ARRAY_STRUCT0(JSON, unsigned);
-DEF_ARRAY_T(JSON);
-DEF_ARRAY_OP_NOPOINTER(JSON);
-
 typedef ARRAY(JSON) kstack_t;
 
 static inline unsigned kstack_size(kstack_t *stack)
