@@ -6,8 +6,8 @@
 extern "C" {
 #endif
 
-#define USE_SUPERFASTHASH
-//#define USE_FNV1A
+//#define USE_SUPERFASTHASH
+#define USE_FNV1A
 //#define USE_DJBHASH
 //#define USE_ONE_AT_A_TIME
 //

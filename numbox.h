@@ -34,17 +34,20 @@
 #define TagBase     (TagBaseMask << TagBitShift)
 
 enum NumBoxTag {
-    TagDouble   = (TagBaseMask | 0x0ULL) << TagBitShift,
-    TagDouble2  = (TagBaseMask | 0x7ULL) << TagBitShift,
-    TagInt32    = (TagBaseMask | 0x2ULL) << TagBitShift,
-    TagBoolean  = (TagBaseMask | 0x4ULL) << TagBitShift,
-    TagNull     = (TagBaseMask | 0x6ULL) << TagBitShift,
-    TagObject   = (TagBaseMask | 0x3ULL) << TagBitShift,
-    TagString   = (TagBaseMask | 0x1ULL) << TagBitShift,
-    TagUString  = (TagBaseMask | 0x9ULL) << TagBitShift,
-    TagArray    = (TagBaseMask | 0x5ULL) << TagBitShift,
-    TagInt64    = (TagBaseMask | 0xbULL) << TagBitShift
+    FlagDouble   = (TagBaseMask | 0x0ULL) << TagBitShift,
+    FlagDouble2  = (TagBaseMask | 0x7ULL) << TagBitShift,
+    FlagInt32    = (TagBaseMask | 0x2ULL) << TagBitShift,
+    FlagBoolean  = (TagBaseMask | 0x4ULL) << TagBitShift,
+    FlagNull     = (TagBaseMask | 0x6ULL) << TagBitShift,
+    FlagObject   = (TagBaseMask | 0x3ULL) << TagBitShift,
+    FlagString   = (TagBaseMask | 0x1ULL) << TagBitShift,
+    FlagUString  = (TagBaseMask | 0x9ULL) << TagBitShift,
+    FlagArray    = (TagBaseMask | 0x5ULL) << TagBitShift,
+    FlagInt64    = (TagBaseMask | 0xbULL) << TagBitShift,
+    FlagMalloced = ((TagBaseMask | 0x10ULL) << TagBitShift)
 };
+
+#define TAG(T) ((Flag##T) << TagBitShift)
 
 union JSONValue;
 struct JSONObject;
@@ -71,29 +74,33 @@ static inline Value ValueF(double d) {
 static inline Value ValueI(int32_t ival) {
     uint64_t n = (uint64_t)ival;
     n = n & 0x00000000ffffffffLL;
-    Value v; v.bits = n | TagInt32; return v;
+    Value v; v.bits = n | TAG(Int32); return v;
 }
 
 static inline Value ValueIO(struct JSONInt64 *oval) {
-    Value v; v.bits = toU64((long)oval) | TagInt64; return v;
+    Value v; v.bits = toU64((long)oval) | TAG(Int64); return v;
 }
 static inline Value ValueB(bool bval) {
-    Value v; v.bits = (uint64_t)bval | TagBoolean; return v;
+    Value v; v.bits = (uint64_t)bval | TAG(Boolean); return v;
 }
 static inline Value ValueO(struct JSONObject *oval) {
-    Value v; v.bits = toU64((long)oval) | TagObject; return v;
+    Value v; v.bits = toU64((long)oval) | TAG(Object); return v;
 }
 static inline Value ValueS(struct JSONString *sval) {
-    Value v; v.bits = toU64((long)sval) | TagString; return v;
+    bool isMalloced = true;
+    Value v; v.bits = toU64((long)sval) | TAG(String) | ((isMalloced)?TAG(Malloced):0);
+    return v;
 }
 static inline Value ValueU(struct JSONString *sval) {
-    Value v; v.bits = toU64((long)sval) | TagUString; return v;
+    bool isMalloced = true;
+    Value v; v.bits = toU64((long)sval) | TAG(UString) | ((isMalloced)?TAG(Malloced):0);
+    return v;
 }
 static inline Value ValueA(struct JSONArray *aval) {
-    Value v; v.bits = toU64((long)aval) | TagArray; return v;
+    Value v; v.bits = toU64((long)aval) | TAG(Array); return v;
 }
 static inline Value ValueN() {
-    Value v; v.bits = TagNull; return v;
+    Value v; v.bits = TAG(Null); return v;
 }
 static inline Value ValueP(uint64_t bits) {
     Value v; v.bits = bits; return v;
@@ -128,24 +135,27 @@ static inline struct JSONInt64 *toInt64(Value v) {
     return (struct JSONInt64 *) toPtr(v);
 }
 static inline bool IsDouble(Value v) {
-    return Tag(v) <= TagDouble;
+    return Tag(v) <= TAG(Double);
 }
 static inline bool IsInt32(Value v) {
-    return Tag(v) == TagInt32;
+    return Tag(v) == TAG(Int32);
 }
 static inline bool IsBool(Value v) {
-    return Tag(v) == TagBoolean;
+    return Tag(v) == TAG(Boolean);
 }
 static inline bool IsObj(Value v) {
-    return Tag(v) == TagObject;
+    return Tag(v) == TAG(Object);
 }
 static inline bool IsStr(Value v) {
-    return Tag(v) == TagString;
+    return Tag(v) == TAG(String);
 }
 static inline bool IsAry(Value v) {
-    return Tag(v) == TagArray;
+    return Tag(v) == TAG(Array);
 }
 static inline bool IsNull(Value v) {
-    return Tag(v) == TagNull;
+    return Tag(v) == TAG(Null);
+}
+static inline bool IsMalloced(Value v) {
+    return (Tag(v) & TAG(Malloced));
 }
 #endif /* end of include guard */
