@@ -81,7 +81,6 @@ typedef JSONNumber JSONDouble;
 typedef JSONNumber JSONBool;
 
 typedef struct JSONInt64 {
-    kjson_type type;
     int64_t val;
 } JSONInt64;
 
@@ -108,29 +107,41 @@ DEF_ARRAY_OP_NOPOINTER(JSON);
 
 typedef JSONNumber JSONNull;
 
+static inline JSON JSON_NOP(void)
+{
+    JSON def = {{0}};
+    return def;
+}
+
+static inline bool JSON_isValid(JSON json)
+{
+    return json.bits != 0;
+}
+
 /* [Getter API] */
 KJSON_API JSON JSON_get(JSON json, const char *key, size_t len);
 static inline int JSON_getInt(JSON json, const char *key, size_t len)
 {
     JSON v = JSON_get(json, key, len);
-    return toInt32(v.val);
+    return JSON_isValid(v) ? toInt32(v.val) : 0;
 }
 
 static inline bool JSON_getBool(JSON json, const char *key, size_t len)
 {
     JSON v = JSON_get(json, key, len);
-    return toBool(v.val);
-}
+    return JSON_isValid(v) ? toBool(v.val) : 0; }
 
 static inline double JSON_getDouble(JSON json, const char *key, size_t len)
 {
     JSON v = JSON_get(json, key, len);
-    return toDouble(v.val);
+    return JSON_isValid(v) ? toDouble(v.val) : 0;
 }
 
 static inline const char *JSON_getString(JSON json, const char *key, size_t *len)
 {
     JSON obj = JSON_get(json, key, *len);
+    if(!JSON_isValid(obj))
+        return NULL;
     JSONString *s = toStr(obj.val);
     *len = s->length;
     return s->str;
@@ -139,11 +150,12 @@ static inline const char *JSON_getString(JSON json, const char *key, size_t *len
 static inline JSON *JSON_getArray(JSON json, const char *key, size_t *len)
 {
     JSON obj = JSON_get(json, key, *len);
+    if(!JSON_isValid(obj))
+        return NULL;
     JSONArray *a = toAry(obj.val);
     *len = a->array.size;
     return a->array.list;
 }
-
 
 /* [Other API] */
 KJSON_API void JSONObject_setObject(JSONMemoryPool *jm, JSON obj, JSON key, JSON value);
@@ -158,11 +170,6 @@ static inline char *JSON_toString(JSON json)
     size_t len;
     char *s = JSON_toStringWithLength(json, &len);
     return s;
-}
-
-static inline bool JSON_isValid(JSON json)
-{
-    return json.bits != 0;
 }
 
 static inline kjson_type JSON_type(JSON json) {
@@ -239,6 +246,12 @@ static inline unsigned JSONString_length(JSON json)
 static inline int32_t JSONInt_get(JSON json)
 {
     return toInt32(json.val);
+}
+
+static inline int64_t JSONInt64_get(JSON json)
+{
+    JSONInt64 *i = toInt64(json.val);
+    return i->val;
 }
 
 static inline double JSONDouble_get(JSON json)
@@ -322,17 +335,26 @@ static inline unsigned JSON_length(JSON json)
 
 static inline JSON JSONArray_get(JSON json, unsigned index)
 {
-    if(JSON_TYPE_CHECK(Array, json)) {
-        JSONArray *a = toAry(json.val);
+    JSONArray *a = toAry(json.val);
+    if(JSON_TYPE_CHECK(Array, json) && index < a->array.size) {
         return ARRAY_get(JSON, &a->array, index);
     } else {
-        return JSONNull_new();
+        return JSON_NOP();
     }
+}
+static inline bool JSONArray_set(JSON json, unsigned index, JSON val)
+{
+    JSONArray *a = toAry(json.val);
+    if(JSON_TYPE_CHECK(Array, json) && index < a->array.size) {
+        ARRAY_set(JSON, &a->array, index, val);
+        return true;
+    }
+    return false;
 }
 
 static inline int JSONObject_iterator_init(JSONObject_iterator *itr, JSON json)
 {
-    if(!JSON_type(json) ==  JSON_Object)
+    if(!JSON_TYPE_CHECK(Object, json))
         return 0;
     itr->obj = toObj(json.val);
     itr->index = 0;

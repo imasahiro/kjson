@@ -191,8 +191,7 @@ static JSON parseString(JSONMemoryPool *jm, input_stream *ins, uint8_t c);
 
 static JSON parseNOP(JSONMemoryPool *jm, input_stream *ins, uint8_t c)
 {
-    JSON o; o.bits = 0;
-    return o;
+    return JSON_NOP();
 }
 
 #define _N 0x40 |
@@ -600,7 +599,7 @@ static JSON parseNull(JSONMemoryPool *jm, input_stream *ins, uint8_t c)
         return JSONNull_new();
     }
     assert(0 && "Cannot parse JSON null variable");
-    return parseNOP(jm, ins, c);
+    return JSON_NOP();
 }
 
 static JSON parse(JSONMemoryPool *jm, input_stream *ins)
@@ -615,13 +614,11 @@ static JSON parse(JSONMemoryPool *jm, input_stream *ins)
         if(json.obj != NULL)
             return json;
     }
-    return parseNOP(jm, ins, c);
+    return JSON_NOP();
 }
 
 #undef EOS
 #undef NEXT
-
-static const JSON JSON_default = {{0}};
 
 static JSON parseJSON_stream(JSONMemoryPool *jm, input_stream *ins)
 {
@@ -646,7 +643,7 @@ KJSON_API JSON JSON_get(JSON json, const char *key, size_t len)
     tmp.length = len;
     tmp.hashcode = 0;
     map_record_t *r = kmap_get(&o->child, &tmp);
-    return (r) ? toJSON(ValueP(r->v)) : JSON_default;
+    return (r) ? toJSON(ValueP(r->v)) : JSON_NOP();
 }
 
 static void _JSONString_toString(string_builder *sb, JSONString *o)
