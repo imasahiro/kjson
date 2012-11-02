@@ -4,7 +4,8 @@
 #include <sys/time.h>
 #include <assert.h>
 #include <stdint.h>
-#include "kjson.h"
+#define KJSON_HEADER_ONLY 1
+#include "kjson.c"
 
 typedef uint64_t my_json_object_t;
 struct benchmark {

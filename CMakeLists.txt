@@ -105,7 +105,6 @@ add_executable(benchmark4 test/benchmark4.c)
 target_link_libraries(benchmark4 kjson)
 
 add_executable(benchmark5 test/benchmark5.c)
-target_link_libraries(benchmark5 kjson)
 
 add_executable(parseString test/parseString.c)
 add_test(kjson_parseString parseString)
