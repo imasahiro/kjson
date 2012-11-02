@@ -447,6 +447,7 @@ static JSON parseObject(JSONMemoryPool *jm, input_stream *ins, uint8_t c)
         assert(c == '"' && "Missing open quote for element key");
 
         JSON key = parseString(jm, ins, c);
+        JSONString_hashCode(toStr(key.val));
         kstack_push(&ins->stack, key);
         c = skip_space(ins, NEXT(ins));
         assert(c == ':' && "Missing ':' after key in object");
