@@ -41,26 +41,28 @@ extern "C" {
 
 typedef enum kjson_type {
     /** ($type & 1 == 0) means $type extends Number */
-    JSON_Double   =  0, /* 0b00000 */
-    JSON_String   =  1, /* 0b00001 */
-    JSON_Int32    =  2, /* 0b00010 */
-    JSON_Object   =  3, /* 0b00011 */
-    JSON_Bool     =  4, /* 0b00100 */
-    JSON_Array    =  5, /* 0b00101 */
-    JSON_Null     =  6, /* 0b00110 */
-    JSON_UString  =  9, /* 0b01001 */
-    JSON_Int64    = 11, /* 0b01011 */
-    JSON_Error    = 15, /* 0b01111 */
-    JSON_reserved =  7  /* 0b00111 '7' is reserved by numbox */
+    JSON_Double   =  0, /* 0b0000 */
+    JSON_String   =  1, /* 0b0001 */
+    JSON_Int32    =  2, /* 0b0010 */
+    JSON_Object   =  3, /* 0b0011 */
+    JSON_Bool     =  4, /* 0b0100 */
+    JSON_Array    =  5, /* 0b0101 */
+    JSON_Null     =  6, /* 0b0110 */
+    JSON_UString  =  9, /* 0b1001 */
+    JSON_Int64    = 11, /* 0b1011 */
+    JSON_Error    = 15, /* 0b1111 */
+    JSON_reserved =  7  /* 0b0111 '7' is reserved by numbox */
 } kjson_type;
 
 union JSONValue;
 typedef union JSONValue JSON;
 
+#define JSONSTRING_INLINE_SIZE (sizeof(void*)*2)
 typedef struct JSONString {
     const char *str;
     unsigned length;
     unsigned hashcode;
+    char text[JSONSTRING_INLINE_SIZE];
 } JSONString;
 typedef JSONString JSONUString;
 
@@ -262,8 +264,9 @@ static inline JSON JSONString_new(JSONMemoryPool *jm, const char *s, size_t len)
 {
     bool malloced;
     JSONString *o = (JSONString *) JSONMemoryPool_Alloc(jm, sizeof(*o), &malloced);
-    JSONString_init(o, (const char *) malloc(len), len);
-    memcpy((char *)o->str, s, len);
+    char *str = (len > JSONSTRING_INLINE_SIZE) ? (char *) malloc(len) : o->text;
+    memcpy(str, s, len);
+    JSONString_init(o, (const char *)str, len);
     return toJSON(ValueS(o));
 }
 
@@ -341,8 +344,9 @@ static inline JSON JSONObject_iterator_next(JSONObject_iterator *itr, JSON *val)
     JSONObject *o = itr->obj;
     map_record_t *r;
     while((r = kmap_next(&o->child, (kmap_iterator*) itr)) != NULL) {
+        JSONString *key = r->k;
         *val = toJSON(ValueP(r->v));
-        return toJSON(ValueS(r->k));
+        return toJSON(ValueS(key));
     }
     JSON obj; obj.bits = 0;
     *val = obj;

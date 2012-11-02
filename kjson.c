@@ -46,6 +46,10 @@ static JSON JSONUString_new(JSONMemoryPool *jm, string_builder *builder)
     bool malloced;
     char *s = string_builder_tostring(builder, &len, 1);
     JSONString *o = (JSONString *) JSONMemoryPool_Alloc(jm, sizeof(*o), &malloced);
+    if(len <= JSONSTRING_INLINE_SIZE) {
+        memcpy(o->text, s, len-1);
+        s = o->text;
+    }
     JSONString_init(o, s, len-1);
     return toJSON(ValueU(o));
 }
@@ -84,7 +88,9 @@ static void JSONObject_free(JSON json)
 
 static void _JSONString_free(JSONString *obj)
 {
-    free((char *)obj->str);
+    if(obj->length > JSONSTRING_INLINE_SIZE) {
+        free((char *)obj->str);
+    }
 }
 
 static void JSONString_free(JSON json)
@@ -634,7 +640,7 @@ KJSON_API JSON JSON_get(JSON json, const char *key, size_t len)
 {
     JSONObject *o = toObj(json.val);
 
-    struct JSONString tmp;
+    JSONString tmp;
     tmp.str = (char *)key;
     tmp.length = len;
     tmp.hashcode = 0;

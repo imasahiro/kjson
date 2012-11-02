@@ -137,7 +137,8 @@ static void hashmap_api_dispose(kmap_t *_m)
     for(i = 0; i < size; ++i) {
         map_record_t *r = hashmap_at(m, i);
         if(r->hash) {
-            JSON_free(toJSON(ValueS(r->k)));
+            JSONString *key = r->k;
+            JSON_free(toJSON(ValueS(key)));
         }
     }
     free(m->base.records/*, (m->record_size_mask+1) * sizeof(map_record_t)*/);
@@ -322,7 +323,8 @@ static void dictmap_api_dispose(kmap_t *_m)
     for(i = 0; i < m->used_size; ++i) {
         if(likely(m->hash_list[i])) {
             map_record_t *r = dictmap_at(m, i);
-            _JSONString_free(r->k);
+            JSONString *key = r->k;
+            _JSONString_free(key);
             JSON_free(toJSON(ValueP(r->v)));
         }
     }

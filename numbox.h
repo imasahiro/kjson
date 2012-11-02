@@ -34,20 +34,18 @@
 #define TagBase     (TagBaseMask << TagBitShift)
 
 enum NumBoxTag {
-    FlagDouble   = (TagBaseMask | 0x0ULL) << TagBitShift,
-    FlagDouble2  = (TagBaseMask | 0x7ULL) << TagBitShift,
-    FlagInt32    = (TagBaseMask | 0x2ULL) << TagBitShift,
-    FlagBoolean  = (TagBaseMask | 0x4ULL) << TagBitShift,
-    FlagNull     = (TagBaseMask | 0x6ULL) << TagBitShift,
-    FlagObject   = (TagBaseMask | 0x3ULL) << TagBitShift,
-    FlagString   = (TagBaseMask | 0x1ULL) << TagBitShift,
-    FlagUString  = (TagBaseMask | 0x9ULL) << TagBitShift,
-    FlagArray    = (TagBaseMask | 0x5ULL) << TagBitShift,
-    FlagInt64    = (TagBaseMask | 0xbULL) << TagBitShift,
-    FlagMalloced = ((TagBaseMask | 0x10ULL) << TagBitShift)
+    FlagDouble   = 0x00,
+    FlagInt32    = 0x02,
+    FlagBoolean  = 0x04,
+    FlagNull     = 0x06,
+    FlagObject   = 0x03,
+    FlagString   = 0x01,
+    FlagUString  = 0x09,
+    FlagArray    = 0x05,
+    FlagInt64    = 0x0b,
 };
 
-#define TAG(T) ((Flag##T) << TagBitShift)
+#define TAG(T) ((TagBaseMask | (uint64_t)(Flag##T)) << TagBitShift)
 
 union JSONValue;
 struct JSONObject;
@@ -87,13 +85,11 @@ static inline Value ValueO(struct JSONObject *oval) {
     Value v; v.bits = toU64((long)oval) | TAG(Object); return v;
 }
 static inline Value ValueS(struct JSONString *sval) {
-    bool isMalloced = true;
-    Value v; v.bits = toU64((long)sval) | TAG(String) | ((isMalloced)?TAG(Malloced):0);
+    Value v; v.bits = toU64((long)sval) | TAG(String);
     return v;
 }
 static inline Value ValueU(struct JSONString *sval) {
-    bool isMalloced = true;
-    Value v; v.bits = toU64((long)sval) | TAG(UString) | ((isMalloced)?TAG(Malloced):0);
+    Value v; v.bits = toU64((long)sval) | TAG(UString);
     return v;
 }
 static inline Value ValueA(struct JSONArray *aval) {
@@ -154,8 +150,5 @@ static inline bool IsAry(Value v) {
 }
 static inline bool IsNull(Value v) {
     return Tag(v) == TAG(Null);
-}
-static inline bool IsMalloced(Value v) {
-    return (Tag(v) & TAG(Malloced));
 }
 #endif /* end of include guard */
