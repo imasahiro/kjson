@@ -12,6 +12,6 @@ int main(int argc, char const* argv[])
     assert(JSON_type(kstack_pop(&stack)) == JSON_Null);
     assert(JSON_type(kstack_pop(&stack)) == JSON_Null);
     assert(JSON_type(kstack_pop(&stack)) == JSON_Null);
-    kstack_deinit(&stack);
+    kstack_deinit(&stack, 1);
     return 0;
 }

@@ -50,9 +50,11 @@ static inline void kstack_init(kstack_t *stack)
     ARRAY_init(JSON, stack, 8);
 }
 
-static inline void kstack_deinit(kstack_t *stack)
+static inline void kstack_deinit(kstack_t *stack, int check_stack)
 {
-    assert(kstack_size(stack) == 0);
+    if(check_stack) {
+        assert(kstack_size(stack) == 0);
+    }
     ARRAY_dispose(JSON, stack);
 }
 

@@ -333,6 +333,11 @@ static inline unsigned JSON_length(JSON json)
     return ARRAY_size(a->array);
 }
 
+static inline const char *JSONError_get(JSON json)
+{
+    return toError(json.val);
+}
+
 static inline JSON JSONArray_get(JSON json, unsigned index)
 {
     JSONArray *a = toAry(json.val);

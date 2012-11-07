@@ -64,6 +64,21 @@ add_executable(test_tostring test/test_tostring.c)
 target_link_libraries(test_tostring kjson)
 add_test(kjson_test_tostring test_tostring)
 
+file(GLOB JSON_FAIL_TEST ${CMAKE_CURRENT_SOURCE_DIR}/test/test_json/fail*.json)
+file(GLOB JSON_PASS_TEST ${CMAKE_CURRENT_SOURCE_DIR}/test/test_json/pass*.json)
+add_executable(test_file test/test_file.c)
+
+foreach(f ${JSON_FAIL_TEST})
+	add_test(${f} test_file ${f} "F")
+endforeach()
+
+foreach(f ${JSON_PASS_TEST})
+	add_test(${f} test_file ${f} "T")
+endforeach()
+
+add_executable(test_kexception test/test_kexception.c)
+add_test(kjson_test_kexception test_kexception)
+
 #add_executable(test_float test/test_float.c)
 #add_test(kjson_test_float test_float)
 
