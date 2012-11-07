@@ -39,6 +39,14 @@ extern "C" {
 #define KJSON_API
 #endif
 
+#ifndef unlikely
+#define unlikely(x)   __builtin_expect(!!(x), 0)
+#endif
+
+#ifndef likely
+#define likely(x)     __builtin_expect(!!(x), 1)
+#endif
+
 typedef enum kjson_type {
     /** ($type & 1 == 0) means $type extends Number */
     JSON_Double   =  0, /* 0b0000 */

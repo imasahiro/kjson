@@ -41,7 +41,7 @@ extern "C" {
 #endif
 
 #define THROW_IF(COND, EXCEPTION, MESSAGE) do {\
-    if((COND)) {\
+    if(unlikely(COND)) {\
         THROW(&(EXCEPTION), PARSER_EXCEPTION, MESSAGE);\
     }\
 } while(0)
