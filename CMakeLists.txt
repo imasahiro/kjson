@@ -128,6 +128,9 @@ target_link_libraries(parseString kjson)
 add_executable(check_cpp test/check_cpp_build.cpp)
 add_test(kjson_check_cpp check_cpp)
 
+add_executable(check_struct_size test/test_sizeof.c)
+add_test(kjson_check_struct_size check_struct_size)
+
 add_executable(test_whitespace test/test_whitespace.c)
 add_test(kjson_test_whitespace test_whitespace)
 target_link_libraries(test_whitespace kjson)
