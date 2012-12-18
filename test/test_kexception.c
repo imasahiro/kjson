@@ -5,7 +5,7 @@
 
 int check_try_catch(int n)
 {
-    kexception_handler_t e = {{}};
+    kexception_handler_t e;
     kexception_handler_init(&e);
     int num = 0;
     TRY(e) {
