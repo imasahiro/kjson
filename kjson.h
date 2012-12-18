@@ -337,8 +337,9 @@ static inline JSON JSONBool_new(bool val)
 static inline unsigned JSON_length(JSON json)
 {
     assert((JSON_type(json) & 0x3) == 0x1);
-    JSONArray *a = toAry(json.val);
-    return ARRAY_size(a->array);
+    return JSON_type(json) == JSON_Object ?
+        kmap_size(&toObj(json.val)->child):
+        ARRAY_size(toAry(json.val)->array);
 }
 
 static inline const char *JSONError_get(JSON json)
