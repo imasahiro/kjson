@@ -26,7 +26,7 @@
 #define KJSON_H_
 
 #include "kmemory_pool.h"
-#include "numbox.h"
+#include "knumbox.h"
 #include "kmap.h"
 
 #ifdef __cplusplus
