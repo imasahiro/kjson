@@ -119,7 +119,7 @@ static char *loadFile(const char *file, size_t *length)
     fseek(fp, 0, SEEK_END);
     size_t len = (size_t)ftell(fp);
     fseek(fp, 0, SEEK_SET);
-    char *json = (char*)calloc(1, len + 1);
+    char *json = (char *)calloc(1, len + 1);
     if(len != fread(json, 1, len, fp)) {
         exit(EXIT_FAILURE);
     }
@@ -236,7 +236,7 @@ int main(int argc, char* argv[])
 {
 #define RUN(NAME) do {\
     benchmark(&benchmark_##NAME);\
-} while (0)
+} while(0)
     int i;
 #define N 4
     for (i = 0; i < N; i++) {

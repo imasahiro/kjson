@@ -27,7 +27,7 @@ int main(int argc, char const* argv[])
         fprintf(stderr, "Checking Error:%s\n", JSONError_get(o));
     } else {
         assert(o.bits != 0);
-        if (!JSON_isValid(o)) {
+        if(!JSON_isValid(o)) {
             fprintf(stderr, "Error\n");
             exit(EXIT_FAILURE);
         }

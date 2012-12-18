@@ -12,7 +12,7 @@ static void test_parser(JSONMemoryPool *jm, const char *s, size_t len)
     size_t length;
     const char *text = JSON_toStringWithLength(json, &length);
     assert(len == length);
-    free((char*)text);
+    free((char *)text);
     JSON_free(json);
 }
 
@@ -31,7 +31,7 @@ static void test_obj()
     JSON_free(o);
     fprintf(stderr, "'%s'\n", s);
     test_parser(&jm, s, len);
-    free((char*)s);
+    free((char *)s);
     JSONMemoryPool_Delete(&jm);
 }
 static void test_array()
