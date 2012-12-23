@@ -95,6 +95,7 @@ static void JSONObject_free(JSON json)
 {
     JSONObject *o = toObj(json.val);
     kmap_dispose(&o->child);
+    JSONMemoryPool_Free(0, o);
 }
 
 static void _JSONString_free(JSONString *obj)
@@ -102,6 +103,7 @@ static void _JSONString_free(JSONString *obj)
     if(obj->length > JSONSTRING_INLINE_SIZE) {
         free((char *)obj->str);
     }
+    JSONMemoryPool_Free(0, obj);
 }
 
 static void JSONString_free(JSON json)
@@ -120,6 +122,7 @@ static void JSONArray_free(JSON json)
     }
 
     ARRAY_dispose(JSON, &a->array);
+    JSONMemoryPool_Free(0, a);
 }
 
 #define JSON_OP(OP)\
