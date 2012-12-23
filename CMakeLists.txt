@@ -4,7 +4,7 @@ include(CheckIncludeFiles)
 cmake_minimum_required(VERSION 2.4)
 project(kjson)
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/kjson)
 
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release")
@@ -21,7 +21,7 @@ if(${CMAKE_BUILD_TYPE} STREQUAL "Release")
     add_definitions(-DNDEBUG)
 endif()
 
-set(JSON_SRC kjson.c)
+set(JSON_SRC kjson/kjson.c)
 add_library(kjson SHARED ${JSON_SRC})
 
 ## Test cases
@@ -137,7 +137,7 @@ target_link_libraries(test_whitespace kjson)
 
 install(TARGETS kjson LIBRARY DESTINATION lib)
 
-file(GLOB headers ${CMAKE_CURRENT_SOURCE_DIR}/*.h)
+file(GLOB headers ${CMAKE_CURRENT_SOURCE_DIR}/kjson/*.h)
 #message(STATUS ${headers})
 foreach(it ${headers})
 	install(FILES ${it} DESTINATION include/kjson)

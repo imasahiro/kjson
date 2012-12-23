@@ -1,4 +1,4 @@
-#include "../kmemory_pool.h"
+#include "kmemory_pool.h"
 int main(int argc, char const* argv[])
 {
 #if 1

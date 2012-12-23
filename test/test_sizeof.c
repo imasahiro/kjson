@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "../kjson.h"
+#include "kjson.h"
 
 int main(int argc, char const* argv[])
 {

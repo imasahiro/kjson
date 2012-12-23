@@ -1,4 +1,4 @@
-#include "../kstack.h"
+#include "kstack.h"
 
 int main(int argc, char const* argv[])
 {
