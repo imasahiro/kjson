@@ -65,8 +65,13 @@ typedef enum kjson_type {
 union JSONValue;
 typedef union JSONValue JSON;
 
+typedef struct JSONRC {
+    long count;
+} JSONRC;
+
 #define JSONSTRING_INLINE_SIZE (sizeof(void *)*2)
 typedef struct JSONString {
+    JSONRC rc;
     const char *str;
     unsigned length;
     unsigned hashcode;
@@ -78,6 +83,7 @@ DEF_ARRAY_STRUCT0(JSON, unsigned);
 DEF_ARRAY_T(JSON);
 
 typedef struct JSONArray {
+    JSONRC rc;
     ARRAY(JSON) array;
 } JSONArray;
 
@@ -89,16 +95,19 @@ typedef JSONNumber JSONDouble;
 typedef JSONNumber JSONBool;
 
 typedef struct JSONInt64 {
+    JSONRC rc;
     int64_t val;
 } JSONInt64;
 
 typedef struct JSONObject {
+    JSONRC rc;
     kmap_t child;
 } JSONObject;
 
 union JSONValue {
     Value       val;
     JSONNumber  num;
+    JSONInt64  *box;
     JSONString *str;
     JSONArray  *ary;
     JSONObject *obj;
@@ -124,6 +133,31 @@ static inline JSON JSON_NOP(void)
 static inline bool JSON_isValid(JSON json)
 {
     return json.bits != 0;
+}
+
+/* JSON Reference Count API */
+static inline JSONRC *JSON_Reference(JSON json)
+{
+    JSONObject *o = toObj(json.val);
+    return &o->rc;
+}
+
+static inline void JSON_Init(JSON json)
+{
+    JSONRC *rc = JSON_Reference(json);
+    rc->count = 0;
+}
+
+static inline void JSON_Retain(JSON json)
+{
+    JSONRC *rc = JSON_Reference(json);
+    rc->count += 1;
+}
+
+static inline void JSON_Release(JSON json)
+{
+    JSONRC *rc = JSON_Reference(json);
+    rc->count -= 1;
 }
 
 /* [Getter API] */
@@ -285,10 +319,12 @@ static inline JSON JSONString_new(JSONMemoryPool *jm, const char *s, size_t len)
 {
     bool malloced;
     JSONString *o = (JSONString *) JSONMemoryPool_Alloc(jm, sizeof(*o), &malloced);
+    JSON json = toJSON(ValueS(o));
+    JSON_Init(json);
     char *str = (len > JSONSTRING_INLINE_SIZE) ? (char *) malloc(len) : o->text;
     memcpy(str, s, len);
     JSONString_init(o, (const char *)str, len);
-    return toJSON(ValueS(o));
+    return json;
 }
 
 static inline JSON JSONNull_new()
@@ -300,16 +336,20 @@ static inline JSON JSONObject_new(JSONMemoryPool *jm, unsigned map_size)
 {
     bool malloced;
     JSONObject *o = (JSONObject *) JSONMemoryPool_Alloc(jm, sizeof(*o), &malloced);
+    JSON json = toJSON(ValueO(o));
+    JSON_Init(json);
     kmap_init(&(o->child), map_size);
-    return toJSON(ValueO(o));
+    return json;
 }
 
 static inline JSON JSONArray_new(JSONMemoryPool *jm, unsigned elm_size)
 {
     bool malloced;
     JSONArray *o = (JSONArray *) JSONMemoryPool_Alloc(jm, sizeof(*o), &malloced);
+    JSON json = toJSON(ValueA(o));
+    JSON_Init(json);
     ARRAY_init(JSON, &o->array, elm_size);
-    return toJSON(ValueA(o));
+    return json;
 }
 
 static inline JSON JSONDouble_new(double val)

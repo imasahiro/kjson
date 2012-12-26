@@ -16,7 +16,7 @@ int main(int argc, char const* argv[])
     SIZE_OF(dictmap_t);
     SIZE_OF(hashmap_t);
     assert(sizeof(JSONInt)     <= sizeof(JSON));
-    assert(sizeof(JSONInt64)   <= sizeof(JSON));
+    assert(sizeof(JSONInt64*)   <= sizeof(JSON));
     assert(sizeof(JSONDouble)  <= sizeof(JSON));
     assert(sizeof(JSONString *) <= sizeof(JSON));
     return 0;

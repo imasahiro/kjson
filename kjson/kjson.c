@@ -29,6 +29,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <inttypes.h>
+#include <limits.h>
 
 #ifdef __SSE2__
 #include <emmintrin.h>
@@ -45,6 +46,18 @@ extern "C" {
         THROW(&(EXCEPTION), PARSER_EXCEPTION, MESSAGE);\
     }\
 } while(0)
+
+static inline bool JSON_CanFree(JSON json)
+{
+    JSONRC *rc = JSON_Reference(json);
+    return rc->count <= 0;
+}
+
+static inline void JSON_dispose(JSON json)
+{
+    JSONRC *rc = JSON_Reference(json);
+    rc->count = INT_MAX;
+}
 
 static inline JSON JSONError_new(const char *emessage)
 {
@@ -94,16 +107,25 @@ KJSON_API void JSON_free(JSON o)
 static void JSONObject_free(JSON json)
 {
     JSONObject *o = toObj(json.val);
-    kmap_dispose(&o->child);
-    JSONMemoryPool_Free(0, o);
+    JSON_Release(json);
+    if (JSON_CanFree(json)) {
+        kmap_dispose(&o->child);
+        JSON_dispose(json);
+        JSONMemoryPool_Free(0, o);
+    }
 }
 
 static void _JSONString_free(JSONString *obj)
 {
-    if(obj->length > JSONSTRING_INLINE_SIZE) {
-        free((char *)obj->str);
+    JSON json = toJSON(ValueS(obj));
+    JSON_Release(json);
+    if (JSON_CanFree(json)) {
+        JSON_dispose(json);
+        if(obj->length > JSONSTRING_INLINE_SIZE) {
+            free((char *)obj->str);
+        }
+        JSONMemoryPool_Free(0, obj);
     }
-    JSONMemoryPool_Free(0, obj);
 }
 
 static void JSONString_free(JSON json)
@@ -115,14 +137,17 @@ static void JSONString_free(JSON json)
 static void JSONArray_free(JSON json)
 {
     JSONArray *a = toAry(json.val);
-    JSON *s, *e;
+    JSON_Release(json);
+    if (JSON_CanFree(json)) {
+        JSON *s, *e;
 
-    FOR_EACH_ARRAY(a->array, s, e) {
-        _JSON_free(*s);
+        FOR_EACH_ARRAY(a->array, s, e) {
+            _JSON_free(*s);
+        }
+        JSON_dispose(json);
+        ARRAY_dispose(JSON, &a->array);
+        JSONMemoryPool_Free(0, a);
     }
-
-    ARRAY_dispose(JSON, &a->array);
-    JSONMemoryPool_Free(0, a);
 }
 
 #define JSON_OP(OP)\
@@ -176,6 +201,9 @@ KJSON_API void JSONArray_append(JSONMemoryPool *jm, JSON json, JSON o)
 static void _JSONObject_set(JSONObject *o, JSONString *key, JSON value)
 {
     assert(JSON_type(value) < 16);
+    if ((JSON_type(value) & 1) == 1) {
+        JSON_Retain(value);
+    }
     kmap_set(&o->child, key, value.bits);
 }
 
@@ -675,6 +703,8 @@ KJSON_API JSON JSON_get(JSON json, const char *key, size_t len)
     tmp.length = len;
     tmp.hashcode = 0;
     map_record_t *r = kmap_get(&o->child, &tmp);
+    if (r) {
+    }
     return (r) ? toJSON(ValueP(r->v)) : JSON_NOP();
 }
 
