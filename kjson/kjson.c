@@ -59,9 +59,14 @@ static inline void JSON_dispose(JSON json)
     rc->count = INT_MAX;
 }
 
-static inline JSON JSONError_new(const char *emessage)
+static inline JSON JSONError_new(JSONMemoryPool *jm, const char *emessage)
 {
-    return toJSON(ValueE(emessage));
+    bool malloced;
+    JSONError *o = (JSONError *) JSONMemoryPool_Alloc(jm, sizeof(*o), &malloced);
+    JSON json = toJSON(ValueE(o));
+    JSON_Init(json);
+    o->message = emessage;
+    return json;
 }
 
 static JSON JSONUString_new(JSONMemoryPool *jm, string_builder *builder)
@@ -684,7 +689,7 @@ KJSON_API JSON parseJSON(JSONMemoryPool *jm, const char *s, const char *e)
     }
     CATCH(PARSER_EXCEPTION) {
         const char *emessage = ins->exception.error_message;
-        json = JSONError_new(emessage);
+        json = JSONError_new(jm, emessage);
         ins->exception.has_error = 1;
         goto L_finally;
     }

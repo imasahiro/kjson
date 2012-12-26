@@ -104,6 +104,11 @@ typedef struct JSONObject {
     kmap_t child;
 } JSONObject;
 
+typedef struct JSONError {
+    JSONRC rc;
+    const char *message;
+} JSONError;
+
 union JSONValue {
     Value       val;
     JSONNumber  num;
@@ -111,6 +116,7 @@ union JSONValue {
     JSONString *str;
     JSONArray  *ary;
     JSONObject *obj;
+    JSONError  *err;
     uint64_t bits;
 };
 
@@ -135,6 +141,13 @@ static inline bool JSON_isValid(JSON json)
     return json.bits != 0;
 }
 
+static inline kjson_type JSON_type(JSON json) {
+    Value v; v.bits = (uint64_t)json.val.bits;
+    uint64_t tag = Tag(v);
+    return (IsDouble((v)))?
+        JSON_Double : (kjson_type) ((tag >> TagBitShift) & 15);
+}
+
 /* JSON Reference Count API */
 static inline JSONRC *JSON_Reference(JSON json)
 {
@@ -152,6 +165,13 @@ static inline void JSON_Retain(JSON json)
 {
     JSONRC *rc = JSON_Reference(json);
     rc->count += 1;
+}
+
+static inline void JSONObject_Retain(JSON json)
+{
+    if ((JSON_type(json) & 1) == 1) {
+        JSON_Retain(json);
+    }
 }
 
 static inline void JSON_Release(JSON json)
@@ -212,13 +232,6 @@ static inline char *JSON_toString(JSON json)
     size_t len;
     char *s = JSON_toStringWithLength(json, &len);
     return s;
-}
-
-static inline kjson_type JSON_type(JSON json) {
-    Value v; v.bits = (uint64_t)json.val.bits;
-    uint64_t tag = Tag(v);
-    return (IsDouble((v)))?
-        JSON_Double : (kjson_type) ((tag >> TagBitShift) & 15);
 }
 
 #define JSON_TYPE_CHECK(T, O) (JSON_type(((JSON)O)) == JSON_##T)
@@ -384,7 +397,7 @@ static inline unsigned JSON_length(JSON json)
 
 static inline const char *JSONError_get(JSON json)
 {
-    return toError(json.val);
+    return toError(json.val)->message;
 }
 
 static inline JSON JSONArray_get(JSON json, unsigned index)
