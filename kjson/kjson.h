@@ -224,6 +224,10 @@ static inline JSON *JSON_getArray(JSON json, const char *key, size_t *len)
 /* [Other API] */
 KJSON_API void JSONObject_setObject(JSONMemoryPool *jm, JSON obj, JSON key, JSON value);
 KJSON_API void JSONObject_set(JSONMemoryPool *jm, JSON obj, const char *key, size_t len, JSON value);
+
+KJSON_API void JSONObject_removeObject(JSONMemoryPool *jm, JSON json, JSONString *key);
+KJSON_API void JSONObject_remove(JSONMemoryPool *jm, JSON json, const char *keyword, size_t keylen);
+
 KJSON_API void JSONArray_append(JSONMemoryPool *jm, JSON ary, JSON o);
 KJSON_API void JSON_free(JSON o);
 

@@ -226,6 +226,22 @@ KJSON_API void JSONObject_set(JSONMemoryPool *jm, JSON json, const char *keyword
     _JSONObject_set(toObj(json.val), key, value);
 }
 
+KJSON_API void JSONObject_removeObject(JSONMemoryPool *jm, JSON json, JSONString *key)
+{
+
+    JSONObject *o = toObj(json.val);
+    kmap_remove(&o->child, key);
+}
+
+KJSON_API void JSONObject_remove(JSONMemoryPool *jm, JSON json, const char *keyword, size_t keylen)
+{
+    JSONString tmp;
+    tmp.str = (char *)keyword;
+    tmp.length = keylen;
+    tmp.hashcode = 0;
+    JSONObject_removeObject(jm, json, &tmp);
+}
+
 /* Parser functions */
 #define NEXT(ins) string_input_stream_next(ins)
 #define EOS(ins)  string_input_stream_eos(ins)
@@ -699,18 +715,20 @@ KJSON_API JSON parseJSON(JSONMemoryPool *jm, const char *s, const char *e)
     return json;
 }
 
-KJSON_API JSON JSON_get(JSON json, const char *key, size_t len)
+static inline JSON JSONObject_get(JSON json, JSONString *key)
 {
     JSONObject *o = toObj(json.val);
+    map_record_t *r = kmap_get(&o->child, &tmp);
+    return (r) ? toJSON(ValueP(r->v)) : JSON_NOP();
+}
 
+KJSON_API JSON JSON_get(JSON json, const char *key, size_t len)
+{
     JSONString tmp;
     tmp.str = (char *)key;
     tmp.length = len;
     tmp.hashcode = 0;
-    map_record_t *r = kmap_get(&o->child, &tmp);
-    if (r) {
-    }
-    return (r) ? toJSON(ValueP(r->v)) : JSON_NOP();
+    return JSONObject_get(json, &tmp);
 }
 
 static void _JSONString_toString(string_builder *sb, JSONString *o)
