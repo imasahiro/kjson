@@ -718,7 +718,7 @@ KJSON_API JSON parseJSON(JSONMemoryPool *jm, const char *s, const char *e)
 static inline JSON JSONObject_get(JSON json, JSONString *key)
 {
     JSONObject *o = toObj(json.val);
-    map_record_t *r = kmap_get(&o->child, &tmp);
+    map_record_t *r = kmap_get(&o->child, key);
     return (r) ? toJSON(ValueP(r->v)) : JSON_NOP();
 }
 
