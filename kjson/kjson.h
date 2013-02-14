@@ -242,6 +242,11 @@ static inline char *JSON_toString(JSON json)
 
 #define JSON_TYPE_CHECK(T, O) (JSON_type(((JSON)O)) == JSON_##T)
 
+typedef struct JSONArray_iterator {
+    JSON      *Itr, *End;
+    JSONArray *Array;
+} JSONArray_iterator;
+
 #define JSON_ARRAY_EACH(json, A, I, E)\
     if(!JSON_type((json)) == JSON_Array) {} else\
         if(!(A = toAry((json).val)) != 0) {}\
