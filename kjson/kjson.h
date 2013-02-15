@@ -345,7 +345,7 @@ static inline JSON JSONString_new(JSONMemoryPool *jm, const char *s, size_t len)
     JSONString *o = (JSONString *) JSONMemoryPool_Alloc(jm, sizeof(*o), &malloced);
     JSON json = toJSON(ValueS(o));
     JSON_Init(json);
-    assert(len > 0);
+    assert(len >= 0);
     char *str = (len > JSONSTRING_INLINE_SIZE) ? (char *) malloc(len) : o->text;
     memcpy(str, s, len);
     JSONString_init(o, (const char *)str, len);
@@ -380,6 +380,12 @@ static inline JSON JSONArray_new(JSONMemoryPool *jm, unsigned elm_size)
 static inline JSON JSONDouble_new(double val)
 {
     return toJSON(ValueF(val));
+}
+
+static inline JSON JSONInt32_new(JSONMemoryPool *jm, int64_t val)
+{
+    assert(INT32_MIN < val && val < INT32_MAX);
+    return toJSON(ValueI(val));
 }
 
 static inline JSON JSONInt_new(JSONMemoryPool *jm, int64_t val)
