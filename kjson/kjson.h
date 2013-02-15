@@ -382,7 +382,7 @@ static inline JSON JSONDouble_new(double val)
     return toJSON(ValueF(val));
 }
 
-static inline JSON JSONInt32_new(JSONMemoryPool *jm, int64_t val)
+static inline JSON JSONInt32_new(int64_t val)
 {
     assert(INT32_MIN < val && val < INT32_MAX);
     return toJSON(ValueI(val));
