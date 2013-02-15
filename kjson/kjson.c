@@ -30,7 +30,7 @@
 #include <assert.h>
 #include <inttypes.h>
 #include <limits.h>
-
+#undef __SSE2__
 #ifdef __SSE2__
 #include <emmintrin.h>
 #endif
@@ -77,10 +77,13 @@ static JSON JSONUString_new(JSONMemoryPool *jm, string_builder *builder)
     JSONString *o = (JSONString *) JSONMemoryPool_Alloc(jm, sizeof(*o), &malloced);
     if(len <= JSONSTRING_INLINE_SIZE) {
         memcpy(o->text, s, len-1);
+        free(s);
         s = o->text;
     }
     JSONString_init(o, s, len-1);
-    return toJSON(ValueU(o));
+    JSON json = toJSON(ValueU(o));
+    JSON_Init(json);
+    return json;
 }
 
 static unsigned JSONString_hashCode(JSONString *key)
@@ -441,7 +444,10 @@ static void parseEscape(input_stream *ins, string_builder *sb, uint8_t c)
         case 'r': c = '\r';  break;
         case 't': c = '\t';  break;
         case 'u': parseUnicode(ins, sb); return;
-        default: THROW(&ins->exception, PARSER_EXCEPTION, "Illegal escape token");
+        default: {
+            string_builder_dispose(sb);
+            THROW(&ins->exception, PARSER_EXCEPTION, "Illegal escape token");
+        }
     }
     string_builder_add(sb, c);
 }
