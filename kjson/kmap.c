@@ -160,7 +160,8 @@ static void hashmap_api_remove(kmap_t *_m, JSONString *key)
     unsigned hash = JSONString_hashCode(key);
     map_record_t *r = hashmap_get(m, hash, key);
     if(r) {
-        r->hash = 0; r->k = NULL;
+        JSON_free(toJSON(ValueP(r->v)));
+        r->hash = 0; r->k = 0;
         m->used_size -= 1;
     }
 }
@@ -282,6 +283,7 @@ static void dictmap_api_remove(kmap_t *_m, JSONString *key)
     unsigned hash = JSONString_hashCode(key);
     map_record_t *r = dictmap_get(m, hash, key);
     if(r) {
+        JSON_free(toJSON(ValueP(r->v)));
         r->hash = 0; r->k = 0;
         m->used_size -= 1;
     }

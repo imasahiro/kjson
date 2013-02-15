@@ -206,9 +206,7 @@ KJSON_API void JSONArray_append(JSONMemoryPool *jm, JSON json, JSON o)
 static void _JSONObject_set(JSONObject *o, JSONString *key, JSON value)
 {
     assert(JSON_type(value) < 16);
-    if ((JSON_type(value) & 1) == 1) {
-        JSON_Retain(value);
-    }
+    JSONObject_Retain(value);
     kmap_set(&o->child, key, value.bits);
 }
 
