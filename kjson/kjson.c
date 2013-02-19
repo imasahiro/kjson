@@ -862,7 +862,7 @@ static void JSONInt32_toString(string_builder *sb, JSON json)
 static void JSONInt64_toString(string_builder *sb, JSON json)
 {
     JSONInt64 *o = toInt64(json.val);
-    string_builder_add_int(sb, o->val);
+    string_builder_add_int64(sb, o->val);
 }
 
 static void JSONDouble_toString(string_builder *sb, JSON json)
