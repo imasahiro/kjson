@@ -553,7 +553,6 @@ static JSON parseArray(JSONMemoryPool *jm, input_stream *ins, uint8_t c)
     }
     for(; EOS(ins); c = skip_space(ins, NEXT(ins))) {
         JSON val = parseChild(jm, ins, c);
-        THROW_IF(val.bits == 0, ins->exception, "JSONArray with extra comma");
         kstack_push(&ins->stack, val);
         c = skip_space(ins, NEXT(ins));
         if(c == ']') {
