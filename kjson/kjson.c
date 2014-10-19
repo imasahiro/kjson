@@ -570,6 +570,13 @@ static JSON parseArray(JSONMemoryPool *jm, input_stream *ins, uint8_t c)
     return json;
 }
 
+static const double tens[] = {
+    1e0, 1e1, 1e2, 1e3,
+    1e4, 1e5, 1e6, 1e7,
+    1e8, 1e9, 1e10, 1e11,
+    1e12, 1e13, 1e14, 1e15,
+};
+
 static JSON parseNumber(JSONMemoryPool *jm, input_stream *ins, uint8_t c)
 {
     assert((c == '-' || ('0' <= c && c <= '9')) && "It do not seem as Number");
@@ -577,7 +584,11 @@ static JSON parseNumber(JSONMemoryPool *jm, input_stream *ins, uint8_t c)
     const uint8_t *state1, *state2;
     state1 = _input_stream_save(ins);
     bool negative = false;
+    bool enegative = false;
     int64_t val = 0;
+    double dval = 0.0;
+    double fract = 10;
+    unsigned exp = 0;
     JSON n;
     if(c == '-') { negative = true; c = NEXT(ins); }
     if(c == '0') { c = NEXT(ins); }
@@ -589,18 +600,25 @@ static JSON parseNumber(JSONMemoryPool *jm, input_stream *ins, uint8_t c)
     if(c != '.' && c != 'e' && c != 'E') {
         goto L_emit;
     }
+    dval = (double) val;
     if(c == '.') {
         type = JSON_Double;
         for(c = NEXT(ins); '0' <= c && c <= '9' &&
-                EOS(ins); c = NEXT(ins)) {}
+                EOS(ins); c = NEXT(ins)) {
+            dval += (double)(c - '0') / fract;
+            fract *= 10;
+        }
     }
     if(c == 'e' || c == 'E') {
         type = JSON_Double;
         c = NEXT(ins);
         if(c == '+' || c == '-') {
             c = NEXT(ins);
+            enegative = c == '-';
         }
-        for(; '0' <= c && c <= '9' && EOS(ins); c = NEXT(ins)) {}
+        for(; '0' <= c && c <= '9' && EOS(ins); c = NEXT(ins)) {
+            exp = exp * 10 + (c - '0');
+        }
     }
     L_emit:;
     state2 = _input_stream_save(ins) - 1;
@@ -609,10 +627,27 @@ static JSON parseNumber(JSONMemoryPool *jm, input_stream *ins, uint8_t c)
         val = (negative)? -val : val;
         n = JSONInt_new(jm, val);
     } else {
-        char *s = (char *)state1-1;
-        char *e = (char *)state2;
-        double d = strtod(s, &e);
-        n = JSONDouble_new(d);
+        // FIXME more refactor
+        if (!enegative) {
+            int i = exp & 0xf;
+            dval *= tens[i];
+            exp -= i;
+            while (exp > 0) {
+                dval *= 1e16;
+                exp -= 16;
+            }
+        }
+        else {
+            int i = exp & 0xf;
+            dval /= tens[i];
+            exp -= i;
+            while (exp > 0) {
+                dval /= 1e16;
+                exp -= 16;
+            }
+        }
+        dval = (negative)? -dval : dval;
+        n = JSONDouble_new(dval);
     }
     return n;
 }
