@@ -11,6 +11,7 @@ static void test_parser(JSONMemoryPool *jm, const char *s, size_t len)
     JSON json = parseJSON(jm, s, s + len);
     size_t length;
     const char *text = JSON_toStringWithLength(json, &length);
+    fprintf(stderr, "%s\n", text);
     assert(len == length);
     free((char *)text);
     JSON_free(json);

@@ -17,6 +17,7 @@ int main(int argc, char const* argv[])
     char *json = (char *) calloc(1, len + 1);
     size_t readed = fread(json, 1, len, fp);
     assert(len == readed);
+    fprintf(stderr, "len=%d, json='%s'\n", (int)readed, json);
     fclose(fp);
 
     JSONMemoryPool jm;
@@ -30,6 +31,12 @@ int main(int argc, char const* argv[])
         if(!JSON_isValid(o)) {
             fprintf(stderr, "Error\n");
             exit(EXIT_FAILURE);
+        }
+        else {
+            size_t length;
+            const char *text = JSON_toStringWithLength(o, &length);
+            fprintf(stderr, "%s\n", text);
+            free((char *)text);
         }
         JSON_free(o);
     }

@@ -1,5 +1,5 @@
 {
     "dataStoreMaxConns": 100,
     "Tag": 200,
-    "float" : { "min": -1.0e+28, "v" : 3.14, "max": 1.0e+28 }
+    "float" : { "min": -1.0e+28, "v" : 3.14, "e" : 2.71828182846, "max": 1.0e+28 }
 }

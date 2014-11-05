@@ -30,12 +30,14 @@
 #include <assert.h>
 #include <inttypes.h>
 #include <limits.h>
+#include <math.h>
 #undef __SSE2__
 #ifdef __SSE2__
 #include <emmintrin.h>
 #endif
 
 #include "khash.h"
+#include "kpow10.c"
 
 #ifdef __cplusplus
 extern "C" {
@@ -570,23 +572,15 @@ static JSON parseArray(JSONMemoryPool *jm, input_stream *ins, uint8_t c)
     return json;
 }
 
-static const double tens[] = {
-    1e0, 1e1, 1e2, 1e3,
-    1e4, 1e5, 1e6, 1e7,
-    1e8, 1e9, 1e10, 1e11,
-    1e12, 1e13, 1e14, 1e15,
-};
-
 static JSON parseNumber(JSONMemoryPool *jm, input_stream *ins, uint8_t c)
 {
     kjson_type type = JSON_Int32;
     const uint8_t *state;
     bool negative = false;
-    bool enegative = false;
     int64_t val = 0;
     double dval = 0.0;
-    double fract = 10;
-    unsigned exp = 0;
+    int exp1 = 0;
+    int exp2 = 0;
     JSON n;
 
     assert((c == '-' || ('0' <= c && c <= '9')) && "It do not seem as Number");
@@ -605,20 +599,25 @@ static JSON parseNumber(JSONMemoryPool *jm, input_stream *ins, uint8_t c)
         type = JSON_Double;
         for(c = NEXT(ins); '0' <= c && c <= '9' &&
                 EOS(ins); c = NEXT(ins)) {
-            dval += (double)(c - '0') / fract;
-            fract *= 10;
+            val = val * 10 + (c - '0');
+            exp1 -= 1;
         }
     }
     if(c == 'e' || c == 'E') {
+        int sign;
         type = JSON_Double;
         c = NEXT(ins);
         if(c == '+' || c == '-') {
             c = NEXT(ins);
-            enegative = c == '-';
+            sign = c == '-';
         }
+        THROW_IF(!('0' <= c && c <= '9'), ins->exception,
+                "need number after 'e' or 'E'");
+
         for(; '0' <= c && c <= '9' && EOS(ins); c = NEXT(ins)) {
-            exp = exp * 10 + (c - '0');
+            exp2 = exp2 * 10 + (c - '0');
         }
+        exp2 = (sign) ? -exp2 : exp2;
     }
     L_emit:;
     state = _input_stream_save(ins) - 1;
@@ -627,24 +626,15 @@ static JSON parseNumber(JSONMemoryPool *jm, input_stream *ins, uint8_t c)
         val = (negative)? -val : val;
         n = JSONInt_new(jm, val);
     } else {
-        // FIXME more refactor
-        if (!enegative) {
-            int i = exp & 0xf;
-            dval *= tens[i];
-            exp -= i;
-            while (exp > 0) {
-                dval *= 1e16;
-                exp -= 16;
-            }
+        int exp = exp1 + exp2;
+        if (exp < -308) {
+            dval = -INFINITY;
+        }
+        else if (exp >= 0) {
+            dval = (double)val * kjson_pow10(exp);
         }
         else {
-            int i = exp & 0xf;
-            dval /= tens[i];
-            exp -= i;
-            while (exp > 0) {
-                dval /= 1e16;
-                exp -= 16;
-            }
+            dval = (double)val / kjson_pow10(-exp);
         }
         dval = (negative)? -dval : dval;
         n = JSONDouble_new(dval);
