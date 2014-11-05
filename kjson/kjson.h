@@ -248,8 +248,8 @@ typedef struct JSONArray_iterator {
 } JSONArray_iterator;
 
 #define JSON_ARRAY_EACH(json, A, I, E)\
-    if(!JSON_type((json)) == JSON_Array) {} else\
-        if(!(A = toAry((json).val)) != 0) {}\
+    if(JSON_type((json)) != JSON_Array) {} else\
+        if((A = toAry((json).val)) == 0) {}\
         else FOR_EACH_ARRAY(A->array, I, E)
 
 typedef struct JSONObject_iterator {
