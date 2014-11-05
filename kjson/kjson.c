@@ -580,7 +580,7 @@ static const double tens[] = {
 static JSON parseNumber(JSONMemoryPool *jm, input_stream *ins, uint8_t c)
 {
     kjson_type type = JSON_Int32;
-    const uint8_t *state1, *state2;
+    const uint8_t *state;
     bool negative = false;
     bool enegative = false;
     int64_t val = 0;
@@ -590,7 +590,6 @@ static JSON parseNumber(JSONMemoryPool *jm, input_stream *ins, uint8_t c)
     JSON n;
 
     assert((c == '-' || ('0' <= c && c <= '9')) && "It do not seem as Number");
-    state1 = _input_stream_save(ins);
     if(c == '-') { negative = true; c = NEXT(ins); }
     if(c == '0') { c = NEXT(ins); }
     else if('1' <= c && c <= '9') {
@@ -622,8 +621,8 @@ static JSON parseNumber(JSONMemoryPool *jm, input_stream *ins, uint8_t c)
         }
     }
     L_emit:;
-    state2 = _input_stream_save(ins) - 1;
-    _input_stream_resume(ins, state2);
+    state = _input_stream_save(ins) - 1;
+    _input_stream_resume(ins, state);
     if(type != JSON_Double) {
         val = (negative)? -val : val;
         n = JSONInt_new(jm, val);

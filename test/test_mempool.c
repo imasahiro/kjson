@@ -12,6 +12,7 @@ int main(int argc, char const* argv[])
         }
     }
     JSONMemoryPool_Delete(&jm);
+    (void)ptr;
 #else
     void *ptr;
     int i, j;
