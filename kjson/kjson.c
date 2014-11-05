@@ -579,10 +579,8 @@ static const double tens[] = {
 
 static JSON parseNumber(JSONMemoryPool *jm, input_stream *ins, uint8_t c)
 {
-    assert((c == '-' || ('0' <= c && c <= '9')) && "It do not seem as Number");
     kjson_type type = JSON_Int32;
     const uint8_t *state1, *state2;
-    state1 = _input_stream_save(ins);
     bool negative = false;
     bool enegative = false;
     int64_t val = 0;
@@ -590,6 +588,9 @@ static JSON parseNumber(JSONMemoryPool *jm, input_stream *ins, uint8_t c)
     double fract = 10;
     unsigned exp = 0;
     JSON n;
+
+    assert((c == '-' || ('0' <= c && c <= '9')) && "It do not seem as Number");
+    state1 = _input_stream_save(ins);
     if(c == '-') { negative = true; c = NEXT(ins); }
     if(c == '0') { c = NEXT(ins); }
     else if('1' <= c && c <= '9') {
