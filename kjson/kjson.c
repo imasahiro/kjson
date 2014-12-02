@@ -579,8 +579,7 @@ static JSON parseNumber(JSONMemoryPool *jm, input_stream *ins, uint8_t c)
     bool negative = false;
     int64_t val = 0;
     double dval = 0.0;
-    int exp1 = 0;
-    int exp2 = 0;
+    int exp = 0;
     JSON n;
 
     assert((c == '-' || ('0' <= c && c <= '9')) && "It do not seem as Number");
@@ -592,7 +591,7 @@ static JSON parseNumber(JSONMemoryPool *jm, input_stream *ins, uint8_t c)
         }
     }
     if(c != '.' && c != 'e' && c != 'E') {
-        goto L_emit;
+        goto L_emit_int;
     }
     dval = (double) val;
     if(c == '.') {
@@ -600,16 +599,16 @@ static JSON parseNumber(JSONMemoryPool *jm, input_stream *ins, uint8_t c)
         for(c = NEXT(ins); '0' <= c && c <= '9' &&
                 EOS(ins); c = NEXT(ins)) {
             val = val * 10 + (c - '0');
-            exp1 -= 1;
+            exp -= 1;
         }
     }
     if(c == 'e' || c == 'E') {
-        int sign = 0;
+        char sign = '+';
+        int exp2 = 0;
         type = JSON_Double;
         c = NEXT(ins);
         if(c == '+' || c == '-') {
-            c = NEXT(ins);
-            sign = c == '-';
+            sign = NEXT(ins);
         }
         THROW_IF(!('0' <= c && c <= '9'), ins->exception,
                 "need number after 'e' or 'E'");
@@ -617,28 +616,33 @@ static JSON parseNumber(JSONMemoryPool *jm, input_stream *ins, uint8_t c)
         for(; '0' <= c && c <= '9' && EOS(ins); c = NEXT(ins)) {
             exp2 = exp2 * 10 + (c - '0');
         }
-        exp2 = (sign) ? -exp2 : exp2;
+        exp += (sign == '+') ? exp2 : -exp2;
     }
-    L_emit:;
     state = _input_stream_save(ins) - 1;
     _input_stream_resume(ins, state);
-    if(type != JSON_Double) {
-        val = (negative)? -val : val;
-        n = JSONInt_new(jm, val);
-    } else {
-        int exp = exp1 + exp2;
-        if (exp < -308) {
-            dval = -INFINITY;
-        }
-        else if (exp >= 0) {
+    if (likely(-(unsigned)exp < 308)) {
+        if (exp >= 0) {
             dval = (double)val * kjson_pow10(exp);
         }
         else {
             dval = (double)val / kjson_pow10(-exp);
         }
-        dval = (negative)? -dval : dval;
-        n = JSONDouble_new(dval);
     }
+    else if (exp < -308) {
+        dval = (double)val / INFINITY;
+    }
+    else  {
+        assert(exp > 308);
+        dval = INFINITY;
+    }
+    dval = (negative)? -dval : dval;
+    n = JSONDouble_new(dval);
+    return n;
+    L_emit_int:;
+    state = _input_stream_save(ins) - 1;
+    _input_stream_resume(ins, state);
+    val = (negative)? -val : val;
+    n = JSONInt_new(jm, val);
     return n;
 }
 
