@@ -604,7 +604,7 @@ static JSON parseNumber(JSONMemoryPool *jm, input_stream *ins, uint8_t c)
         }
     }
     if(c == 'e' || c == 'E') {
-        int sign;
+        int sign = 0;
         type = JSON_Double;
         c = NEXT(ins);
         if(c == '+' || c == '-') {
