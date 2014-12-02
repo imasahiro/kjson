@@ -1,0 +1,3 @@
+[submodule "kjson/libtoa"]
+	path = kjson/libtoa
+	url = git@github.com:imasahiro/libtoa.git

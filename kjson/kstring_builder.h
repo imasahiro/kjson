@@ -31,6 +31,7 @@
 #endif
 
 #include "karray.h"
+#include "libtoa/libtoa.h"
 
 #ifndef KJSON_STRING_BUILDER_H_
 #define KJSON_STRING_BUILDER_H_
@@ -48,6 +49,11 @@ static inline void string_builder_init(string_builder *sb)
     ARRAY_init(char, &sb->buf, 4);
 }
 
+static inline void string_builder_ensure_size(string_builder *sb, size_t len)
+{
+    ARRAY_ensureSize(char, &sb->buf, len);
+}
+
 static inline void string_builder_add_no_check(string_builder *sb, char c)
 {
     char *p = sb->buf.list + ARRAY_size(sb->buf);
@@ -60,92 +66,34 @@ static inline void string_builder_add(string_builder *sb, char c)
     ARRAY_add(char, &sb->buf, c);
 }
 
-static void reverse(char *const start, char *const end)
-{
-    char *m = start + (end - start) / 2;
-    char tmp, *s = start, *e = end - 1;
-    while(s < m) {
-        tmp  = *s;
-        *s++ = *e;
-        *e-- = tmp;
-    }
-}
-
-static inline char toHexChar(uint8_t c)
-{
-    return c < 10 ? c + '0': c - 10 + 'a';
-}
-
-static inline char *put_x(char *p, uint64_t v)
-{
-    char *base = p;
-    do {
-        *p++ = toHexChar(v % 16);
-    } while((v /= 16) != 0);
-    reverse(base, p);
-    return p;
-}
-
-static inline char *put_d(char *p, uint64_t v)
-{
-    char *base = p;
-    do {
-        *p++ = '0' + (v % 10);
-    } while((v /= 10) != 0);
-    reverse(base, p);
-    return p;
-}
-
-static inline char *put_i(char *p, int64_t value)
-{
-    if(value < 0) {
-        p[0] = '-'; p++;
-        value = -value;
-    }
-    return put_d(p, (uint64_t)value);
-}
-
 static inline void string_builder_add_hex_no_check(string_builder *sb, uint32_t i)
 {
-    ARRAY_ensureSize(char, &sb->buf, 4/* = sizeof("abcd") */);
-    char *p = sb->buf.list + ARRAY_size(sb->buf);
-    char *e = put_x(p, i);
-    sb->buf.size += e - p;
+    char *p;
+    string_builder_ensure_size(sb, 8/* = sizeof("abcd") * 2 */);
+    p = sb->buf.list + ARRAY_size(sb->buf);
+    sb->buf.size += libtoa_put_hex32_lower(p, 8, i);
 }
 
 static inline void string_builder_add_int(string_builder *sb, int32_t i)
 {
-    ARRAY_ensureSize(char, &sb->buf, 12/* = sizeof("-2147483648") */);
-    char *p = sb->buf.list + ARRAY_size(sb->buf);
-    char *e = put_i(p, i);
-    sb->buf.size += e - p;
+    char *p;
+    string_builder_ensure_size(sb, 12/* = sizeof("-2147483648") */);
+    p = sb->buf.list + ARRAY_size(sb->buf);
+    sb->buf.size += libtoa_put_int32(p, 12, i);
 }
 
 static inline void string_builder_add_int64(string_builder *sb, int64_t i)
 {
-    ARRAY_ensureSize(char, &sb->buf, 20/* = sizeof("-9223372036854775807") */);
-    char *p = sb->buf.list + ARRAY_size(sb->buf);
-    char *e = put_i(p, i);
-    sb->buf.size += e - p;
-}
-
-static inline void string_builder_ensure_size(string_builder *sb, size_t len)
-{
-    ARRAY_ensureSize(char, &sb->buf, len);
+    char *p;
+    string_builder_ensure_size(sb, 20/* = sizeof("-9223372036854775807") */);
+    p = sb->buf.list + ARRAY_size(sb->buf);
+    sb->buf.size += libtoa_put_int64(p, 12, i);
 }
 
 static inline void string_builder_add_string_no_check(string_builder *sb, const char *s, size_t len)
 {
     char *p = sb->buf.list + ARRAY_size(sb->buf);
-#ifdef USE_MEMCPY
-    memcpy(p, s, len);
-#else
-    const char *const e = s + len;
-    while(s < e) {
-        *p++ = *s++;
-    }
-#endif
-    sb->buf.size += len;
+    sb->buf.size += libtoa_put_string(p, len, (char *)s, len);
 }
 
 static inline void string_builder_add_string(string_builder *sb, const char *s, size_t len)
