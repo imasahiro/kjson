@@ -344,47 +344,14 @@ static uint8_t skip_space(input_stream *ins, uint8_t c)
 
 static uint8_t skipBSorDoubleQuote(input_stream *ins)
 {
-#if 0 && defined(__SSE2__)
-#define bsf(x) __builtin_ctzl(x)
-    uint8_t *str = (uint8_t *) ins->pos;
-    const __m128i k0x00 = _mm_set1_epi8(0);
-    const __m128i k0x5c = _mm_set1_epi8('\\');
-    const __m128i k0x22 = _mm_set1_epi8('"');
-    size_t ip = (size_t) str;
-    size_t n = ip & 15;
-    if(n > 0) {
-        __m128i mask;
-        __m128i x = _mm_loadu_si128((const __m128i *)(ip & ~15));
-        __m128i result1 = _mm_cmpeq_epi8(x, k0x5c);
-        __m128i result2 = _mm_cmpeq_epi8(x, k0x22);
-        __m128i result3 = _mm_cmpeq_epi8(x, k0x00);
-        mask = _mm_or_si128(result1, result2);
-        mask = _mm_or_si128(result3, mask);
-        unsigned long mask2 = _mm_movemask_epi8(mask);
-        mask2 &= 0xffffffffUL << n;
-        if(mask2) {
-            uint8_t *tmp = str + bsf(mask2) - n;
-            ins->pos = tmp + 1;
-            return *tmp;
-        }
-        str += 16 - n;
-    }
-    while(1) {
-        __m128i x = _mm_loadu_si128((const __m128i *)str);
-        __m128i result1 = _mm_cmpeq_epi8(x, k0x5c);
-        __m128i result2 = _mm_cmpeq_epi8(x, k0x22);
-        __m128i result3 = _mm_cmpeq_epi8(x, k0x00);
-        __m128i mask    = _mm_or_si128(result3, _mm_or_si128(result1, result2));
-        unsigned long mask2 = _mm_movemask_epi8(mask);
-        if(mask2) {
-            uint8_t *tmp = str + bsf(mask2);
-            ins->pos = tmp + 1;
-            return *tmp;
-        }
-        str += 16;
-    }
-    ins->pos = ins->end;
-    return -1;
+#if defined(__SSE4_2__)
+    static const char ranges[] __attribute__((aligned(16))) = "\x00\x00" "\x22\x22" "\x5c\x5c";
+    const uint8_t *p = find_chars(ins->pos, ins->end - ins->pos, ranges, sizeof(ranges)-1);
+    if (p) {
+        ins->pos = p + 1;
+        return *p;
+     }
+    return *(ins->pos);
 #else
     register unsigned ch = NEXT(ins);
     register uint8_t *str;
