@@ -579,8 +579,7 @@ static JSON parseNumber(JSONMemoryPool *jm, input_stream *ins, uint8_t c)
     bool negative = false;
     int64_t val = 0;
     double dval = 0.0;
-    int exp1 = 0;
-    int exp2 = 0;
+    int exp = 0;
     JSON n;
 
     assert((c == '-' || ('0' <= c && c <= '9')) && "It do not seem as Number");
@@ -600,11 +599,12 @@ static JSON parseNumber(JSONMemoryPool *jm, input_stream *ins, uint8_t c)
         for(c = NEXT(ins); '0' <= c && c <= '9' &&
                 EOS(ins); c = NEXT(ins)) {
             val = val * 10 + (c - '0');
-            exp1 -= 1;
+            exp -= 1;
         }
     }
     if(c == 'e' || c == 'E') {
         int sign = 0;
+        int exp2 = 0;
         type = JSON_Double;
         c = NEXT(ins);
         if(c == '+' || c == '-') {
@@ -617,7 +617,7 @@ static JSON parseNumber(JSONMemoryPool *jm, input_stream *ins, uint8_t c)
         for(; '0' <= c && c <= '9' && EOS(ins); c = NEXT(ins)) {
             exp2 = exp2 * 10 + (c - '0');
         }
-        exp2 = (sign) ? -exp2 : exp2;
+        exp += (sign) ? -exp2 : exp2;
     }
     L_emit:;
     state = _input_stream_save(ins) - 1;
@@ -626,7 +626,6 @@ static JSON parseNumber(JSONMemoryPool *jm, input_stream *ins, uint8_t c)
         val = (negative)? -val : val;
         n = JSONInt_new(jm, val);
     } else {
-        int exp = exp1 + exp2;
         if (exp < -308) {
             dval = -INFINITY;
         }
