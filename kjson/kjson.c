@@ -31,9 +31,8 @@
 #include <inttypes.h>
 #include <limits.h>
 #include <math.h>
-#undef __SSE2__
-#ifdef __SSE2__
-#include <emmintrin.h>
+#ifdef __SSE4_2__
+#include <nmmintrin.h>
 #endif
 
 #include "khash.h"
