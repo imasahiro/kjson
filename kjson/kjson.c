@@ -260,6 +260,39 @@ static JSON parseNOP(JSONMemoryPool *jm, input_stream *ins, uint8_t c)
     return JSON_NOP();
 }
 
+static const uint8_t *find_chars(const uint8_t *str, size_t len, const char *ranges, size_t range_size)
+{
+#if defined(__SSE4_2__)
+    if (likely(len > 16)) {
+        __m128i r = _mm_loadu_si128((const __m128i *)ranges);
+        size_t n = len / 16;
+        len = len % 16;
+        do {
+            __m128i s = _mm_loadu_si128((const __m128i *)(str));
+#define MODE _SIDD_LEAST_SIGNIFICANT | _SIDD_CMP_RANGES | _SIDD_UBYTE_OPS
+            int offset = _mm_cmpestri(r, range_size, s, 16, MODE);
+            if (offset != 16) {
+                return str + offset;
+            }
+#undef MODE
+            str += 16;
+        } while (n-- != 0);
+    }
+#endif
+    {
+        size_t i, j;
+        for (i = 0; i < len; i++) {
+            char c = str[i];
+            for (j = 0; j < range_size / 2; j++) {
+                if (ranges[j * 2] <= c && c <= ranges[j * 2 + 1]) {
+                    return str + i;
+                }
+            }
+        }
+    }
+    return NULL;
+}
+
 #define _N 0x40 |
 #define _M 0x80 |
 static const unsigned string_table[] = {
@@ -285,46 +318,18 @@ static const unsigned string_table[] = {
 
 static uint8_t skip_space(input_stream *ins, uint8_t c)
 {
-#if 0 && defined(__SSE2__)
-#define ffs(x) __builtin_ffsl(x)
-    register uint8_t *str = (uint8_t *) (ins->pos - 1);
-    const __m128i k0x00 = _mm_set1_epi8(0);
-    const __m128i k0x09 = _mm_set1_epi8('\t');
-    const __m128i k0x0a = _mm_set1_epi8('\n');
-    const __m128i k0x0d = _mm_set1_epi8('\r');
-    const __m128i k0x20 = _mm_set1_epi8(' ');
-    size_t ip = (size_t) str;
-    size_t n = ip & 15;
-    assert(c != 0 && c == *str);
-    if(n > 0) {
-        ip &= ~15;
-        __m128i x = _mm_loadu_si128((const __m128i *)ip);
-        __m128i mask1 = _mm_or_si128(_mm_cmpeq_epi8(x, k0x09), _mm_cmpeq_epi8(x, k0x0a));
-        __m128i mask2 = _mm_or_si128(_mm_cmpeq_epi8(x, k0x0d), _mm_cmpeq_epi8(x, k0x20));
-        __m128i mask  = _mm_or_si128(_mm_cmpeq_epi8(x, k0x00), _mm_or_si128(mask1, mask2));
-        unsigned short mask3 = _mm_movemask_epi8(mask);
-        mask3 = ~(mask3 | ((1UL << n)-1));
-        if(mask3) {
-            uint8_t *tmp = (uint8_t *)ip + ffs(mask3) - 1;
-            ins->pos = tmp + 1;
-            return *(tmp);
-        }
-        str += 16 - n;
+    // skip '\t', '\r', '\n', ' '
+#if defined(__SSE4_2__)
+    static const char ranges[] __attribute__((aligned(16))) = "\x00\x08" "\x11\x12" "\x14\x1f" "\x21\x7f";
+    const uint8_t *p;
+    if(!(0x40 & string_table[(int)c])) {
+        return c;
     }
-    while(1) {
-        __m128i x = _mm_loadu_si128((const __m128i *)(str));
-        __m128i mask1 = _mm_or_si128(_mm_cmpeq_epi8(x, k0x09), _mm_cmpeq_epi8(x, k0x0a));
-        __m128i mask2 = _mm_or_si128(_mm_cmpeq_epi8(x, k0x0d), _mm_cmpeq_epi8(x, k0x20));
-        __m128i mask  = _mm_or_si128(_mm_cmpeq_epi8(x, k0x00), _mm_or_si128(mask1, mask2));
-        unsigned short mask3 = ~(_mm_movemask_epi8(mask));
-        if(mask3) {
-            uint8_t *tmp = str + ffs(mask3) - 1;
-            ins->pos = tmp + 1;
-            return *(tmp);
-        }
-        str += 16;
+    p = find_chars(ins->pos, ins->end - ins->pos, ranges, sizeof(ranges)-1);
+    if (p) {
+        ins->pos = p + 1;
+        return *p;
     }
-    ins->pos = ins->end;
     return 0;
 #else
     int ch;
