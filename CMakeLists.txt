@@ -11,7 +11,7 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 SET(CFLAGS "-Wsign-compare -Wmissing-field-initializers -Wdisabled-optimization")
-SET(CFLAGS "${CFLAGS} -Wall -Wcomment -Wformat -Wunused-macros")
+SET(CFLAGS "${CFLAGS} -Wall -Wcomment -Wformat -Wunused-macros -march=native")
 SET(CMAKE_C_FLAGS         "-Wall -Wno-variadic-macros ${CFLAGS}")
 SET(CMAKE_C_FLAGS_RELEASE "-O3 -g")
 SET(CMAKE_C_FLAGS_DEBUG   "-O0 -g3")
