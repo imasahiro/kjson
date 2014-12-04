@@ -339,7 +339,7 @@ static uint8_t skip_space(input_stream *ins, uint8_t c)
 
 static uint8_t skipBSorDoubleQuote(input_stream *ins)
 {
-#ifdef __SSE2__
+#if 0 && defined(__SSE2__)
 #define bsf(x) __builtin_ctzl(x)
     uint8_t *str = (uint8_t *) ins->pos;
     const __m128i k0x00 = _mm_set1_epi8(0);
