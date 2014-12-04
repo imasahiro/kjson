@@ -210,7 +210,7 @@ KJSON_API void JSONArray_append(JSONMemoryPool *jm, JSON json, JSON o)
 
 static void _JSONObject_set(JSONObject *o, JSONString *key, JSON value)
 {
-    assert(JSON_type(value) < 16);
+    assert((int)JSON_type(value) < 16);
     JSONObject_Retain(value);
     kmap_set(&o->child, key, value.bits);
 }
@@ -457,11 +457,12 @@ static void parseEscape(input_stream *ins, string_builder *sb, uint8_t c)
 static JSON parseString(JSONMemoryPool *jm, input_stream *ins, uint8_t c)
 {
     const uint8_t *state1, *state2;
+    unsigned length;
     THROW_IF(c != '"', ins->exception, "Missing open quote at start of JSONString");
     state1 = _input_stream_save(ins);
     c = skipBSorDoubleQuote(ins);
     state2 = _input_stream_save(ins);
-    unsigned length = state2 - state1 - 1;
+    length = state2 - state1 - 1;
     if(c == '"') {/* fast path */
         return JSONString_new(jm, (char *)state1, length);
     }
