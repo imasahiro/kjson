@@ -2,6 +2,18 @@ JSON(JavaScript Object Notation) parser for KonohaScript
 
 [![Build Status](https://secure.travis-ci.org/imasahiro/kjson.png)](http://travis-ci.org/imasahiro/kjson)
 
+How to Build
+---
+```
+$ git submodule update --init --recursive
+$ mkdir /build/kjson
+$ cd /build/kjson
+$ cmake /source/kjson
+$ make
+```
+
+API
+---
 [Parse API]
 `  JSON *parseJSON(char *start, char *end);`
 
