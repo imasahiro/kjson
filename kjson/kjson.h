@@ -141,11 +141,14 @@ static inline bool JSON_isValid(JSON json)
     return json.bits != 0;
 }
 
-static inline kjson_type JSON_type(JSON json) {
+static inline kjson_type JSON_type(JSON json)
+{
     Value v; v.bits = (uint64_t)json.val.bits;
     uint64_t tag = Tag(v);
-    return (IsDouble((v)))?
-        JSON_Double : (kjson_type) ((tag >> TagBitShift) & 15);
+    if (IsDouble((v)))
+        return JSON_Double;
+    else
+        return (kjson_type) ((tag >> TagBitShift) & 15);
 }
 
 /* JSON Reference Count API */
@@ -273,7 +276,8 @@ typedef struct JSONObject_iterator {
 #endif
 
 #ifdef __cplusplus
-static inline JSON toJSON(Value v) {
+static inline JSON toJSON(Value v)
+{
     JSON json;
     json.bits = v.bits;
     return json;
