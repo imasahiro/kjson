@@ -578,9 +578,7 @@ static JSON parseNumber(JSONMemoryPool *jm, input_stream *ins, uint8_t c)
     const uint8_t *state;
     bool negative = false;
     int64_t val = 0;
-    double dval = 0.0;
     int exp = 0;
-    JSON n;
 
     assert((c == '-' || ('0' <= c && c <= '9')) && "It do not seem as Number");
     if(c == '-') { negative = true; c = NEXT(ins); }
@@ -590,10 +588,6 @@ static JSON parseNumber(JSONMemoryPool *jm, input_stream *ins, uint8_t c)
             val = val * 10 + (c - '0');
         }
     }
-    if(c != '.' && c != 'e' && c != 'E') {
-        goto L_emit;
-    }
-    dval = (double) val;
     if(c == '.') {
         type = JSON_Double;
         for(c = NEXT(ins); '0' <= c && c <= '9' &&
@@ -619,13 +613,13 @@ static JSON parseNumber(JSONMemoryPool *jm, input_stream *ins, uint8_t c)
         }
         exp += (sign) ? -exp2 : exp2;
     }
-    L_emit:;
     state = _input_stream_save(ins) - 1;
     _input_stream_resume(ins, state);
     if(type != JSON_Double) {
         val = (negative)? -val : val;
-        n = JSONInt_new(jm, val);
+        return JSONInt_new(jm, val);
     } else {
+        double dval = 0.0;
         if (exp < -308) {
             dval = -INFINITY;
         }
@@ -636,9 +630,8 @@ static JSON parseNumber(JSONMemoryPool *jm, input_stream *ins, uint8_t c)
             dval = (double)val / kjson_pow10(-exp);
         }
         dval = (negative)? -dval : dval;
-        n = JSONDouble_new(dval);
+        return JSONDouble_new(dval);
     }
-    return n;
 }
 
 static inline uint32_t encode4(uint8_t a, uint8_t b, uint8_t c, uint8_t d)
@@ -679,7 +672,7 @@ static JSON parseBoolean(JSONMemoryPool *jm, input_stream *ins, uint8_t c)
         ins->pos += 4;
     }
     else {
-        THROW(&ins->exception, PARSER_EXCEPTION, "Cannot parse JSON bool variable");
+        THROW(&ins->exception, PARSER_EXCEPTION, "Cannot parse JSON boolean");
     }
     return JSONBool_new(val);
 }
@@ -690,7 +683,7 @@ static JSON parseNull(JSONMemoryPool *jm, input_stream *ins, uint8_t c)
         ins->pos += 3;
         return JSONNull_new();
     }
-    THROW(&ins->exception, PARSER_EXCEPTION, "Cannot parse JSON null variable");
+    THROW(&ins->exception, PARSER_EXCEPTION, "Cannot parse JSON null");
     return JSON_NOP();
 }
 
