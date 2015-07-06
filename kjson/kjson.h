@@ -21,7 +21,7 @@
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  ***************************************************************************/
-
+#include <stdio.h>
 #ifndef KJSON_H_
 #define KJSON_H_
 
@@ -62,7 +62,25 @@ typedef enum kjson_type {
     JSON_reserved =  7  /* 0b0111 '7' is reserved by numbox */
 } kjson_type;
 
-union JSONValue;
+typedef Value JSONNumber;
+typedef JSONNumber JSONInt;
+typedef JSONInt    JSONInt32;
+typedef JSONNumber JSONDouble;
+typedef JSONNumber JSONBool;
+
+
+union JSONValue {
+    Value       val;
+    JSONNumber  num;
+    struct JSONInt64  *box;
+    struct JSONString *str;
+    struct JSONArray  *ary;
+    struct JSONObject *obj;
+    struct JSONError  *err;
+    uint64_t bits;
+};
+
+
 typedef union JSONValue JSON;
 
 typedef struct JSONRC {
@@ -84,15 +102,18 @@ DEF_ARRAY_T(JSON);
 
 typedef struct JSONArray {
     JSONRC rc;
+#if 0
+    union json_array_entry {
+        struct _ary {
+            unsigned size;
+            JSON ary[2];
+        } aux;
+        ARRAY(JSON) array;
+    };
+#else
     ARRAY(JSON) array;
+#endif
 } JSONArray;
-
-typedef Value JSONNumber;
-
-typedef JSONNumber JSONInt;
-typedef JSONInt    JSONInt32;
-typedef JSONNumber JSONDouble;
-typedef JSONNumber JSONBool;
 
 typedef struct JSONInt64 {
     JSONRC rc;
@@ -108,17 +129,6 @@ typedef struct JSONError {
     JSONRC rc;
     const char *message;
 } JSONError;
-
-union JSONValue {
-    Value       val;
-    JSONNumber  num;
-    JSONInt64  *box;
-    JSONString *str;
-    JSONArray  *ary;
-    JSONObject *obj;
-    JSONError  *err;
-    uint64_t bits;
-};
 
 #ifndef KJSON_MALLOC
 #define KJSON_MALLOC(N) malloc(N)
@@ -378,6 +388,7 @@ static inline JSON JSONArray_new(JSONMemoryPool *jm, unsigned elm_size)
     JSON json = toJSON(ValueA(o));
     JSON_Init(json);
     ARRAY_init(JSON, &o->array, elm_size);
+    // fprintf(stderr, "size=%u\n", elm_size);
     return json;
 }
 

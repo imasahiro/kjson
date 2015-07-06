@@ -41,9 +41,9 @@ extern "C" {
 #define ARRAY(T) ARRAY_##T##_t
 #define DEF_ARRAY_STRUCT0(T, SizeTy)\
 struct ARRAY(T) {\
-    T *list;\
     SizeTy size;\
     SizeTy capacity;\
+    T *list;\
 }
 #define DEF_ARRAY_STRUCT(T) DEF_ARRAY_STRUCT0(T, int)
 
