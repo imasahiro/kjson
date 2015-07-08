@@ -150,11 +150,19 @@ static void JSONArray_free(JSON json)
     JSON_Release(json);
     if (JSON_CanFree(json)) {
         JSON *s, *e;
+        unsigned i, len = JSONArray_length(a);
 
-        FOR_EACH_ARRAY(a->array, s, e) {
-            _JSON_free(*s);
+        if (len > KJSON_SMALL_ARRAY_LIMIT) {
+            FOR_EACH_ARRAY(a->entry.array, s, e) {
+                _JSON_free(*s);
+            }
+            ARRAY_dispose(JSON, &a->entry.array);
         }
-        ARRAY_dispose(JSON, &a->array);
+        else {
+            for (i = 0; i < len; i++) {
+                _JSON_free(a->entry.raw.ary[i]);
+            }
+        }
         JSON_dispose(json);
         JSONMemoryPool_Free(0, a);
     }
@@ -199,7 +207,26 @@ static void _JSON_free(JSON o)
 
 static void _JSONArray_append(JSONArray *a, JSON o)
 {
-    ARRAY_add(JSON, &a->array, o);
+    unsigned len = JSONArray_length(a);
+    if (len > KJSON_SMALL_ARRAY_LIMIT) {
+        ARRAY_add(JSON, &a->entry.array, o);
+    }
+    else if (len == 2) {
+        JSON e0 = a->entry.raw.ary[0];
+        JSON e1 = a->entry.raw.ary[1];
+        ARRAY_init(JSON, &a->entry.array, 3);
+        ARRAY_add(JSON, &a->entry.array, e0);
+        ARRAY_add(JSON, &a->entry.array, e1);
+        ARRAY_add(JSON, &a->entry.array, o);
+    }
+    else if (len == 1) {
+        a->entry.raw.size += 1;
+        a->entry.raw.ary[1] = o;
+    }
+    else { // len == 0
+        a->entry.raw.size += 1;
+        a->entry.raw.ary[0] = o;
+    }
 }
 
 KJSON_API void JSONArray_append(JSONMemoryPool *jm, JSON json, JSON o)
@@ -567,9 +594,14 @@ static JSON parseArray(JSONMemoryPool *jm, input_stream *ins, uint8_t c)
     unsigned element_size = kstack_size(&ins->stack) - stack_top;
     JSON json = JSONArray_new(jm, element_size);
     JSONArray *a = toAry(json.val);
-    kstack_move(&ins->stack, a->array.list, stack_top, element_size);
+    if (element_size > KJSON_SMALL_ARRAY_LIMIT) {
+        kstack_move(&ins->stack, a->entry.array.list, stack_top, element_size);
+    }
+    else {
+        kstack_move(&ins->stack, a->entry.raw.ary, stack_top, element_size);
+    }
     assert(kstack_size(&ins->stack) == stack_top);
-    a->array.size += element_size;
+    a->entry.raw.size = element_size;
     return json;
 }
 
@@ -790,8 +822,8 @@ static void JSONArray_toString(string_builder *sb, JSON json)
     JSON *s, *e;
     JSONArray *a = toAry(json.val);
     string_builder_add(sb, '[');
-    s = ARRAY_BEGIN(a->array);
-    e = ARRAY_END(a->array);
+    s = JSONArray_begin(a);
+    e = JSONArray_end(a);
     if(s < e) {
         _JSON_toString(sb, *s++);
         for(; s != e; ++s) {

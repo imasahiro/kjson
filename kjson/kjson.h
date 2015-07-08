@@ -100,16 +100,17 @@ typedef JSONString JSONUString;
 DEF_ARRAY_STRUCT0(JSON, unsigned);
 DEF_ARRAY_T(JSON);
 
+#define KJSON_SMALL_ARRAY_LIMIT 2
 typedef struct JSONArray {
     JSONRC rc;
-#if 0
+#if 1
     union json_array_entry {
-        struct _ary {
+        struct kjson_small_array {
             unsigned size;
-            JSON ary[2];
-        } aux;
+            JSON ary[KJSON_SMALL_ARRAY_LIMIT];
+        } raw;
         ARRAY(JSON) array;
-    };
+    } entry;
 #else
     ARRAY(JSON) array;
 #endif
@@ -230,8 +231,8 @@ static inline JSON *JSON_getArray(JSON json, const char *key, size_t *len)
     if(!JSON_isValid(obj))
         return NULL;
     JSONArray *a = toAry(obj.val);
-    *len = a->array.size;
-    return a->array.list;
+    *len = a->entry.raw.size;
+    return a->entry.array.list;
 }
 
 /* [Other API] */
@@ -260,10 +261,37 @@ typedef struct JSONArray_iterator {
     JSONArray *Array;
 } JSONArray_iterator;
 
+static inline unsigned JSONArray_length(JSONArray *ary);
+
+static inline JSON *JSONArray_begin(JSONArray *a)
+{
+    unsigned len = JSONArray_length(a);
+    if (len > KJSON_SMALL_ARRAY_LIMIT) {
+        return ARRAY_BEGIN(a->entry.array);
+    }
+    else {
+        return a->entry.raw.ary;
+    }
+}
+
+static inline JSON *JSONArray_end(JSONArray *a)
+{
+    unsigned len = JSONArray_length(a);
+    if (len > KJSON_SMALL_ARRAY_LIMIT) {
+        return ARRAY_END(a->entry.array);
+    }
+    else {
+        return a->entry.raw.ary + len;
+    }
+}
+
+#define JSON_ARRAY_EACH_(a, x, e)\
+    for(x = JSONArray_begin(a), e = JSONArray_end(a); x != e; ++x)
+
 #define JSON_ARRAY_EACH(json, A, I, E)\
     if(JSON_type((json)) != JSON_Array) {} else\
         if((A = toAry((json).val)) == 0) {}\
-        else FOR_EACH_ARRAY(A->array, I, E)
+        else JSON_ARRAY_EACH_(A, I, E)
 
 typedef struct JSONObject_iterator {
     long index;
@@ -387,9 +415,16 @@ static inline JSON JSONArray_new(JSONMemoryPool *jm, unsigned elm_size)
     JSONArray *o = (JSONArray *) JSONMemoryPool_Alloc(jm, sizeof(*o), &malloced);
     JSON json = toJSON(ValueA(o));
     JSON_Init(json);
-    ARRAY_init(JSON, &o->array, elm_size);
-    // fprintf(stderr, "size=%u\n", elm_size);
+    o->entry.raw.size = elm_size;
+    if (elm_size > KJSON_SMALL_ARRAY_LIMIT) {
+        ARRAY_init(JSON, &o->entry.array, elm_size);
+    }
     return json;
+}
+
+static inline unsigned JSONArray_length(JSONArray *ary)
+{
+    return ary->entry.raw.size;
 }
 
 static inline JSON JSONDouble_new(double val)
@@ -423,9 +458,10 @@ static inline JSON JSONBool_new(bool val)
 static inline unsigned JSON_length(JSON json)
 {
     assert((JSON_type(json) & 0x1) == 0x1);
-    return JSON_type(json) == JSON_Object ?
-        kmap_size(&toObj(json.val)->child):
-        ARRAY_size(toAry(json.val)->array);
+    if (JSON_type(json) == JSON_Object)
+        return kmap_size(&toObj(json.val)->child);
+    else
+        return JSONArray_length(toAry(json.val));
 }
 
 static inline const char *JSONError_get(JSON json)
@@ -436,17 +472,32 @@ static inline const char *JSONError_get(JSON json)
 static inline JSON JSONArray_get(JSON json, unsigned index)
 {
     JSONArray *a = toAry(json.val);
-    if(JSON_TYPE_CHECK(Array, json) && index < a->array.size) {
-        return ARRAY_get(JSON, &a->array, index);
-    } else {
-        return JSON_NOP();
+    if(JSON_TYPE_CHECK(Array, json)) {
+        unsigned len = JSONArray_length(a);
+        if (index < len) {
+            if (len > KJSON_SMALL_ARRAY_LIMIT) {
+                return ARRAY_get(JSON, &a->entry.array, index);
+            }
+            else {
+                return a->entry.raw.ary[index];
+            }
+        }
     }
+    return JSON_NOP();
 }
 static inline bool JSONArray_set(JSON json, unsigned index, JSON val)
 {
     JSONArray *a = toAry(json.val);
-    if(JSON_TYPE_CHECK(Array, json) && index < a->array.size) {
-        ARRAY_set(JSON, &a->array, index, val);
+    if(JSON_TYPE_CHECK(Array, json)) {
+        unsigned len = JSONArray_length(a);
+        if (index < len) {
+            if (len > KJSON_SMALL_ARRAY_LIMIT) {
+                ARRAY_set(JSON, &a->entry.array, index, val);
+            }
+            else {
+                a->entry.raw.ary[index] = val;
+            }
+        }
         return true;
     }
     return false;
