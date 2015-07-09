@@ -495,6 +495,8 @@ static JSON parseString(JSONMemoryPool *jm, input_stream *ins, uint8_t c)
     if(c == '"') {/* fast path */
         return JSONString_new(jm, (char *)state1, length);
     }
+    THROW_IF(c == '\t', ins->exception, "'tab char in string' is not acceptable");
+    THROW_IF(c == '\n', ins->exception, "'LF in string' is not acceptable");
     string_builder sb; string_builder_init(&sb);
     if(length > 0) {
         string_builder_add_string(&sb, (const char *) state1, length);
