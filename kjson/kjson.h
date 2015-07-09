@@ -39,6 +39,13 @@ extern "C" {
 #define KJSON_API
 #endif
 
+#define KJSON_USE_RFC7159 0
+#if KJSON_USE_RFC7159
+#define KJSON_USE_RFC4627 0
+#else
+#define KJSON_USE_RFC4627 1
+#endif
+
 #ifndef unlikely
 #define unlikely(x)   __builtin_expect(!!(x), 0)
 #endif

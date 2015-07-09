@@ -757,6 +757,13 @@ KJSON_API JSON parseJSON(JSONMemoryPool *jm, const char *s, const char *e)
     JSON json;
     TRY(ins->exception) {
         json = parseJSON_stream(jm, ins);
+        if (KJSON_USE_RFC4627) {
+            kjson_type type = JSON_type(json);
+            if (type != JSON_Object && type != JSON_Array) {
+                THROW(&ins->exception, PARSER_EXCEPTION,
+                        "Top-level of a JSON should be an object or array.");
+            }
+        }
     }
     CATCH(PARSER_EXCEPTION) {
         const char *emessage = ins->exception.error_message;
