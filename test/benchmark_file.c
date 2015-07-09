@@ -2,6 +2,7 @@
 #include <sys/time.h>
 #include <assert.h>
 #include "kjson.h"
+#include "kjson_test.h"
 
 static struct timeval g_timer;
 static void reset_timer()
@@ -25,23 +26,6 @@ static inline void _show_timer(const char *s, size_t bufsz)
             s, msec,
             ((double)bufsz)/1024/1024,
             ((double)bufsz)*8/msec/1000);
-}
-
-static char *load_file(const char *path, size_t *size)
-{
-    FILE *fp = fopen(path, "r");
-    assert(fp != 0);
-
-    fseek(fp, 0, SEEK_END);
-    size_t len = (size_t) ftell(fp);
-    fseek(fp, 0, SEEK_SET);
-    char *json = (char *) calloc(1, len + 1);
-    size_t readed = fread(json, 1, len, fp);
-    assert(len == readed);
-    fclose(fp);
-    *size = len;
-    return json;
-    (void)readed;
 }
 
 int main(int argc, char const* argv[])

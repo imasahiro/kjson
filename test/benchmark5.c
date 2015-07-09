@@ -6,6 +6,7 @@
 #include <stdint.h>
 #define KJSON_HEADER_ONLY 1
 #include "kjson.c"
+#include "kjson_test.h"
 
 typedef uint64_t my_json_object_t;
 struct benchmark {
@@ -106,29 +107,6 @@ static void show_timer(const char *s)
     reset_timer();
 }
 
-static char *loadFile(const char *file, size_t *length)
-{
-    char pathbuf[1024];
-    snprintf(pathbuf, 1024, "%s", file);
-    FILE *fp = fopen(pathbuf, "rb");
-    if(!fp) {
-        snprintf(pathbuf, 1024, "../%s", file);
-        fp = fopen(pathbuf, "rb");
-    }
-    assert(fp != 0);
-    fseek(fp, 0, SEEK_END);
-    size_t len = (size_t)ftell(fp);
-    fseek(fp, 0, SEEK_SET);
-    char *json = (char *)calloc(1, len + 1);
-    if(len != fread(json, 1, len, fp)) {
-        exit(EXIT_FAILURE);
-    }
-    json[len] = '\0';
-    fclose(fp);
-    *length = len;
-    return json;
-}
-
 static void *nop_bench_context_new()
 {
     return 0;
@@ -173,7 +151,7 @@ void benchmark(struct benchmark *bench)
     size_t length;
     const char *text;
 #if 1
-    text = loadFile("./test/twitter_public.json", &length);
+    text = load_file("./test/twitter_public.json", &length);
 #else
     text = "[{\"a\" : 1000}]";
     length = strlen(text);

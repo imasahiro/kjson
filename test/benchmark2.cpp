@@ -29,6 +29,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "benchmark.h"
+#include "kjson_test.h"
 
 static void kjson(char *buf, size_t len) {
     JSONMemoryPool jm;
@@ -105,27 +106,6 @@ static void rapidjson_run(char *buf, size_t len) {
 
 static int loop_count = 128;
 
-static char *loadFile(const char *file, size_t *length)
-{
-    char pathbuf[1024];
-    snprintf(pathbuf, 1024, "%s", file);
-    FILE *fp = fopen(pathbuf, "rb");
-    if (!fp) {
-        snprintf(pathbuf, 1024, "../%s", file);
-        fp = fopen(pathbuf, "rb");
-    }
-    assert(fp != 0);
-    fseek(fp, 0, SEEK_END);
-    size_t len = (size_t)ftell(fp);
-    fseek(fp, 0, SEEK_SET);
-    char *json = (char*)calloc(1, len + 1);
-    assert(len == fread(json, 1, len, fp));
-    json[len] = '\0';
-    fclose(fp);
-    *length = len;
-    return json;
-}
-
 struct f {
     const char *name;
     void (*func)(char *buf, size_t len);
@@ -149,7 +129,7 @@ const struct f data[] = {
 static void test(const char *file)
 {
     size_t len;
-    char *str = loadFile(file, &len);;
+    char *str = load_file(file, &len);;
     assert(len == strlen(str));
     int i, j, k;
     fprintf(stderr, "  bench:%s, %d\n", file, (int)len);

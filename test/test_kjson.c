@@ -5,36 +5,29 @@
 #include <string.h>
 #include <stdlib.h>
 
-static char *loadFile(const char *file, size_t *file_len)
+static char *load_file(const char *path, size_t *size)
 {
-    size_t len = 1024, size, offset = 0;
-    char *str = malloc(1024);
-    char *end = str + 1024;
-    FILE *fp = fopen(file, "r");
-    char buf[1024];
-    assert(fp);
-    while(1) {
-        size = fread(buf, 1, 1024, fp);
-        if(size == 0)
-            break;
-        if(str + offset + size > end) {
-            len *= 2;
-            str = realloc(str, len);
-            end = str + len;
-        }
-        memcpy(str+offset, buf, size);
-        offset += size;
-    }
-    *file_len = offset;
+    FILE *fp = fopen(path, "r");
+    assert(fp != 0);
+
+    fseek(fp, 0, SEEK_END);
+    size_t len = (size_t) ftell(fp);
+    fseek(fp, 0, SEEK_SET);
+    char *json = (char *) calloc(1, len + 1);
+    size_t readed = fread(json, 1, len, fp);
+    assert(len == readed);
     fclose(fp);
-    return str;
+    *size = len;
+    json[len] = '\0';
+    return json;
+    (void)readed;
 }
 
 static void test_file(const char *file)
 {
     fprintf(stderr, "--- {{ test %s --- \n", file);
     size_t len;
-    char *str = loadFile(file, &len);
+    char *str = load_file(file, &len);
     JSONMemoryPool jm;
     JSONMemoryPool_Init(&jm);
     JSON json = JSON_parse_(&jm, str, str+len);
