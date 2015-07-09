@@ -22,7 +22,7 @@ int main(int argc, char const* argv[])
 
     JSONMemoryPool jm;
     JSONMemoryPool_Init(&jm);
-    JSON o = parseJSON(&jm, json, json + len);
+    JSON o = JSON_parse_(&jm, json, json + len);
     assert(o.bits != 0);
     if (!JSON_isValid(o)) {
         fprintf(stderr, "Error\n");

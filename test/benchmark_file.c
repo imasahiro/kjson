@@ -55,7 +55,7 @@ int main(int argc, char const* argv[])
         reset_timer();
         buf = load_file(argv[1], &len);
         JSONMemoryPool_Init(&jm);
-        JSON json = parseJSON(&jm, buf, buf+len);
+        JSON json = JSON_parse_(&jm, buf, buf+len);
         // char *str = JSON_toString(json);
         // JSON_free(json);
         // free(str);

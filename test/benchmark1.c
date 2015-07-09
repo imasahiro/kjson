@@ -200,7 +200,7 @@ void bench_kjson(void)
 
     reset_timer();
     {
-        o = parseJSON(&jm, buf, buf + len);
+        o = JSON_parse_(&jm, buf, buf + len);
         if(o.bits == 0) {
             fprintf(stderr, "Error\n");
         }
@@ -225,7 +225,7 @@ void bench_kjson(void)
 
     reset_timer();
     {
-        o = parseJSON(&jm, buf, buf + len);
+        o = JSON_parse_(&jm, buf, buf + len);
         if(o.bits == 0) {
             fprintf(stderr, "Errro\n");
         }

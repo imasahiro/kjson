@@ -751,7 +751,7 @@ static JSON parseJSON_stream(JSONMemoryPool *jm, input_stream *ins)
     return parse(jm, ins);
 }
 
-KJSON_API JSON parseJSON(JSONMemoryPool *jm, const char *s, const char *e)
+KJSON_API JSON JSON_parse_(JSONMemoryPool *jm, const char *s, const char *e)
 {
     input_stream insbuf;
     input_stream *ins = new_string_input_stream(&insbuf, s, e - s);

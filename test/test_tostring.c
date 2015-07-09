@@ -8,7 +8,7 @@
 
 static void test_parser(JSONMemoryPool *jm, const char *s, size_t len)
 {
-    JSON json = parseJSON(jm, s, s + len);
+    JSON json = JSON_parse_(jm, s, s + len);
     size_t length;
     const char *text = JSON_toStringWithLength(json, &length);
     fprintf(stderr, "%s\n", text);
@@ -116,25 +116,25 @@ static void test_string()
     JSONMemoryPool_Init(&jm);
 #define STRING(S) S, S+strlen(S)
     {
-        JSON n = parseJSON(&jm, STRING("\"ABC\""));
+        JSON n = JSON_parse_(&jm, STRING("[\"ABC\"]"));
         s = JSON_toStringWithLength(n, &len);
-        assert(strncmp(s, "\"ABC\"", len) == 0);
+        assert(strncmp(s, "[\"ABC\"]", len) == 0);
         JSON_free(n);
         fprintf(stderr, "'%s'\n", s);
         free(s);
     }
     {
-        JSON n = parseJSON(&jm, STRING("\"http:\\/\\/twitter.com\\/\""));
+        JSON n = JSON_parse_(&jm, STRING("[\"http:\\/\\/twitter.com\\/\"]"));
         s = JSON_toStringWithLength(n, &len);
-        assert(strncmp(s, "\"http:\\/\\/twitter.com\\/\"", len) == 0);
+        assert(strncmp(s, "[\"http:\\/\\/twitter.com\\/\"]", len) == 0);
         JSON_free(n);
         fprintf(stderr, "'%s'\n", s);
         free(s);
     }
     {
-        JSON n = parseJSON(&jm, STRING("\"A\\nB\\r\\nC\""));
+        JSON n = JSON_parse_(&jm, STRING("[\"A\\nB\\r\\nC\"]"));
         s = JSON_toStringWithLength(n, &len);
-        assert(strncmp(s, "\"A\\nB\\r\\nC\"", len) == 0);
+        assert(strncmp(s, "[\"A\\nB\\r\\nC\"]", len) == 0);
         JSON_free(n);
         fprintf(stderr, "'%s'\n", s);
         free(s);

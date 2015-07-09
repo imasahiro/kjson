@@ -37,7 +37,7 @@ static void test1()
     JSONMemoryPool_Init(&jm);
     while((str = loadLine(fp, buf)) != NULL) {
         len = strlen(str);
-        JSON json = parseJSON(&jm, str, str+len);
+        JSON json = JSON_parse_(&jm, str, str+len);
         assert(JSON_type(json) == JSON_Array);
         JSON_free(json);
     }
@@ -56,7 +56,7 @@ static void test2()
     JSONMemoryPool_Init(&jm);
     while((str = loadLine(fp, buf)) != NULL) {
         len = strlen(str);
-        JSON json = parseJSON(&jm, str, str+len);
+        JSON json = JSON_parse_(&jm, str, str+len);
         char *p = JSON_toStringWithLength(json, &len);
         assert(JSON_type(json) == JSON_Array);
         assert(p);

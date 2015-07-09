@@ -66,7 +66,7 @@ static void kjson_bench_set(void *context, my_json_object_t root, const char *ke
 static my_json_object_t kjson_bench_parse(void *context, const char *text, size_t length)
 {
     JSONMemoryPool *jm = (JSONMemoryPool *) context;
-    JSON json = parseJSON(jm, text, text + length);
+    JSON json = JSON_parse_(jm, text, text + length);
     return (my_json_object_t) json.bits;
 }
 

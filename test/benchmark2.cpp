@@ -33,7 +33,7 @@
 static void kjson(char *buf, size_t len) {
     JSONMemoryPool jm;
     JSONMemoryPool_Init(&jm);
-    JSON json = parseJSON(&jm, buf, buf+len);
+    JSON json = JSON_parse_(&jm, buf, buf+len);
     char *str = JSON_toString(json);
     JSON_free(json);
     free(str);

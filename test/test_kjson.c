@@ -37,7 +37,7 @@ static void test_file(const char *file)
     char *str = loadFile(file, &len);
     JSONMemoryPool jm;
     JSONMemoryPool_Init(&jm);
-    JSON json = parseJSON(&jm, str, str+len);
+    JSON json = JSON_parse_(&jm, str, str+len);
     size_t json_len;
     char *json_s = JSON_toStringWithLength(json, &json_len);
     fprintf(stderr, "'%s'\n", json_s);
@@ -84,7 +84,7 @@ static void test_string(void)
 {
     JSONMemoryPool jm;
     JSONMemoryPool_Init(&jm);
-    JSON json = parseJSON(&jm, data, data+sizeof(data));
+    JSON json = JSON_parse_(&jm, data, data+sizeof(data));
     JSON child = JSON_get(json, "app", 3);
     assert(JSON_isValid(child));
     assert(JSON_type(child) == JSON_Array);
@@ -113,7 +113,7 @@ static void test_string(void)
     (void)names;
 }
 
-static char data2[] = 
+static char data2[] =
 "{\n"
 "    \"name\": \"foo\",\n"
 "    \"line\": 10,\n"
@@ -125,7 +125,7 @@ static void test_object_iterator(void)
 {
     JSONMemoryPool jm;
     JSONMemoryPool_Init(&jm);
-    JSON o = parseJSON(&jm, data2, data2+sizeof(data2));
+    JSON o = JSON_parse_(&jm, data2, data2+sizeof(data2));
     assert(JSON_type(o) == JSON_Object);
     //assert(JSON_length((JSON)child) == 3);
 

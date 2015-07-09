@@ -37,7 +37,7 @@ void f(void)
     int len2 = strlen(test2);
     reset_timer();
     for(i = 0; i < N; i++) {
-        o = parseJSON(&jm, test0, test0+len0);
+        o = JSON_parse_(&jm, test0, test0+len0);
         if(o.bits == 0) {
             fprintf(stderr, "Errro\n");
         }
@@ -46,7 +46,7 @@ void f(void)
     }
     show_timer("parse true");
     for(i = 0; i < N; i++) {
-        o = parseJSON(&jm, test1, test1+len1);
+        o = JSON_parse_(&jm, test1, test1+len1);
         if(o.bits == 0) {
             fprintf(stderr, "Errro\n");
         }
@@ -55,7 +55,7 @@ void f(void)
     }
     show_timer("parse false");
     for(i = 0; i < N; i++) {
-        o = parseJSON(&jm, test2, test2+len2);
+        o = JSON_parse_(&jm, test2, test2+len2);
         if(o.bits == 0) {
             fprintf(stderr, "Errro\n");
         }

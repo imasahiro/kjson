@@ -39,7 +39,10 @@ extern "C" {
 #define KJSON_API
 #endif
 
+#ifndef KJSON_USE_RFC7159
 #define KJSON_USE_RFC7159 0
+#endif
+
 #if KJSON_USE_RFC7159
 #define KJSON_USE_RFC4627 0
 #else
@@ -74,7 +77,6 @@ typedef JSONNumber JSONInt;
 typedef JSONInt    JSONInt32;
 typedef JSONNumber JSONDouble;
 typedef JSONNumber JSONBool;
-
 
 union JSONValue {
     Value       val;
@@ -252,7 +254,7 @@ KJSON_API void JSONObject_remove(JSONMemoryPool *jm, JSON json, const char *keyw
 KJSON_API void JSONArray_append(JSONMemoryPool *jm, JSON ary, JSON o);
 KJSON_API void JSON_free(JSON o);
 
-KJSON_API JSON parseJSON(JSONMemoryPool *jm, const char *s, const char *e);
+KJSON_API JSON JSON_parse_(JSONMemoryPool *jm, const char *s, const char *e);
 KJSON_API char *JSON_toStringWithLength(JSON json, size_t *len);
 static inline char *JSON_toString(JSON json)
 {
@@ -342,7 +344,7 @@ static inline JSON toJSON(Value v)
 static inline JSON JSON_parse(JSONMemoryPool *jm, const char *str)
 {
     const char *end = str + strlen(str);
-    return parseJSON(jm, str, end);
+    return JSON_parse_(jm, str, end);
 }
 
 /* [Getter API] */
