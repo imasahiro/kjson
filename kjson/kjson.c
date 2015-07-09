@@ -559,7 +559,10 @@ static JSON parseObject(JSONMemoryPool *jm, input_stream *ins, uint8_t c)
         if(c == '}') {
             break;
         }
-        THROW_IF(c != ',', ins->exception, "Missing comma or end of JSON Object '}'");
+        THROW_IF(c != ',', ins->exception,
+                "Missing comma or end of JSON Object '}'");
+        THROW_IF(!EOS(ins), ins->exception,
+                "Missing end of JSON Object '}'");
     }
     unsigned field_size = (kstack_size(&ins->stack) - stack_top) / 2;
     JSON json = JSONObject_new(jm, field_size);
