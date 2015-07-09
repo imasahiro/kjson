@@ -290,8 +290,10 @@ static JSON parseNOP(JSONMemoryPool *jm, input_stream *ins, uint8_t c)
 
 #define _N 0x40 |
 #define _M 0x80 |
+#define _O _N _M
+
 static const unsigned string_table[] = {
-    0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,_N 0,_N 0,0   ,0   ,_N 0,0   ,0,
+    0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,_N 0,_O 0,0   ,0   ,_N 0,0   ,0,
     0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0,
     _N 0,0   ,_M 2,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,4   ,0   ,0,
     4   ,4   ,4   ,4   ,4   ,4   ,4   ,4   ,4   ,4   ,0   ,0   ,0   ,0   ,0   ,0,
@@ -365,9 +367,9 @@ static uint8_t skip_space(input_stream *ins, uint8_t c)
 #endif
 }
 
-static uint8_t skipBSorDoubleQuote(input_stream *ins)
+static uint8_t skip_unescaped(input_stream *ins)
 {
-#ifdef __SSE2__
+#if 0 && defined(__SSE2__)
 #define bsf(x) __builtin_ctzl(x)
     uint8_t *str = (uint8_t *) ins->pos;
     const __m128i k0x00 = _mm_set1_epi8(0);
@@ -487,7 +489,7 @@ static JSON parseString(JSONMemoryPool *jm, input_stream *ins, uint8_t c)
     unsigned length;
     THROW_IF(c != '"', ins->exception, "Missing open quote at start of JSONString");
     state1 = _input_stream_save(ins);
-    c = skipBSorDoubleQuote(ins);
+    c = skip_unescaped(ins);
     state2 = _input_stream_save(ins);
     length = state2 - state1 - 1;
     if(c == '"') {/* fast path */
