@@ -293,7 +293,7 @@ static JSON parseNOP(JSONMemoryPool *jm, input_stream *ins, uint8_t c)
 #define _O _N _M
 
 static const unsigned string_table[] = {
-    0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,_N 0,_O 0,0   ,0   ,_N 0,0   ,0,
+    0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,_O 0,_O 0,0   ,0   ,_N 0,0   ,0,
     0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0,
     _N 0,0   ,_M 2,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,0   ,4   ,0   ,0,
     4   ,4   ,4   ,4   ,4   ,4   ,4   ,4   ,4   ,4   ,0   ,0   ,0   ,0   ,0   ,0,
@@ -540,7 +540,7 @@ static JSON parseObject(JSONMemoryPool *jm, input_stream *ins, uint8_t c)
 {
     THROW_IF(c != '{', ins->exception, "Missing open brace '{' at start of json object");
     unsigned stack_top = kstack_size(&ins->stack);
-    for(c = skip_space(ins, NEXT(ins)); EOS(ins); c = skip_space(ins, NEXT(ins))) {
+    for(c = skip_space(ins, NEXT(ins)); EOS(ins);) {
         if(c == '}') {
             break;
         }
@@ -561,8 +561,12 @@ static JSON parseObject(JSONMemoryPool *jm, input_stream *ins, uint8_t c)
         }
         THROW_IF(c != ',', ins->exception,
                 "Missing comma or end of JSON Object '}'");
+        c = NEXT(ins);
+        THROW_IF(c == '}', ins->exception,
+                "Extra comma in JSON Object");
         THROW_IF(!EOS(ins), ins->exception,
                 "Missing end of JSON Object '}'");
+        c = skip_space(ins, c);
     }
     unsigned field_size = (kstack_size(&ins->stack) - stack_top) / 2;
     JSON json = JSONObject_new(jm, field_size);
@@ -737,7 +741,7 @@ static JSON parse(JSONMemoryPool *jm, input_stream *ins)
     json = parseChild(jm, ins, c);
     assert(json.bits != 0);
     THROW_IF(IsError(json.val), ins->exception, "Parse Error");
-#if 0
+#if 1
     if(EOS(ins)) {
         c = skip_space(ins, NEXT(ins));
         THROW_IF(c != 0, ins->exception, "Rest of token are not parsed");
@@ -749,19 +753,12 @@ static JSON parse(JSONMemoryPool *jm, input_stream *ins)
 #undef EOS
 #undef NEXT
 
-static JSON parseJSON_stream(JSONMemoryPool *jm, input_stream *ins)
+static JSON JSON_parse2(JSONMemoryPool *jm, input_stream *ins)
 {
-    return parse(jm, ins);
-}
-
-KJSON_API JSON JSON_parse_(JSONMemoryPool *jm, const char *s, const char *e)
-{
-    input_stream insbuf;
-    input_stream *ins = new_string_input_stream(&insbuf, s, e - s);
     kexception_handler_init(&ins->exception);
     JSON json;
     TRY(ins->exception) {
-        json = parseJSON_stream(jm, ins);
+        json = parse(jm, ins);
         if (KJSON_USE_RFC4627) {
             kjson_type type = JSON_type(json);
             if (type != JSON_Object && type != JSON_Array) {
@@ -780,6 +777,13 @@ KJSON_API JSON JSON_parse_(JSONMemoryPool *jm, const char *s, const char *e)
         input_stream_delete(ins);
     }
     return json;
+}
+
+KJSON_API JSON JSON_parse_(JSONMemoryPool *jm, const char *s, const char *e)
+{
+    input_stream insbuf;
+    input_stream *ins = new_string_input_stream(&insbuf, s, e - s);
+    return JSON_parse2(jm, ins);
 }
 
 static inline JSON JSONObject_get(JSON json, JSONString *key)
