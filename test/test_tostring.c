@@ -40,9 +40,9 @@ static void test_array()
     JSONMemoryPool jm;
     JSONMemoryPool_Init(&jm);
     JSON a = JSONArray_new(&jm, 0);
-    JSONArray_append(&jm, a, (JSON) JSONString_new(&jm, "a", 1));
-    JSONArray_append(&jm, a, (JSON) JSONString_new(&jm, "b", 1));
-    JSONArray_append(&jm, a, (JSON) JSONString_new(&jm, "c", 1));
+    JSONArray_append(a, (JSON) JSONString_new(&jm, "a", 1));
+    JSONArray_append(a, (JSON) JSONString_new(&jm, "b", 1));
+    JSONArray_append(a, (JSON) JSONString_new(&jm, "c", 1));
     size_t len;
     char *s = JSON_toStringWithLength(a, &len);
     assert(strncmp(s, "[\"a\",\"b\",\"c\"]", len) == 0);

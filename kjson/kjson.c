@@ -205,8 +205,9 @@ static void _JSON_free(JSON o)
     dispatch_free[type](o);
 }
 
-static void _JSONArray_append(JSONArray *a, JSON o)
+KJSON_API void JSONArray_append(JSON json, JSON o)
 {
+    JSONArray *a = toAry(json.val);
     unsigned len = JSONArray_length(a);
     if (len > KJSON_SMALL_ARRAY_LIMIT) {
         ARRAY_add(JSON, &a->entry.array, o);
@@ -229,12 +230,6 @@ static void _JSONArray_append(JSONArray *a, JSON o)
     }
 }
 
-KJSON_API void JSONArray_append(JSONMemoryPool *jm, JSON json, JSON o)
-{
-    JSONArray *a = toAry(json.val);
-    _JSONArray_append(a, o);
-}
-
 static void _JSONObject_set(JSONObject *o, JSONString *key, JSON value)
 {
     assert((int)JSON_type(value) < 16);
@@ -242,11 +237,12 @@ static void _JSONObject_set(JSONObject *o, JSONString *key, JSON value)
     kmap_set(&o->child, key, value.bits);
 }
 
-KJSON_API void JSONObject_setObject(JSONMemoryPool *jm, JSON json, JSON key, JSON value)
+KJSON_API void JSONObject_setObject(JSON json, JSON key, JSON value)
 {
+    JSONObject *o;
     assert(JSON_TYPE_CHECK(Object, json));
     assert(JSON_TYPE_CHECK(String, key));
-    JSONObject *o = toObj(json.val);
+    o = toObj(json.val);
     _JSONObject_set(o, toStr(key.val), value);
 }
 
@@ -256,20 +252,20 @@ KJSON_API void JSONObject_set(JSONMemoryPool *jm, JSON json, const char *keyword
     _JSONObject_set(toObj(json.val), key, value);
 }
 
-KJSON_API void JSONObject_removeObject(JSONMemoryPool *jm, JSON json, JSONString *key)
+KJSON_API void JSONObject_removeObject(JSON json, JSONString *key)
 {
 
     JSONObject *o = toObj(json.val);
     kmap_remove(&o->child, key);
 }
 
-KJSON_API void JSONObject_remove(JSONMemoryPool *jm, JSON json, const char *keyword, size_t keylen)
+KJSON_API void JSONObject_remove(JSON json, const char *keyword, size_t keylen)
 {
     JSONString tmp;
     tmp.str = (char *)keyword;
     tmp.length = keylen;
     tmp.hashcode = 0;
-    JSONObject_removeObject(jm, json, &tmp);
+    JSONObject_removeObject(json, &tmp);
 }
 
 /* Parser functions */
@@ -538,8 +534,11 @@ static JSON parseChild(JSONMemoryPool *jm, input_stream *ins, uint8_t c)
 
 static JSON parseObject(JSONMemoryPool *jm, input_stream *ins, uint8_t c)
 {
+    unsigned stack_top;
+    unsigned field_size;
+
     THROW_IF(c != '{', ins->exception, "Missing open brace '{' at start of json object");
-    unsigned stack_top = kstack_size(&ins->stack);
+    stack_top = kstack_size(&ins->stack);
     for(c = skip_space(ins, NEXT(ins)); EOS(ins);) {
         if(c == '}') {
             break;
@@ -568,7 +567,7 @@ static JSON parseObject(JSONMemoryPool *jm, input_stream *ins, uint8_t c)
                 "Missing end of JSON Object '}'");
         c = skip_space(ins, c);
     }
-    unsigned field_size = (kstack_size(&ins->stack) - stack_top) / 2;
+    field_size = (kstack_size(&ins->stack) - stack_top) / 2;
     JSON json = JSONObject_new(jm, field_size);
     JSONObject *obj = toObj(json.val);
     while(field_size-- > 0) {
@@ -585,8 +584,11 @@ static JSON parseObject(JSONMemoryPool *jm, input_stream *ins, uint8_t c)
 
 static JSON parseArray(JSONMemoryPool *jm, input_stream *ins, uint8_t c)
 {
+    unsigned stack_top;
+    unsigned element_size;
+
     THROW_IF(c != '[', ins->exception, "Missing open brace '[' at start of json array");
-    unsigned stack_top = kstack_size(&ins->stack);
+    stack_top = kstack_size(&ins->stack);
     c = skip_space(ins, NEXT(ins));
     if(c == ']') {
         /* array with no elements "[]" */
@@ -602,7 +604,7 @@ static JSON parseArray(JSONMemoryPool *jm, input_stream *ins, uint8_t c)
         THROW_IF(c != ',', ins->exception, "Missing comma or end of JSON Array ']'");
     }
 
-    unsigned element_size = kstack_size(&ins->stack) - stack_top;
+    element_size = kstack_size(&ins->stack) - stack_top;
     JSON json = JSONArray_new(jm, element_size);
     JSONArray *a = toAry(json.val);
     if (element_size > KJSON_SMALL_ARRAY_LIMIT) {
